@@ -125,6 +125,7 @@ function collectLineupData() {
     colorShirt: document.getElementById('l-color-shirt').value,
     colorGk: document.getElementById('l-color-gk').value,
     colorNum: document.getElementById('l-color-num').value,
+    colorNumGk: document.getElementById('l-color-num-gk').value,
     colorBg: document.getElementById('l-color-bg').value,
     bgOpacity: document.getElementById('l-bg-opacity').value,
     starters: JSON.parse(JSON.stringify(starters)),
@@ -138,6 +139,7 @@ function applyLineupData(data) {
   if (data.colorShirt) document.getElementById('l-color-shirt').value = data.colorShirt;
   if (data.colorGk) document.getElementById('l-color-gk').value = data.colorGk;
   if (data.colorNum) document.getElementById('l-color-num').value = data.colorNum;
+  if (data.colorNumGk) document.getElementById('l-color-num-gk').value = data.colorNumGk;
   if (data.colorBg) document.getElementById('l-color-bg').value = data.colorBg;
   if (data.bgOpacity != null) document.getElementById('l-bg-opacity').value = data.bgOpacity;
   if (Array.isArray(data.starters) && data.starters.length === 11) {
@@ -169,6 +171,7 @@ function resetLineup() {
   document.getElementById('l-color-shirt').value = '#d40000';
   document.getElementById('l-color-gk').value = '#222222';
   document.getElementById('l-color-num').value = '#ffffff';
+  document.getElementById('l-color-num-gk').value = '#ffffff';
   document.getElementById('l-color-bg').value = '#0a2540';
   document.getElementById('l-bg-opacity').value = '100';
   document.getElementById('l-team-logo-file').value = '';
@@ -266,6 +269,7 @@ const lFooter = document.getElementById('l-footer');
 const lColorShirt = document.getElementById('l-color-shirt');
 const lColorGk = document.getElementById('l-color-gk');
 const lColorNum = document.getElementById('l-color-num');
+const lColorNumGk = document.getElementById('l-color-num-gk');
 const lColorBg = document.getElementById('l-color-bg');
 
 function renderPitch() {
@@ -279,8 +283,9 @@ function renderPitch() {
     el.style.top = p.y + '%';
     el.dataset.index = i;
     const shirtColor = p.gk ? lColorGk.value : lColorShirt.value;
+    const numColor = p.gk ? lColorNumGk.value : lColorNum.value;
     el.innerHTML = `
-      ${renderShirtSVG(shirtColor, lColorNum.value, p.num)}
+      ${renderShirtSVG(shirtColor, numColor, p.num)}
       <div class="lb-player-name">${p.name}</div>
     `;
     pitch.appendChild(el);
@@ -396,7 +401,7 @@ function updateLineupCommon() {
   renderPitch();
 }
 
-[lTeam, lFooter, lColorShirt, lColorGk, lColorNum, lColorBg,
+[lTeam, lFooter, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
  document.getElementById('l-bg-opacity')].forEach(el =>
   el.addEventListener('input', () => { updateLineupCommon(); saveLineup(); })
 );

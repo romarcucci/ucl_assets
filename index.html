@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UCL Graphics Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Barlow+Condensed:wght@500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="logo">⚽ UCL Graphics Editor</div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="player">Bannière joueur</button>
+        <button class="tab" data-tab="lineup">Composition</button>
+        <button class="tab" data-tab="score">Score live</button>
+        <button class="tab" data-tab="bracket">Tableau final</button>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <!-- ============ EDITOR PANEL (LEFT) ============ -->
+      <aside class="editor-panel">
+        <!-- ============ PLAYER BANNER EDITOR ============ -->
+        <section class="editor-section active" data-editor="player">
+          <h2>Bannière joueur</h2>
+
+          <label class="field">
+            <span>Numéro</span>
+            <input type="number" id="p-number" value="20" min="0" max="99" />
+          </label>
+
+          <label class="field">
+            <span>Nom du joueur</span>
+            <input type="text" id="p-name" value="VINÍCIUS JÚNIOR" />
+          </label>
+
+          <label class="field">
+            <span>Statistique (ligne 2)</span>
+            <input type="text" id="p-stat" value="4 GOALS IN 13 MATCHES" />
+          </label>
+
+          <label class="field">
+            <span>Club (préréglage)</span>
+            <select id="p-club">
+              <option value="rma">Real Madrid</option>
+              <option value="lfc">Liverpool</option>
+              <option value="bar">FC Barcelona</option>
+              <option value="psg">PSG</option>
+              <option value="bay">Bayern Munich</option>
+              <option value="custom">Personnalisé</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Logo personnalisé (URL ou upload)</span>
+            <input type="file" id="p-logo-file" accept="image/*" />
+          </label>
+
+          <div class="row">
+            <label class="field">
+              <span>Couleur bande principale</span>
+              <input type="color" id="p-color-main" value="#0a1a4a" />
+            </label>
+            <label class="field">
+              <span>Couleur bande basse</span>
+              <input type="color" id="p-color-low" value="#162a6e" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Couleur du texte</span>
+            <input type="color" id="p-color-text" value="#ffffff" />
+          </label>
+        </section>
+
+        <!-- ============ LINEUP EDITOR ============ -->
+        <section class="editor-section" data-editor="lineup">
+          <h2>Composition d'équipe</h2>
+
+          <label class="field">
+            <span>Nom de l'équipe</span>
+            <input type="text" id="l-team" value="LIVERPOOL FC" />
+          </label>
+
+          <label class="field">
+            <span>Logo de l'équipe (PNG)</span>
+            <input type="file" id="l-team-logo-file" accept="image/*" />
+          </label>
+          <button class="btn-secondary" id="l-team-logo-clear" type="button">Retirer le logo</button>
+
+          <label class="field">
+            <span>Texte du bas (ex: PARIS FINAL 2022)</span>
+            <input type="text" id="l-footer" value="PARIS FINAL 2022" />
+          </label>
+
+          <div class="row">
+            <label class="field">
+              <span>Couleur maillot</span>
+              <input type="color" id="l-color-shirt" value="#d40000" />
+            </label>
+            <label class="field">
+              <span>Couleur maillot GK</span>
+              <input type="color" id="l-color-gk" value="#222222" />
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span>Couleur numéro</span>
+              <input type="color" id="l-color-num" value="#ffffff" />
+            </label>
+            <label class="field">
+              <span>Couleur fond</span>
+              <input type="color" id="l-color-bg" value="#0a2540" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Opacité du fond <span id="l-bg-opacity-value">100%</span></span>
+            <input type="range" id="l-bg-opacity" min="0" max="100" value="100" />
+          </label>
+
+          <h3>Titulaires (glisser sur le terrain pour déplacer)</h3>
+          <label class="checkbox-field">
+            <input type="checkbox" id="l-show-grid" />
+            <span>Afficher la grille d'alignement</span>
+          </label>
+          <div id="l-starters" class="player-list"></div>
+
+          <div class="storage-info">
+            <span>💾 Sauvegarde automatique activée</span>
+            <button class="btn-secondary" id="l-reset" type="button">Réinitialiser</button>
+          </div>
+
+          <h3>Équipes sauvegardées</h3>
+          <div class="saved-teams-controls">
+            <select id="l-saved-team-select"></select>
+            <button class="btn-secondary" id="l-load-team" type="button">Charger</button>
+            <button class="btn-secondary danger" id="l-delete-team" type="button">×</button>
+          </div>
+          <div class="save-team-form">
+            <input type="text" id="l-save-team-name" placeholder="Nom de la sauvegarde…" />
+            <button class="btn-primary" id="l-save-team" type="button">💾 Enregistrer</button>
+          </div>
+        </section>
+
+        <!-- ============ SCORE EDITOR ============ -->
+        <section class="editor-section" data-editor="score">
+          <h2>Bandeau score live</h2>
+
+          <label class="field">
+            <span>Temps (ex: 0:18, 45+2)</span>
+            <input type="text" id="s-time" value="0:18" />
+          </label>
+
+          <h3>Équipe domicile</h3>
+          <div class="row">
+            <label class="field">
+              <span>Code (3 lettres)</span>
+              <input type="text" id="s-home" value="LIV" maxlength="4" />
+            </label>
+            <label class="field">
+              <span>Score</span>
+              <input type="number" id="s-home-score" value="0" min="0" />
+            </label>
+            <label class="field">
+              <span>Couleur</span>
+              <input type="color" id="s-home-color" value="#c00000" />
+            </label>
+          </div>
+
+          <h3>Équipe extérieure</h3>
+          <div class="row">
+            <label class="field">
+              <span>Code (3 lettres)</span>
+              <input type="text" id="s-away" value="RMA" maxlength="4" />
+            </label>
+            <label class="field">
+              <span>Score</span>
+              <input type="number" id="s-away-score" value="0" min="0" />
+            </label>
+            <label class="field">
+              <span>Couleur</span>
+              <input type="color" id="s-away-color" value="#1a3a8a" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Couleur fond central</span>
+            <input type="color" id="s-bg" value="#0a1a4a" />
+          </label>
+        </section>
+
+        <!-- ============ BRACKET EDITOR ============ -->
+        <section class="editor-section" data-editor="bracket">
+          <h2>Tableau de tournoi</h2>
+
+          <label class="field">
+            <span>Titre du tournoi</span>
+            <input type="text" id="b-title" value="CHAMPIONS LEAGUE 2023/24" />
+          </label>
+
+          <label class="field">
+            <span>Lieu et année finale</span>
+            <input type="text" id="b-final" value="LONDON 24" />
+          </label>
+
+          <label class="field">
+            <span>Logo central (PNG officiel)</span>
+            <input type="file" id="b-logo-file" accept="image/*" />
+          </label>
+          <button class="btn-secondary" id="b-logo-clear" type="button">Réinitialiser le logo</button>
+
+          <h3>8 équipes (quart de finale)</h3>
+          <div id="b-teams" class="player-list"></div>
+
+          <label class="field">
+            <span>Couleur fond</span>
+            <input type="color" id="b-bg" value="#0a1228" />
+          </label>
+        </section>
+      </aside>
+
+      <!-- ============ PREVIEW PANEL (RIGHT) ============ -->
+      <section class="preview-panel">
+        <div class="preview-toolbar">
+          <span class="preview-label">Rendu en temps réel</span>
+          <button id="export-btn" class="btn-primary">📷 Exporter PNG</button>
+        </div>
+
+        <!-- Player banner preview -->
+        <div class="preview-container active" data-preview="player">
+          <div class="player-banner" id="player-banner">
+            <div class="pb-logo" id="pb-logo">
+              <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                <circle
+                  cx="30"
+                  cy="30"
+                  r="28"
+                  fill="#fff"
+                  stroke="#c8a951"
+                  stroke-width="2"
+                />
+                <text
+                  x="30"
+                  y="38"
+                  text-anchor="middle"
+                  font-family="serif"
+                  font-size="22"
+                  font-weight="bold"
+                  fill="#0a1a4a"
+                >
+                  RM
+                </text>
+              </svg>
+            </div>
+            <div class="pb-bars">
+              <div class="pb-top" id="pb-top">
+                <span class="pb-number" id="pb-number">20</span>
+                <span class="pb-name" id="pb-name">VINÍCIUS JÚNIOR</span>
+              </div>
+              <div class="pb-bottom" id="pb-bottom">
+                <span id="pb-stat">4 GOALS IN 13 MATCHES</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lineup preview -->
+        <div class="preview-container" data-preview="lineup">
+          <div class="lineup-board" id="lineup-board">
+            <div class="lb-header">
+              <div class="lb-team-logo" id="lb-team-logo"></div>
+              <span class="lb-team-name" id="lb-team-name">LIVERPOOL FC</span>
+            </div>
+            <div class="lb-body">
+              <div class="lb-pitch" id="lb-pitch">
+                <!-- Players placed via JS -->
+              </div>
+            </div>
+            <div class="lb-footer" id="lb-footer">PARIS FINAL 2022</div>
+          </div>
+        </div>
+
+        <!-- Score preview -->
+        <div class="preview-container" data-preview="score">
+          <div class="score-banner" id="score-banner">
+            <div class="sb-time" id="sb-time">⚽ 0:18</div>
+            <div class="sb-home-color" id="sb-home-color"></div>
+            <div class="sb-team sb-home" id="sb-home">LIV</div>
+            <div class="sb-score" id="sb-home-score">0</div>
+            <div class="sb-sep">|</div>
+            <div class="sb-score" id="sb-away-score">0</div>
+            <div class="sb-team sb-away" id="sb-away">RMA</div>
+            <div class="sb-away-color" id="sb-away-color"></div>
+          </div>
+        </div>
+
+        <!-- Bracket preview -->
+        <div class="preview-container" data-preview="bracket">
+          <div class="bracket-board" id="bracket-board">
+            <div class="br-top">
+              <div class="br-tournament-title" id="br-tournament-title">CHAMPIONS LEAGUE 2023/24</div>
+              <div class="br-venue-title" id="br-venue-title">LONDON 24</div>
+            </div>
+            <div class="br-grid">
+              <div class="br-col br-qf-col left">
+                <div class="br-match-group">
+                  <div class="br-team-card" data-team-i="0"></div>
+                  <div class="br-team-card" data-team-i="1"></div>
+                </div>
+                <div class="br-match-group">
+                  <div class="br-team-card" data-team-i="2"></div>
+                  <div class="br-team-card" data-team-i="3"></div>
+                </div>
+              </div>
+              <div class="br-col br-sf-col">
+                <div class="br-sf-card">
+                  <div class="br-tbd">TBD</div>
+                  <div class="br-sf-sep"></div>
+                  <div class="br-tbd">TBD</div>
+                </div>
+              </div>
+              <div class="br-col br-final-col">
+                <div class="br-final-card">
+                  <div class="br-marker top"></div>
+                  <div class="br-ucl-logo" id="br-ucl-logo"></div>
+                  <div class="br-final-venue" id="br-final-venue">LONDON 24</div>
+                  <div class="br-marker bottom"></div>
+                </div>
+              </div>
+              <div class="br-col br-sf-col">
+                <div class="br-sf-card">
+                  <div class="br-tbd">TBD</div>
+                  <div class="br-sf-sep"></div>
+                  <div class="br-tbd">TBD</div>
+                </div>
+              </div>
+              <div class="br-col br-qf-col right">
+                <div class="br-match-group">
+                  <div class="br-team-card" data-team-i="4"></div>
+                  <div class="br-team-card" data-team-i="5"></div>
+                </div>
+                <div class="br-match-group">
+                  <div class="br-team-card" data-team-i="6"></div>
+                  <div class="br-team-card" data-team-i="7"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

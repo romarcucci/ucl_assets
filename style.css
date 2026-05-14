@@ -710,6 +710,7 @@ body {
   width: 70px;
   height: 74px;
   display: block;
+  margin: 0 auto;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
   pointer-events: none;
 }

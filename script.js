@@ -468,7 +468,7 @@ function updateLineupCommon() {
   const alpha = (+document.getElementById('l-bg-opacity').value) / 100;
   const bgTop = hexToRgba(lColorBg.value, alpha);
   const bgBottom = hexToRgba(shadeColor(lColorBg.value, -0.25), alpha);
-  document.getElementById('lineup-board').style.background =
+  document.getElementById('lineup-board').style.backgroundImage =
     `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 100%)`;
   document.getElementById('l-bg-opacity-value').textContent =
     Math.round(alpha * 100) + '%';

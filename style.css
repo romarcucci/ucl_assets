@@ -751,8 +751,9 @@ body {
   font-family: var(--font-data);
   font-weight: 700;
   font-size: 15px;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-transform: uppercase;
+  color: #ffffff;
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(0, 0, 0, 0.5);
@@ -764,19 +765,22 @@ body {
   background: #070a37;
   text-align: center;
   padding: 14px;
-  font-family: var(--font-data);
+  font-family: var(--font-title);
   font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 2px;
+  font-weight: 700;
+  letter-spacing: 4px;
   text-transform: uppercase;
+  color: #ffffff;
 }
 .lb-coach {
   position: absolute;
   left: 30px;
-  bottom: 50px;
+  bottom: 15px;
   font-family: var(--font-data);
+  font-weight: 700;
   font-size: 18px;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
+  color: #ffffff;
   text-transform: uppercase;
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),

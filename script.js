@@ -117,11 +117,13 @@ function hexToRgba(hex, alpha) {
 /* ----- localStorage persistence ----- */
 const LINEUP_STORAGE_KEY = 'ucl-lineup-v1';
 const SAVED_TEAMS_KEY = 'ucl-lineup-teams-v1';
+const SAVED_FORMATIONS_KEY = 'ucl-lineup-formations-v1';
 
 function collectLineupData() {
   return {
     team: document.getElementById('l-team').value,
     footer: document.getElementById('l-footer').value,
+    coach: document.getElementById('l-coach').value,
     colorShirt: document.getElementById('l-color-shirt').value,
     colorGk: document.getElementById('l-color-gk').value,
     colorNum: document.getElementById('l-color-num').value,
@@ -136,6 +138,7 @@ function collectLineupData() {
 function applyLineupData(data) {
   if (data.team) document.getElementById('l-team').value = data.team;
   if (data.footer) document.getElementById('l-footer').value = data.footer;
+  if (data.coach != null) document.getElementById('l-coach').value = data.coach;
   if (data.colorShirt) document.getElementById('l-color-shirt').value = data.colorShirt;
   if (data.colorGk) document.getElementById('l-color-gk').value = data.colorGk;
   if (data.colorNum) document.getElementById('l-color-num').value = data.colorNum;
@@ -168,6 +171,7 @@ function resetLineup() {
   teamLogoURL = null;
   document.getElementById('l-team').value = 'LIVERPOOL FC';
   document.getElementById('l-footer').value = 'PARIS FINAL 2022';
+  document.getElementById('l-coach').value = 'DIDIER DESCHAMPS';
   document.getElementById('l-color-shirt').value = '#d40000';
   document.getElementById('l-color-gk').value = '#222222';
   document.getElementById('l-color-num').value = '#ffffff';
@@ -240,6 +244,74 @@ function deleteSelectedTeam() {
   renderSavedTeamsList();
 }
 
+/* ----- Formations sauvegardées (positions uniquement) ----- */
+function getSavedFormations() {
+  try { return JSON.parse(localStorage.getItem(SAVED_FORMATIONS_KEY) || '[]'); }
+  catch { return []; }
+}
+function setSavedFormations(list) {
+  localStorage.setItem(SAVED_FORMATIONS_KEY, JSON.stringify(list));
+}
+function renderSavedFormationsList() {
+  const sel = document.getElementById('l-saved-formation-select');
+  const formations = getSavedFormations();
+  if (formations.length === 0) {
+    sel.innerHTML = '<option value="">— Aucune formation sauvegardée —</option>';
+  } else {
+    sel.innerHTML = formations
+      .map((f, i) => `<option value="${i}">${f.name}</option>`)
+      .join('');
+  }
+}
+function saveCurrentAsFormation() {
+  const nameInput = document.getElementById('l-save-formation-name');
+  const name = nameInput.value.trim();
+  if (!name) { alert('Donne un nom à la formation.'); return; }
+  const formations = getSavedFormations();
+  const existing = formations.findIndex(f => f.name === name);
+  const entry = {
+    name,
+    positions: starters.map(p => ({ x: p.x, y: p.y, gk: !!p.gk }))
+  };
+  if (existing >= 0) {
+    if (!confirm(`Une formation "${name}" existe déjà. L'écraser ?`)) return;
+    formations[existing] = entry;
+  } else {
+    formations.push(entry);
+  }
+  setSavedFormations(formations);
+  nameInput.value = '';
+  renderSavedFormationsList();
+  const idx = formations.findIndex(f => f.name === name);
+  document.getElementById('l-saved-formation-select').value = String(idx);
+}
+function loadSelectedFormation() {
+  const sel = document.getElementById('l-saved-formation-select');
+  const idx = parseInt(sel.value, 10);
+  const formations = getSavedFormations();
+  if (isNaN(idx) || !formations[idx]) return;
+  const positions = formations[idx].positions;
+  if (!Array.isArray(positions) || positions.length !== 11) return;
+  positions.forEach((pos, i) => {
+    if (!starters[i]) return;
+    starters[i].x = pos.x;
+    starters[i].y = pos.y;
+    if (typeof pos.gk === 'boolean') starters[i].gk = pos.gk;
+  });
+  renderPitch();
+  saveLineup();
+}
+function deleteSelectedFormation() {
+  const sel = document.getElementById('l-saved-formation-select');
+  const idx = parseInt(sel.value, 10);
+  const formations = getSavedFormations();
+  if (isNaN(idx) || !formations[idx]) return;
+  if (!confirm(`Supprimer la formation "${formations[idx].name}" ?`)) return;
+  formations.splice(idx, 1);
+  setSavedFormations(formations);
+  renderSavedFormationsList();
+}
+
 function renderStartersEditor() {
   const list = document.getElementById('l-starters');
   list.innerHTML = '';
@@ -266,6 +338,7 @@ function renderStartersEditor() {
 
 const lTeam = document.getElementById('l-team');
 const lFooter = document.getElementById('l-footer');
+const lCoach = document.getElementById('l-coach');
 const lColorShirt = document.getElementById('l-color-shirt');
 const lColorGk = document.getElementById('l-color-gk');
 const lColorNum = document.getElementById('l-color-num');
@@ -389,7 +462,9 @@ function renderTeamLogo() {
 
 function updateLineupCommon() {
   document.getElementById('lb-team-name').textContent = lTeam.value;
-  document.getElementById('lb-footer').textContent = lFooter.value;
+  document.getElementById('lb-footer-text').textContent = lFooter.value;
+  const coachName = lCoach.value.trim();
+  document.getElementById('lb-coach').textContent = coachName ? `COACH: ${coachName}` : '';
   const alpha = (+document.getElementById('l-bg-opacity').value) / 100;
   const bgTop = hexToRgba(lColorBg.value, alpha);
   const bgBottom = hexToRgba(shadeColor(lColorBg.value, -0.25), alpha);
@@ -401,7 +476,7 @@ function updateLineupCommon() {
   renderPitch();
 }
 
-[lTeam, lFooter, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
+[lTeam, lFooter, lCoach, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
  document.getElementById('l-bg-opacity')].forEach(el =>
   el.addEventListener('input', () => { updateLineupCommon(); saveLineup(); })
 );
@@ -437,6 +512,80 @@ document.getElementById('l-team-logo-clear').addEventListener('click', () => {
 document.getElementById('l-save-team').addEventListener('click', saveCurrentAsTeam);
 document.getElementById('l-load-team').addEventListener('click', loadSelectedTeam);
 document.getElementById('l-delete-team').addEventListener('click', deleteSelectedTeam);
+
+document.getElementById('l-save-formation').addEventListener('click', saveCurrentAsFormation);
+document.getElementById('l-load-formation').addEventListener('click', loadSelectedFormation);
+document.getElementById('l-delete-formation').addEventListener('click', deleteSelectedFormation);
+renderSavedFormationsList();
+
+/* ----- Export / Import JSON (équipes + formations) ----- */
+function exportSavesToJson() {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    teams: getSavedTeams(),
+    formations: getSavedFormations()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ucl-saves-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importSavesFromJson(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    let parsed;
+    try {
+      parsed = JSON.parse(ev.target.result);
+    } catch (e) {
+      alert('Fichier JSON invalide : ' + e.message);
+      return;
+    }
+    const importedTeams = Array.isArray(parsed.teams) ? parsed.teams : [];
+    const importedFormations = Array.isArray(parsed.formations) ? parsed.formations : [];
+    if (!importedTeams.length && !importedFormations.length) {
+      alert('Aucune équipe ni formation trouvée dans le fichier.');
+      return;
+    }
+    const msg = `Importer ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s) ?\n\nLes entrées avec le même nom seront écrasées par celles du fichier.`;
+    if (!confirm(msg)) return;
+    const teams = getSavedTeams();
+    importedTeams.forEach(t => {
+      if (!t || typeof t.name !== 'string') return;
+      const i = teams.findIndex(x => x.name === t.name);
+      if (i >= 0) teams[i] = t; else teams.push(t);
+    });
+    setSavedTeams(teams);
+    const formations = getSavedFormations();
+    importedFormations.forEach(f => {
+      if (!f || typeof f.name !== 'string') return;
+      const i = formations.findIndex(x => x.name === f.name);
+      if (i >= 0) formations[i] = f; else formations.push(f);
+    });
+    setSavedFormations(formations);
+    renderSavedTeamsList();
+    renderSavedFormationsList();
+    alert(`Import terminé : ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s).`);
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('l-export-json').addEventListener('click', exportSavesToJson);
+document.getElementById('l-import-json-btn').addEventListener('click', () => {
+  document.getElementById('l-import-json-file').click();
+});
+document.getElementById('l-import-json-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  importSavesFromJson(file);
+  e.target.value = '';
+});
 
 /* Toggle grille d'alignement */
 const GRID_PREF_KEY = 'ucl-lineup-grid-v1';
@@ -701,22 +850,81 @@ renderBracket();
 /* ============================================================
    EXPORT TO PNG (via html-to-image-style using SVG foreignObject)
    ============================================================ */
+const EXPORT_RESOLUTION_HEIGHT = {
+  '4k': 2160,
+  '1080p': 1080,
+  '720p': 720,
+  '580p': 580
+};
+
+function loadExternalScript(src, globalName) {
+  if (globalName && typeof window[globalName] !== 'undefined') return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
 document.getElementById('export-btn').addEventListener('click', async () => {
   const active = document.querySelector('.preview-container.active');
   if (!active) return;
   const target = active.firstElementChild;
+  const format = document.getElementById('export-format').value;
+  const resolution = document.getElementById('export-resolution').value;
+  const targetHeight = EXPORT_RESOLUTION_HEIGHT[resolution] || 1080;
+  const rect = target.getBoundingClientRect();
+  const scale = targetHeight / rect.height;
+  const baseName = `ucl-graphic-${resolution}-${Date.now()}`;
 
-  // Use html2canvas via CDN if available; otherwise fall back to native screenshot via SVG
-  if (typeof html2canvas === 'undefined') {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    document.head.appendChild(script);
-    await new Promise(r => script.onload = r);
-  }
-  html2canvas(target, { backgroundColor: null, scale: 2 }).then(canvas => {
+  try {
+    if (format === 'svg') {
+      await loadExternalScript('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js', 'htmlToImage');
+      const dataUrl = await window.htmlToImage.toSvg(target, {
+        width: rect.width * scale,
+        height: rect.height * scale,
+        pixelRatio: scale,
+        backgroundColor: null,
+        style: {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: rect.width + 'px',
+          height: rect.height + 'px'
+        }
+      });
+      const link = document.createElement('a');
+      link.download = `${baseName}.svg`;
+      link.href = dataUrl;
+      link.click();
+      return;
+    }
+
+    await loadExternalScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas');
+    const canvas = await html2canvas(target, { backgroundColor: null, scale });
+
+    if (format === 'pdf') {
+      await loadExternalScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'jspdf');
+      const { jsPDF } = window.jspdf;
+      const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
+      const pdf = new jsPDF({
+        orientation,
+        unit: 'px',
+        format: [canvas.width, canvas.height],
+        hotfixes: ['px_scaling']
+      });
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`${baseName}.pdf`);
+      return;
+    }
+
+    // Default: PNG
     const link = document.createElement('a');
-    link.download = `ucl-graphic-${Date.now()}.png`;
+    link.download = `${baseName}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-  });
+  } catch (err) {
+    alert('Export échoué : ' + err.message);
+  }
 });

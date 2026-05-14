@@ -99,6 +99,11 @@
             <input type="text" id="l-footer" value="PARIS FINAL 2022" />
           </label>
 
+          <label class="field">
+            <span>Coach (en bas à gauche)</span>
+            <input type="text" id="l-coach" value="DIDIER DESCHAMPS" placeholder="Nom du coach (vide pour cacher)" />
+          </label>
+
           <div class="row">
             <label class="field">
               <span>Couleur maillot</span>
@@ -157,6 +162,24 @@
             <input type="text" id="l-save-team-name" placeholder="Nom de la sauvegarde…" />
             <button class="btn-primary" id="l-save-team" type="button">💾 Enregistrer</button>
           </div>
+
+          <h3>Formations sauvegardées (positions uniquement)</h3>
+          <div class="saved-teams-controls">
+            <select id="l-saved-formation-select"></select>
+            <button class="btn-secondary" id="l-load-formation" type="button">Appliquer</button>
+            <button class="btn-secondary danger" id="l-delete-formation" type="button">×</button>
+          </div>
+          <div class="save-team-form">
+            <input type="text" id="l-save-formation-name" placeholder="Nom de la formation (ex: 4-3-3)…" />
+            <button class="btn-primary" id="l-save-formation" type="button">💾 Enregistrer formation</button>
+          </div>
+
+          <h3>Export / Import (équipes + formations)</h3>
+          <div class="row">
+            <button class="btn-secondary" id="l-export-json" type="button">📤 Exporter JSON</button>
+            <button class="btn-secondary" id="l-import-json-btn" type="button">📥 Importer JSON</button>
+          </div>
+          <input type="file" id="l-import-json-file" accept="application/json,.json" style="display:none" />
         </section>
 
         <!-- ============ SCORE EDITOR ============ -->
@@ -240,7 +263,22 @@
       <section class="preview-panel">
         <div class="preview-toolbar">
           <span class="preview-label">Rendu en temps réel</span>
-          <button id="export-btn" class="btn-primary">📷 Exporter PNG</button>
+          <div class="preview-toolbar-right">
+            <label class="preview-resolution-label" for="export-format">Format :</label>
+            <select id="export-format">
+              <option value="png" selected>PNG</option>
+              <option value="svg">SVG</option>
+              <option value="pdf">PDF</option>
+            </select>
+            <label class="preview-resolution-label" for="export-resolution">Résolution :</label>
+            <select id="export-resolution">
+              <option value="4k">4K (2160p)</option>
+              <option value="1080p" selected>1080p</option>
+              <option value="720p">720p</option>
+              <option value="580p">580p</option>
+            </select>
+            <button id="export-btn" class="btn-primary">📷 Exporter</button>
+          </div>
         </div>
 
         <!-- Player banner preview -->
@@ -305,10 +343,13 @@
                     <rect x="0" y="405" width="1060" height="45" />
                   </g>
                 </svg>
+                <div class="lb-coach" id="lb-coach">COACH: DIDIER DESCHAMPS</div>
                 <!-- Players placed via JS -->
               </div>
             </div>
-            <div class="lb-footer" id="lb-footer">PARIS FINAL 2022</div>
+            <div class="lb-footer" id="lb-footer">
+              <span class="lb-footer-text" id="lb-footer-text">PARIS FINAL 2022</span>
+            </div>
           </div>
         </div>
 

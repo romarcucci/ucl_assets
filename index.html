@@ -136,6 +136,22 @@
             <input type="range" id="l-bg-opacity" min="0" max="100" value="100" />
           </label>
 
+          <label class="checkbox-field">
+            <input type="checkbox" id="l-bg-image-toggle" />
+            <span>Image de fond du terrain</span>
+          </label>
+          <label class="field">
+            <span>Choix de l'image (PNG dans le dossier projet)</span>
+            <select id="l-bg-image-select">
+              <option value="">Aucune image</option>
+              <option value="lineup_bg_01.png">Background 01</option>
+              <option value="lineup_bg_02.png">Background 02</option>
+              <option value="lineup_bg_03.png">Background 03</option>
+              <option value="lineup_bg_04.png">Background 04</option>
+              <option value="lineup_bg_05.png">Background 05</option>
+            </select>
+          </label>
+
           <h3>Titulaires (glisser sur le terrain pour déplacer)</h3>
           <label class="checkbox-field">
             <input type="checkbox" id="l-show-grid" />
@@ -328,6 +344,7 @@
             </div>
             <div class="lb-body">
               <div class="lb-pitch" id="lb-pitch">
+                <div class="lb-bg-image" id="lb-bg-image"></div>
                 <svg class="lb-pitch-lines" viewBox="0 0 1060 450" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <defs>
                     <linearGradient id="pitch-stripes-fade" x1="1060" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">

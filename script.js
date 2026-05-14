@@ -472,6 +472,7 @@ function updateLineupCommon() {
     `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 100%)`;
   document.getElementById('l-bg-opacity-value').textContent =
     Math.round(alpha * 100) + '%';
+  if (typeof applyBgImage === 'function') applyBgImage();
   renderTeamLogo();
   renderPitch();
 }
@@ -605,6 +606,38 @@ document.getElementById('lb-pitch').classList.toggle('show-stripes', stripesChec
 stripesCheckbox.addEventListener('change', () => {
   document.getElementById('lb-pitch').classList.toggle('show-stripes', stripesCheckbox.checked);
   localStorage.setItem(STRIPES_PREF_KEY, stripesCheckbox.checked ? '1' : '0');
+});
+
+/* Toggle image de fond du terrain + sélecteur d'image */
+const BG_IMAGE_PREF_KEY = 'ucl-lineup-bg-image-v1';
+const BG_IMAGE_FILE_KEY = 'ucl-lineup-bg-image-file-v1';
+function applyBgImage() {
+  const checkbox = document.getElementById('l-bg-image-toggle');
+  const select = document.getElementById('l-bg-image-select');
+  const pitch = document.getElementById('lb-pitch');
+  const imgDiv = document.getElementById('lb-bg-image');
+  if (!checkbox || !pitch || !imgDiv || !select) return;
+  const alpha = (+document.getElementById('l-bg-opacity').value) / 100;
+  const hasFile = !!select.value;
+  pitch.classList.toggle('has-bg-image', checkbox.checked && hasFile);
+  imgDiv.style.backgroundImage = hasFile ? `url('./${select.value}')` : 'none';
+  imgDiv.style.opacity = alpha;
+}
+const bgImageCheckbox = document.getElementById('l-bg-image-toggle');
+const bgImageSelect = document.getElementById('l-bg-image-select');
+bgImageCheckbox.checked = localStorage.getItem(BG_IMAGE_PREF_KEY) === '1';
+const savedBgFile = localStorage.getItem(BG_IMAGE_FILE_KEY);
+if (savedBgFile && [...bgImageSelect.options].some(o => o.value === savedBgFile)) {
+  bgImageSelect.value = savedBgFile;
+}
+applyBgImage();
+bgImageCheckbox.addEventListener('change', () => {
+  localStorage.setItem(BG_IMAGE_PREF_KEY, bgImageCheckbox.checked ? '1' : '0');
+  applyBgImage();
+});
+bgImageSelect.addEventListener('change', () => {
+  localStorage.setItem(BG_IMAGE_FILE_KEY, bgImageSelect.value);
+  applyBgImage();
 });
 
 /* ============================================================

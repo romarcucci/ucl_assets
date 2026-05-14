@@ -692,6 +692,18 @@ body {
   height: 100%;
   pointer-events: none;
 }
+.lb-bg-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  display: none;
+}
+.lb-pitch.has-bg-image .lb-bg-image {
+  display: block;
+}
 .lb-pitch:not(.show-stripes) .lb-pitch-stripes {
   display: none;
 }

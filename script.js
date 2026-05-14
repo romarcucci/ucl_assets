@@ -443,6 +443,16 @@ gridCheckbox.addEventListener('change', () => {
   localStorage.setItem(GRID_PREF_KEY, gridCheckbox.checked ? '1' : '0');
 });
 
+/* Toggle terrain rayé */
+const STRIPES_PREF_KEY = 'ucl-lineup-stripes-v1';
+const stripesCheckbox = document.getElementById('l-pitch-stripes');
+stripesCheckbox.checked = localStorage.getItem(STRIPES_PREF_KEY) === '1';
+document.getElementById('lb-pitch').classList.toggle('show-stripes', stripesCheckbox.checked);
+stripesCheckbox.addEventListener('change', () => {
+  document.getElementById('lb-pitch').classList.toggle('show-stripes', stripesCheckbox.checked);
+  localStorage.setItem(STRIPES_PREF_KEY, stripesCheckbox.checked ? '1' : '0');
+});
+
 /* ============================================================
    3) SCORE BANNER
    ============================================================ */

@@ -131,6 +131,10 @@
             <input type="checkbox" id="l-show-grid" />
             <span>Afficher la grille d'alignement</span>
           </label>
+          <label class="checkbox-field">
+            <input type="checkbox" id="l-pitch-stripes" />
+            <span>Terrain rayé (10 bandes, fade droite→gauche)</span>
+          </label>
           <div id="l-starters" class="player-list"></div>
 
           <div class="storage-info">
@@ -281,6 +285,21 @@
             </div>
             <div class="lb-body">
               <div class="lb-pitch" id="lb-pitch">
+                <svg class="lb-pitch-lines" viewBox="0 0 1060 450" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="pitch-stripes-fade" x1="1060" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#000000" stop-opacity="0.18" />
+                      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <g class="lb-pitch-stripes" fill="url(#pitch-stripes-fade)">
+                    <rect x="0" y="45" width="1060" height="45" />
+                    <rect x="0" y="135" width="1060" height="45" />
+                    <rect x="0" y="225" width="1060" height="45" />
+                    <rect x="0" y="315" width="1060" height="45" />
+                    <rect x="0" y="405" width="1060" height="45" />
+                  </g>
+                </svg>
                 <!-- Players placed via JS -->
               </div>
             </div>

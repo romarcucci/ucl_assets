@@ -653,6 +653,16 @@ body {
   height: 100%;
   padding: 20px;
 }
+.lb-pitch-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.lb-pitch:not(.show-stripes) .lb-pitch-stripes {
+  display: none;
+}
 .lb-pitch.show-grid {
   background-image:
     linear-gradient(to right, rgba(120, 180, 255, 0.18) 1px, transparent 1px),

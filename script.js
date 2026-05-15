@@ -523,7 +523,7 @@ function updateLineupCommon() {
   const bgTop = hexToRgba(lColorBg.value, alpha);
   const bgBottom = hexToRgba(shadeColor(lColorBg.value, -0.25), alpha);
   document.getElementById('lineup-board').style.backgroundImage =
-    `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 100%)`;
+    `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 89.83%, transparent 89.83%)`;
   document.getElementById('l-bg-opacity-value').textContent =
     Math.round(alpha * 100) + '%';
   if (typeof applyBgImage === 'function') applyBgImage();

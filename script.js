@@ -849,6 +849,33 @@ stripesCheckbox.addEventListener("change", () => {
   localStorage.setItem(STRIPES_PREF_KEY, stripesCheckbox.checked ? "1" : "0");
 });
 
+/* Toggle ligne séparation teal (header / pitch) */
+const DIVIDER_PREF_KEY = "ucl-lineup-divider-v1";
+const DIVIDER_THICKNESS_KEY = "ucl-lineup-divider-thickness-v1";
+const dividerCheckbox = document.getElementById("l-divider-toggle");
+const dividerThickness = document.getElementById("l-divider-thickness");
+const dividerThicknessValue = document.getElementById("l-divider-thickness-value");
+dividerCheckbox.checked = localStorage.getItem(DIVIDER_PREF_KEY) === "1";
+const savedDividerThickness = parseInt(localStorage.getItem(DIVIDER_THICKNESS_KEY), 10);
+if (!isNaN(savedDividerThickness)) dividerThickness.value = savedDividerThickness;
+function applyDivider() {
+  const board = document.getElementById("lineup-board");
+  const divider = document.getElementById("lb-divider");
+  if (!board || !divider) return;
+  board.classList.toggle("show-divider", dividerCheckbox.checked);
+  divider.style.height = dividerThickness.value + "px";
+  if (dividerThicknessValue) dividerThicknessValue.textContent = dividerThickness.value + "px";
+}
+applyDivider();
+dividerCheckbox.addEventListener("change", () => {
+  localStorage.setItem(DIVIDER_PREF_KEY, dividerCheckbox.checked ? "1" : "0");
+  applyDivider();
+});
+dividerThickness.addEventListener("input", () => {
+  localStorage.setItem(DIVIDER_THICKNESS_KEY, dividerThickness.value);
+  applyDivider();
+});
+
 /* Toggle image de fond du terrain + sélecteur d'image */
 const BG_IMAGE_PREF_KEY = "ucl-lineup-bg-image-v1";
 const BG_IMAGE_FILE_KEY = "ucl-lineup-bg-image-file-v1";

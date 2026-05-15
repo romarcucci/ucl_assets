@@ -221,6 +221,14 @@
             <input type="checkbox" id="l-pitch-stripes" />
             <span>Terrain rayé (10 bandes, fade droite→gauche)</span>
           </label>
+          <label class="checkbox-field">
+            <input type="checkbox" id="l-divider-toggle" />
+            <span>Afficher ligne de séparation teal (sous le nom d'équipe)</span>
+          </label>
+          <label class="field">
+            <span>Épaisseur de la ligne <span id="l-divider-thickness-value">2px</span></span>
+            <input type="range" id="l-divider-thickness" min="1" max="10" value="2" />
+          </label>
           <div id="l-starters" class="player-list"></div>
 
           <div class="storage-info">
@@ -402,6 +410,7 @@
               <div class="lb-team-logo" id="lb-team-logo"></div>
               <span class="lb-team-name" id="lb-team-name">LIVERPOOL FC</span>
             </div>
+            <div class="lb-divider" id="lb-divider"></div>
             <div class="lb-body">
               <div class="lb-pitch" id="lb-pitch">
                 <div class="lb-bg-image" id="lb-bg-image"></div>

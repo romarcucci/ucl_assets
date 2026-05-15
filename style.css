@@ -852,6 +852,20 @@ body {
 .lb-coach:empty {
   display: none;
 }
+.lb-divider {
+  flex-shrink: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(20, 184, 166, 0.85) 50%,
+    transparent 100%
+  );
+  display: none;
+}
+.lineup-board.show-divider .lb-divider {
+  display: block;
+}
 .lb-coach-label {
   font-size: 18px;
   font-weight: 100;

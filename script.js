@@ -547,7 +547,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
             fill="url(#${uid}-body)" stroke="${darker}" stroke-width="0.8" stroke-linejoin="round"/>
       ${stripesBlock}
       <!-- Subtle round collar trim -->
-      <path d="M 40,18 Q 50,22 57,18 Q 50,20 40,18 Z"
+      <path d="M 43,18 Q 50,22 57,18 Q 50,20 43,18 Z"
             fill="${darker}" opacity="0.85"/>
       <!-- Hem line at bottom -->
       <path d="M 22,93 Q 50,98 78,93" fill="none" stroke="${darker}" stroke-width="0.6" opacity="0.5"/>

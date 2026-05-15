@@ -459,7 +459,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
           <stop offset="100%" stop-color="${sleeveDark}"/>
         </linearGradient>
         <clipPath id="${uid}-body-clip">
-          <path d="M 26,16 Q 33,17 40,18 L 50,32 L 60,18 Q 67,17 74,16 L 78,42 L 80,98 Q 50,103 20,98 L 22,42 Z" />
+          <path d="M 26,16 Q 33,16 40,18 Q 50,26 60,18 Q 67,16 74,16 L 78,34 L 80,98 Q 50,103 20,98 L 22,34 Z" />
         </clipPath>
       </defs>
       <!-- Left sleeve -->
@@ -468,23 +468,22 @@ function renderShirtSVG(color, numColor, number, options = {}) {
       <!-- Right sleeve -->
       <path d="M 74,16 L 95,28 L 92,46 L 78,42 Z"
             fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
-      <!-- Body silhouette -->
+      <!-- Body silhouette: round neck + smooth shoulders + raised torso -->
       <path d="M 26,16
-               Q 33,17 40,18
-               L 50,32
-               L 60,18
-               Q 67,17 74,16
-               L 78,42
+               Q 33,16 40,18
+               Q 50,26 60,18
+               Q 67,16 74,16
+               L 78,34
                L 80,98
                Q 50,103 20,98
-               L 22,42 Z"
+               L 22,34 Z"
             fill="url(#${uid}-body)" stroke="${darker}" stroke-width="0.8" stroke-linejoin="round"/>
       ${stripesBlock}
-      <!-- Collar V-neck (darker triangle) -->
-      <path d="M 40,18 L 50,32 L 60,18 L 56,18 L 50,28 L 44,18 Z"
-            fill="${darker}"/>
+      <!-- Subtle round collar trim -->
+      <path d="M 40,18 Q 50,26 60,18 Q 50,23 40,18 Z"
+            fill="${darker}" opacity="0.85"/>
       <!-- Subtle vertical body shading on right -->
-      <path d="M 70,42 L 76,42 L 78,98 Q 74,99 70,99 Z"
+      <path d="M 70,34 L 76,34 L 78,98 Q 74,99 70,99 Z"
             fill="rgba(0,0,0,0.15)"/>
       <!-- Hem line at bottom -->
       <path d="M 22,93 Q 50,98 78,93" fill="none" stroke="${darker}" stroke-width="0.6" opacity="0.5"/>

@@ -455,6 +455,7 @@ function renderPitch() {
           style: lShirtStyle.value,
           sleevesColor: lColorSleeves.value,
           stripesColor: lColorStripes.value,
+          flat: true,
         };
     const captainBadge = p.captain
       ? '<span class="lb-captain-badge" aria-label="Capitaine">C</span>'
@@ -496,9 +497,11 @@ function renderShirtSVG(color, numColor, number, options = {}) {
     stripesColor = "#ffffff",
     flat = false,
   } = options;
-  const dark = flat ? color : shadeColor(color, -0.25);
-  const darker = shadeColor(color, -0.4);
-  const light = flat ? color : shadeColor(color, 0.12);
+  const bodyColor = style === "stripes" ? stripesColor : color;
+  const stripeFillColor = style === "stripes" ? color : stripesColor;
+  const dark = flat ? bodyColor : shadeColor(bodyColor, -0.25);
+  const darker = shadeColor(bodyColor, -0.4);
+  const light = flat ? bodyColor : shadeColor(bodyColor, 0.12);
   const sleeveBase = style === "two-tone" ? sleevesColor : color;
   const sleeveDark = flat ? sleeveBase : shadeColor(sleeveBase, -0.25);
   const sleeveDarker = shadeColor(sleeveBase, -0.4);
@@ -507,10 +510,9 @@ function renderShirtSVG(color, numColor, number, options = {}) {
     style === "stripes"
       ? `
       <g clip-path="url(#${uid}-body-clip)">
-        <rect x="28" y="14" width="7" height="92" fill="${stripesColor}" />
-        <rect x="42" y="14" width="7" height="92" fill="${stripesColor}" />
-        <rect x="56" y="14" width="7" height="92" fill="${stripesColor}" />
-        <rect x="70" y="14" width="7" height="92" fill="${stripesColor}" />
+        <rect x="30" y="14" width="8" height="92" fill="${stripeFillColor}" />
+        <rect x="46" y="14" width="8" height="92" fill="${stripeFillColor}" />
+        <rect x="62" y="14" width="8" height="92" fill="${stripeFillColor}" />
       </g>`
       : "";
   return `
@@ -518,7 +520,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
       <defs>
         <linearGradient id="${uid}-body" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="${light}"/>
-          <stop offset="50%" stop-color="${color}"/>
+          <stop offset="50%" stop-color="${bodyColor}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </linearGradient>
         <linearGradient id="${uid}-sleeve" x1="0" y1="0" x2="0" y2="1">
@@ -531,10 +533,10 @@ function renderShirtSVG(color, numColor, number, options = {}) {
       </defs>
       <!-- Left sleeve -->
       <path d="M 26,16 L 5,28 L 8,46 L 22,42 Z"
-            fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
+            fill="url(#${uid}-sleeve)" stroke="#ffffff" stroke-width="0.4" stroke-linejoin="round"/>
       <!-- Right sleeve -->
       <path d="M 74,16 L 95,28 L 92,46 L 78,42 Z"
-            fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
+            fill="url(#${uid}-sleeve)" stroke="#ffffff" stroke-width="0.4" stroke-linejoin="round"/>
       <!-- Body silhouette: round neck + smooth shoulders + raised torso -->
       <path d="M 26,16
                Q 35,12 43,18
@@ -544,7 +546,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
                L 80,98
                Q 50,103 20,98
                L 22,34 Z"
-            fill="url(#${uid}-body)" stroke="${darker}" stroke-width="0.8" stroke-linejoin="round"/>
+            fill="url(#${uid}-body)" stroke="#ffffff" stroke-width="0.4" stroke-linejoin="round"/>
       ${stripesBlock}
       <!-- Subtle round collar trim -->
       <path d="M 43,18 Q 50,22 57,18 Q 50,20 43,18 Z"

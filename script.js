@@ -654,6 +654,10 @@ function updateLineupCommon() {
     `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 89.83%, transparent 89.83%)`;
   document.getElementById("l-bg-opacity-value").textContent =
     Math.round(alpha * 100) + "%";
+  const dividerEl = document.getElementById("lb-divider");
+  if (dividerEl) dividerEl.style.opacity = alpha;
+  const penaltyEl = document.getElementById("lb-pitch-penalty");
+  if (penaltyEl) penaltyEl.style.opacity = alpha;
   if (typeof applyBgImage === "function") applyBgImage();
   renderTeamLogo();
   renderPitch();

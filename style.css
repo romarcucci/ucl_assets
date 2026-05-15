@@ -412,13 +412,30 @@ body {
 }
 .player-row {
   display: grid;
-  grid-template-columns: 50px 1fr auto;
+  grid-template-columns: 50px 1fr auto auto;
   gap: 6px;
   align-items: center;
   background: #0d1117;
   border: 1px solid #30363d;
   padding: 6px;
   border-radius: 6px;
+}
+.player-row .captain-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8b949e;
+  cursor: pointer;
+  user-select: none;
+}
+.player-row .captain-cell input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #1f6feb;
+  cursor: pointer;
+  margin: 0;
 }
 .player-row input {
   padding: 6px 8px;
@@ -767,6 +784,24 @@ body {
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.lb-captain-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  background: #000;
+  color: #fff;
+  border-radius: 50%;
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: none;
+  vertical-align: middle;
+  line-height: 1;
 }
 .lb-footer {
   position: relative;

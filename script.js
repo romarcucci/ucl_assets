@@ -344,15 +344,30 @@ function renderStartersEditor() {
     row.innerHTML = `
       <input type="number" value="${p.num}" min="0" max="99" data-i="${i}" data-field="num" />
       <input type="text" value="${p.name}" data-i="${i}" data-field="name" />
+      <label class="captain-cell" title="Capitaine">
+        <input type="checkbox" data-i="${i}" data-field="captain" ${p.captain ? 'checked' : ''} />
+        <span>C</span>
+      </label>
       <span class="role-tag">${p.gk ? 'GK' : '#' + (i+1)}</span>
     `;
     list.appendChild(row);
   });
   list.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('input', e => {
+    const evtName = inp.type === 'checkbox' ? 'change' : 'input';
+    inp.addEventListener(evtName, e => {
       const idx = +e.target.dataset.i;
       const field = e.target.dataset.field;
-      starters[idx][field] = field === 'num' ? +e.target.value : e.target.value;
+      if (field === 'captain') {
+        if (e.target.checked) {
+          // Mutex: only one captain at a time
+          starters.forEach((s, j) => { s.captain = j === idx; });
+          renderStartersEditor();
+        } else {
+          starters[idx].captain = false;
+        }
+      } else {
+        starters[idx][field] = field === 'num' ? +e.target.value : e.target.value;
+      }
       renderPitch();
       saveLineup();
     });
@@ -392,9 +407,10 @@ function renderPitch() {
           sleevesColor: lColorSleeves.value,
           stripesColor: lColorStripes.value
         };
+    const captainBadge = p.captain ? '<span class="lb-captain-badge" aria-label="Capitaine">C</span>' : '';
     el.innerHTML = `
       ${renderShirtSVG(shirtColor, numColor, p.num, styleOpts)}
-      <div class="lb-player-name">${p.name}</div>
+      <div class="lb-player-name">${p.name}${captainBadge}</div>
     `;
     pitch.appendChild(el);
     makeDraggable(el, p);

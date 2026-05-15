@@ -122,7 +122,9 @@ const SAVED_FORMATIONS_KEY = 'ucl-lineup-formations-v1';
 function collectLineupData() {
   return {
     team: document.getElementById('l-team').value,
-    footer: document.getElementById('l-footer').value,
+    footerRound: document.getElementById('l-footer-round').value,
+    footerLeg: document.getElementById('l-footer-leg').value,
+    footerExtra: document.getElementById('l-footer-extra').value,
     coach: document.getElementById('l-coach').value,
     colorShirt: document.getElementById('l-color-shirt').value,
     colorGk: document.getElementById('l-color-gk').value,
@@ -137,7 +139,15 @@ function collectLineupData() {
 
 function applyLineupData(data) {
   if (data.team) document.getElementById('l-team').value = data.team;
-  if (data.footer) document.getElementById('l-footer').value = data.footer;
+  document.getElementById('l-footer-round').value = data.footerRound || 'Quarter Finals';
+  document.getElementById('l-footer-leg').value = data.footerLeg != null ? data.footerLeg : 'First Leg';
+  if (data.footerExtra != null) {
+    document.getElementById('l-footer-extra').value = data.footerExtra;
+  } else if (data.footer) {
+    document.getElementById('l-footer-extra').value = data.footer;
+  } else {
+    document.getElementById('l-footer-extra').value = '';
+  }
   if (data.coach != null) document.getElementById('l-coach').value = data.coach;
   if (data.colorShirt) document.getElementById('l-color-shirt').value = data.colorShirt;
   if (data.colorGk) document.getElementById('l-color-gk').value = data.colorGk;
@@ -170,7 +180,9 @@ function resetLineup() {
   starters = JSON.parse(JSON.stringify(defaultStarters));
   teamLogoURL = null;
   document.getElementById('l-team').value = 'LIVERPOOL FC';
-  document.getElementById('l-footer').value = 'PARIS FINAL 2022';
+  document.getElementById('l-footer-round').value = 'Quarter Finals';
+  document.getElementById('l-footer-leg').value = 'First Leg';
+  document.getElementById('l-footer-extra').value = '';
   document.getElementById('l-coach').value = 'DIDIER DESCHAMPS';
   document.getElementById('l-color-shirt').value = '#d40000';
   document.getElementById('l-color-gk').value = '#222222';
@@ -229,6 +241,7 @@ function loadSelectedTeam() {
   if (isNaN(idx) || !teams[idx]) return;
   applyLineupData(teams[idx].data);
   document.getElementById('l-team-logo-file').value = '';
+  document.getElementById('l-save-team-name').value = teams[idx].name;
   renderStartersEditor();
   updateLineupCommon();
   saveLineup();
@@ -298,6 +311,7 @@ function loadSelectedFormation() {
     starters[i].y = pos.y;
     if (typeof pos.gk === 'boolean') starters[i].gk = pos.gk;
   });
+  document.getElementById('l-save-formation-name').value = formations[idx].name;
   renderPitch();
   saveLineup();
 }
@@ -337,7 +351,9 @@ function renderStartersEditor() {
 }
 
 const lTeam = document.getElementById('l-team');
-const lFooter = document.getElementById('l-footer');
+const lFooterRound = document.getElementById('l-footer-round');
+const lFooterLeg = document.getElementById('l-footer-leg');
+const lFooterExtra = document.getElementById('l-footer-extra');
 const lCoach = document.getElementById('l-coach');
 const lColorShirt = document.getElementById('l-color-shirt');
 const lColorGk = document.getElementById('l-color-gk');
@@ -462,7 +478,11 @@ function renderTeamLogo() {
 
 function updateLineupCommon() {
   document.getElementById('lb-team-name').textContent = lTeam.value;
-  document.getElementById('lb-footer-text').textContent = lFooter.value;
+  const round = lFooterRound.value;
+  const leg = lFooterLeg.value;
+  const extra = lFooterExtra.value.trim();
+  const parts = [round, leg, extra].filter(Boolean);
+  document.getElementById('lb-footer-text').textContent = parts.join(' - ');
   const coachName = lCoach.value.trim();
   document.getElementById('lb-coach').textContent = coachName ? `COACH: ${coachName}` : '';
   const alpha = (+document.getElementById('l-bg-opacity').value) / 100;
@@ -477,9 +497,12 @@ function updateLineupCommon() {
   renderPitch();
 }
 
-[lTeam, lFooter, lCoach, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
+[lTeam, lFooterRound, lFooterLeg, lFooterExtra, lCoach, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
  document.getElementById('l-bg-opacity')].forEach(el =>
   el.addEventListener('input', () => { updateLineupCommon(); saveLineup(); })
+);
+[lFooterRound, lFooterLeg].forEach(el =>
+  el.addEventListener('change', () => { updateLineupCommon(); saveLineup(); })
 );
 
 loadLineup();

@@ -3,17 +3,21 @@
    ============================================================ */
 
 /* ============ TAB SWITCHING ============ */
-const tabs = document.querySelectorAll('.tab');
-const editorSections = document.querySelectorAll('.editor-section');
-const previewContainers = document.querySelectorAll('.preview-container');
+const tabs = document.querySelectorAll(".tab");
+const editorSections = document.querySelectorAll(".editor-section");
+const previewContainers = document.querySelectorAll(".preview-container");
 
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => {
+tabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
     const target = tab.dataset.tab;
-    tabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    editorSections.forEach(s => s.classList.toggle('active', s.dataset.editor === target));
-    previewContainers.forEach(p => p.classList.toggle('active', p.dataset.preview === target));
+    tabs.forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    editorSections.forEach((s) =>
+      s.classList.toggle("active", s.dataset.editor === target),
+    );
+    previewContainers.forEach((p) =>
+      p.classList.toggle("active", p.dataset.preview === target),
+    );
   });
 });
 
@@ -21,16 +25,16 @@ tabs.forEach(tab => {
    1) PLAYER BANNER
    ============================================================ */
 const CLUB_PRESETS = {
-  rma: { name: 'RM', bg: '#fff', text: '#0a1a4a', stroke: '#c8a951' },
-  lfc: { name: 'LFC', bg: '#d40000', text: '#fff', stroke: '#fdb913' },
-  bar: { name: 'FCB', bg: '#a50044', text: '#fff', stroke: '#edbb00' },
-  psg: { name: 'PSG', bg: '#004170', text: '#fff', stroke: '#da291c' },
-  bay: { name: 'FCB', bg: '#dc052d', text: '#fff', stroke: '#0066b2' },
-  custom: null
+  rma: { name: "RM", bg: "#fff", text: "#0a1a4a", stroke: "#c8a951" },
+  lfc: { name: "LFC", bg: "#d40000", text: "#fff", stroke: "#fdb913" },
+  bar: { name: "FCB", bg: "#a50044", text: "#fff", stroke: "#edbb00" },
+  psg: { name: "PSG", bg: "#004170", text: "#fff", stroke: "#da291c" },
+  bay: { name: "FCB", bg: "#dc052d", text: "#fff", stroke: "#0066b2" },
+  custom: null,
 };
 
 function renderClubLogo(clubKey, fileURL) {
-  const logoBox = document.getElementById('pb-logo');
+  const logoBox = document.getElementById("pb-logo");
   if (fileURL) {
     logoBox.innerHTML = `<img src="${fileURL}" alt="logo" />`;
     return;
@@ -43,42 +47,49 @@ function renderClubLogo(clubKey, fileURL) {
   logoBox.innerHTML = `
     <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
       <circle cx="30" cy="30" r="28" fill="${preset.bg}" stroke="${preset.stroke}" stroke-width="2"/>
-      <text x="30" y="38" text-anchor="middle" font-family="serif" font-size="${preset.name.length>2?16:22}" font-weight="bold" fill="${preset.text}">${preset.name}</text>
+      <text x="30" y="38" text-anchor="middle" font-family="serif" font-size="${preset.name.length > 2 ? 16 : 22}" font-weight="bold" fill="${preset.text}">${preset.name}</text>
     </svg>
   `;
 }
 
-const pNumber = document.getElementById('p-number');
-const pName = document.getElementById('p-name');
-const pStat = document.getElementById('p-stat');
-const pClub = document.getElementById('p-club');
-const pLogoFile = document.getElementById('p-logo-file');
-const pColorMain = document.getElementById('p-color-main');
-const pColorLow = document.getElementById('p-color-low');
-const pColorText = document.getElementById('p-color-text');
+const pNumber = document.getElementById("p-number");
+const pName = document.getElementById("p-name");
+const pStat = document.getElementById("p-stat");
+const pClub = document.getElementById("p-club");
+const pLogoFile = document.getElementById("p-logo-file");
+const pColorMain = document.getElementById("p-color-main");
+const pColorLow = document.getElementById("p-color-low");
+const pColorText = document.getElementById("p-color-text");
 
 let customLogoURL = null;
 
 function updatePlayerBanner() {
-  document.getElementById('pb-number').textContent = pNumber.value;
-  document.getElementById('pb-name').textContent = pName.value;
-  document.getElementById('pb-stat').textContent = pStat.value;
-  document.getElementById('pb-top').style.background = pColorMain.value;
-  document.getElementById('pb-bottom').style.background = pColorLow.value;
-  const banner = document.getElementById('player-banner');
+  document.getElementById("pb-number").textContent = pNumber.value;
+  document.getElementById("pb-name").textContent = pName.value;
+  document.getElementById("pb-stat").textContent = pStat.value;
+  document.getElementById("pb-top").style.background = pColorMain.value;
+  document.getElementById("pb-bottom").style.background = pColorLow.value;
+  const banner = document.getElementById("player-banner");
   banner.style.color = pColorText.value;
   renderClubLogo(pClub.value, customLogoURL);
 }
 
-[pNumber, pName, pStat, pColorMain, pColorLow, pColorText].forEach(el =>
-  el.addEventListener('input', updatePlayerBanner)
+[pNumber, pName, pStat, pColorMain, pColorLow, pColorText].forEach((el) =>
+  el.addEventListener("input", updatePlayerBanner),
 );
-pClub.addEventListener('change', () => { customLogoURL = null; pLogoFile.value = ''; updatePlayerBanner(); });
-pLogoFile.addEventListener('change', e => {
+pClub.addEventListener("change", () => {
+  customLogoURL = null;
+  pLogoFile.value = "";
+  updatePlayerBanner();
+});
+pLogoFile.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => { customLogoURL = ev.target.result; updatePlayerBanner(); };
+  reader.onload = (ev) => {
+    customLogoURL = ev.target.result;
+    updatePlayerBanner();
+  };
   reader.readAsDataURL(file);
 });
 
@@ -89,24 +100,30 @@ updatePlayerBanner();
    ============================================================ */
 // Default Liverpool 4-3-3 positions matching the image
 const defaultStarters = [
-  { num: 1, name: 'ALISSON', x: 92, y: 50, gk: true },
-  { num: 66, name: 'ALEXANDER-ARNOLD', x: 75, y: 18 },
-  { num: 5, name: 'KONATÉ', x: 78, y: 38 },
-  { num: 4, name: 'VIRGIL', x: 78, y: 62 },
-  { num: 26, name: 'ROBERTSON', x: 75, y: 82 },
-  { num: 14, name: 'HENDERSON', x: 55, y: 22 },
-  { num: 3, name: 'FABINHO', x: 58, y: 50 },
-  { num: 6, name: 'THIAGO', x: 55, y: 78 },
-  { num: 11, name: 'SALAH', x: 30, y: 20 },
-  { num: 10, name: 'MANÉ', x: 28, y: 50 },
-  { num: 23, name: 'LUIS DIAZ', x: 30, y: 80 }
+  { num: 1, name: "ALISSON", x: 92, y: 50, gk: true },
+  { num: 66, name: "ALEXANDER-ARNOLD", x: 75, y: 18 },
+  { num: 5, name: "KONATÉ", x: 78, y: 38 },
+  { num: 4, name: "VIRGIL", x: 78, y: 62 },
+  { num: 26, name: "ROBERTSON", x: 75, y: 82 },
+  { num: 14, name: "HENDERSON", x: 55, y: 22 },
+  { num: 3, name: "FABINHO", x: 58, y: 50 },
+  { num: 6, name: "THIAGO", x: 55, y: 78 },
+  { num: 11, name: "SALAH", x: 30, y: 20 },
+  { num: 10, name: "MANÉ", x: 28, y: 50 },
+  { num: 23, name: "LUIS DIAZ", x: 30, y: 80 },
 ];
 let starters = JSON.parse(JSON.stringify(defaultStarters));
 let teamLogoURL = null;
 
 function hexToRgba(hex, alpha) {
-  const c = hex.replace('#', '');
-  const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c;
+  const c = hex.replace("#", "");
+  const full =
+    c.length === 3
+      ? c
+          .split("")
+          .map((x) => x + x)
+          .join("")
+      : c;
   const num = parseInt(full, 16);
   const r = (num >> 16) & 0xff;
   const g = (num >> 8) & 0xff;
@@ -115,52 +132,60 @@ function hexToRgba(hex, alpha) {
 }
 
 /* ----- localStorage persistence ----- */
-const LINEUP_STORAGE_KEY = 'ucl-lineup-v1';
-const SAVED_TEAMS_KEY = 'ucl-lineup-teams-v1';
-const SAVED_FORMATIONS_KEY = 'ucl-lineup-formations-v1';
+const LINEUP_STORAGE_KEY = "ucl-lineup-v1";
+const SAVED_TEAMS_KEY = "ucl-lineup-teams-v1";
+const SAVED_FORMATIONS_KEY = "ucl-lineup-formations-v1";
 
 function collectLineupData() {
   return {
-    team: document.getElementById('l-team').value,
-    footerRound: document.getElementById('l-footer-round').value,
-    footerLeg: document.getElementById('l-footer-leg').value,
-    footerExtra: document.getElementById('l-footer-extra').value,
-    coach: document.getElementById('l-coach').value,
-    colorShirt: document.getElementById('l-color-shirt').value,
-    colorGk: document.getElementById('l-color-gk').value,
-    colorNum: document.getElementById('l-color-num').value,
-    colorNumGk: document.getElementById('l-color-num-gk').value,
-    colorBg: document.getElementById('l-color-bg').value,
-    shirtStyle: document.getElementById('l-shirt-style').value,
-    colorSleeves: document.getElementById('l-color-sleeves').value,
-    colorStripes: document.getElementById('l-color-stripes').value,
-    bgOpacity: document.getElementById('l-bg-opacity').value,
+    team: document.getElementById("l-team").value,
+    footerRound: document.getElementById("l-footer-round").value,
+    footerLeg: document.getElementById("l-footer-leg").value,
+    footerExtra: document.getElementById("l-footer-extra").value,
+    coach: document.getElementById("l-coach").value,
+    colorShirt: document.getElementById("l-color-shirt").value,
+    colorGk: document.getElementById("l-color-gk").value,
+    colorNum: document.getElementById("l-color-num").value,
+    colorNumGk: document.getElementById("l-color-num-gk").value,
+    colorBg: document.getElementById("l-color-bg").value,
+    shirtStyle: document.getElementById("l-shirt-style").value,
+    colorSleeves: document.getElementById("l-color-sleeves").value,
+    colorStripes: document.getElementById("l-color-stripes").value,
+    bgOpacity: document.getElementById("l-bg-opacity").value,
     starters: JSON.parse(JSON.stringify(starters)),
-    teamLogoURL: teamLogoURL
+    teamLogoURL: teamLogoURL,
   };
 }
 
 function applyLineupData(data) {
-  if (data.team) document.getElementById('l-team').value = data.team;
-  document.getElementById('l-footer-round').value = data.footerRound || 'Quarter Finals';
-  document.getElementById('l-footer-leg').value = data.footerLeg != null ? data.footerLeg : 'First Leg';
+  if (data.team) document.getElementById("l-team").value = data.team;
+  document.getElementById("l-footer-round").value =
+    data.footerRound || "Quarter Finals";
+  document.getElementById("l-footer-leg").value =
+    data.footerLeg != null ? data.footerLeg : "First Leg";
   if (data.footerExtra != null) {
-    document.getElementById('l-footer-extra').value = data.footerExtra;
+    document.getElementById("l-footer-extra").value = data.footerExtra;
   } else if (data.footer) {
-    document.getElementById('l-footer-extra').value = data.footer;
+    document.getElementById("l-footer-extra").value = data.footer;
   } else {
-    document.getElementById('l-footer-extra').value = '';
+    document.getElementById("l-footer-extra").value = "";
   }
-  if (data.coach != null) document.getElementById('l-coach').value = data.coach;
-  if (data.colorShirt) document.getElementById('l-color-shirt').value = data.colorShirt;
-  if (data.colorGk) document.getElementById('l-color-gk').value = data.colorGk;
-  if (data.colorNum) document.getElementById('l-color-num').value = data.colorNum;
-  if (data.colorNumGk) document.getElementById('l-color-num-gk').value = data.colorNumGk;
-  if (data.colorBg) document.getElementById('l-color-bg').value = data.colorBg;
-  document.getElementById('l-shirt-style').value = data.shirtStyle || 'solid';
-  if (data.colorSleeves) document.getElementById('l-color-sleeves').value = data.colorSleeves;
-  if (data.colorStripes) document.getElementById('l-color-stripes').value = data.colorStripes;
-  if (data.bgOpacity != null) document.getElementById('l-bg-opacity').value = data.bgOpacity;
+  if (data.coach != null) document.getElementById("l-coach").value = data.coach;
+  if (data.colorShirt)
+    document.getElementById("l-color-shirt").value = data.colorShirt;
+  if (data.colorGk) document.getElementById("l-color-gk").value = data.colorGk;
+  if (data.colorNum)
+    document.getElementById("l-color-num").value = data.colorNum;
+  if (data.colorNumGk)
+    document.getElementById("l-color-num-gk").value = data.colorNumGk;
+  if (data.colorBg) document.getElementById("l-color-bg").value = data.colorBg;
+  document.getElementById("l-shirt-style").value = data.shirtStyle || "solid";
+  if (data.colorSleeves)
+    document.getElementById("l-color-sleeves").value = data.colorSleeves;
+  if (data.colorStripes)
+    document.getElementById("l-color-stripes").value = data.colorStripes;
+  if (data.bgOpacity != null)
+    document.getElementById("l-bg-opacity").value = data.bgOpacity;
   if (Array.isArray(data.starters) && data.starters.length === 11) {
     starters = JSON.parse(JSON.stringify(data.starters));
   }
@@ -169,8 +194,13 @@ function applyLineupData(data) {
 
 function saveLineup() {
   try {
-    localStorage.setItem(LINEUP_STORAGE_KEY, JSON.stringify(collectLineupData()));
-  } catch (e) { /* storage unavailable */ }
+    localStorage.setItem(
+      LINEUP_STORAGE_KEY,
+      JSON.stringify(collectLineupData()),
+    );
+  } catch (e) {
+    /* storage unavailable */
+  }
 }
 
 function loadLineup() {
@@ -178,57 +208,66 @@ function loadLineup() {
     const raw = localStorage.getItem(LINEUP_STORAGE_KEY);
     if (!raw) return;
     applyLineupData(JSON.parse(raw));
-  } catch (e) { /* invalid data */ }
+  } catch (e) {
+    /* invalid data */
+  }
 }
 
 function resetLineup() {
   localStorage.removeItem(LINEUP_STORAGE_KEY);
   starters = JSON.parse(JSON.stringify(defaultStarters));
   teamLogoURL = null;
-  document.getElementById('l-team').value = 'LIVERPOOL FC';
-  document.getElementById('l-footer-round').value = 'Quarter Finals';
-  document.getElementById('l-footer-leg').value = 'First Leg';
-  document.getElementById('l-footer-extra').value = '';
-  document.getElementById('l-coach').value = 'DIDIER DESCHAMPS';
-  document.getElementById('l-color-shirt').value = '#d40000';
-  document.getElementById('l-color-gk').value = '#222222';
-  document.getElementById('l-color-num').value = '#ffffff';
-  document.getElementById('l-color-num-gk').value = '#ffffff';
-  document.getElementById('l-color-bg').value = '#0a2540';
-  document.getElementById('l-shirt-style').value = 'solid';
-  document.getElementById('l-color-sleeves').value = '#ffffff';
-  document.getElementById('l-color-stripes').value = '#ffffff';
-  document.getElementById('l-bg-opacity').value = '100';
-  document.getElementById('l-team-logo-file').value = '';
+  document.getElementById("l-team").value = "LIVERPOOL FC";
+  document.getElementById("l-footer-round").value = "Quarter Finals";
+  document.getElementById("l-footer-leg").value = "First Leg";
+  document.getElementById("l-footer-extra").value = "";
+  document.getElementById("l-coach").value = "DIDIER DESCHAMPS";
+  document.getElementById("l-color-shirt").value = "#d40000";
+  document.getElementById("l-color-gk").value = "#222222";
+  document.getElementById("l-color-num").value = "#ffffff";
+  document.getElementById("l-color-num-gk").value = "#ffffff";
+  document.getElementById("l-color-bg").value = "#0a2540";
+  document.getElementById("l-shirt-style").value = "solid";
+  document.getElementById("l-color-sleeves").value = "#ffffff";
+  document.getElementById("l-color-stripes").value = "#ffffff";
+  document.getElementById("l-bg-opacity").value = "100";
+  document.getElementById("l-team-logo-file").value = "";
   renderStartersEditor();
   updateLineupCommon();
 }
 
 /* ----- Multi-team saved presets ----- */
 function getSavedTeams() {
-  try { return JSON.parse(localStorage.getItem(SAVED_TEAMS_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_TEAMS_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 function setSavedTeams(list) {
   localStorage.setItem(SAVED_TEAMS_KEY, JSON.stringify(list));
 }
 function renderSavedTeamsList() {
-  const sel = document.getElementById('l-saved-team-select');
+  const sel = document.getElementById("l-saved-team-select");
   const teams = getSavedTeams();
   if (teams.length === 0) {
     sel.innerHTML = '<option value="">— Aucune équipe sauvegardée —</option>';
   } else {
     sel.innerHTML = teams
       .map((t, i) => `<option value="${i}">${t.name}</option>`)
-      .join('');
+      .join("");
   }
 }
 function saveCurrentAsTeam() {
-  const nameInput = document.getElementById('l-save-team-name');
-  const name = nameInput.value.trim() || document.getElementById('l-team').value.trim();
-  if (!name) { alert('Donne un nom à la sauvegarde.'); return; }
+  const nameInput = document.getElementById("l-save-team-name");
+  const name =
+    nameInput.value.trim() || document.getElementById("l-team").value.trim();
+  if (!name) {
+    alert("Donne un nom à la sauvegarde.");
+    return;
+  }
   const teams = getSavedTeams();
-  const existing = teams.findIndex(t => t.name === name);
+  const existing = teams.findIndex((t) => t.name === name);
   const entry = { name, data: collectLineupData() };
   if (existing >= 0) {
     if (!confirm(`Une équipe "${name}" existe déjà. L'écraser ?`)) return;
@@ -237,26 +276,26 @@ function saveCurrentAsTeam() {
     teams.push(entry);
   }
   setSavedTeams(teams);
-  nameInput.value = '';
+  nameInput.value = "";
   renderSavedTeamsList();
   // Select the just-saved entry
-  const idx = teams.findIndex(t => t.name === name);
-  document.getElementById('l-saved-team-select').value = String(idx);
+  const idx = teams.findIndex((t) => t.name === name);
+  document.getElementById("l-saved-team-select").value = String(idx);
 }
 function loadSelectedTeam() {
-  const sel = document.getElementById('l-saved-team-select');
+  const sel = document.getElementById("l-saved-team-select");
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
   applyLineupData(teams[idx].data);
-  document.getElementById('l-team-logo-file').value = '';
-  document.getElementById('l-save-team-name').value = teams[idx].name;
+  document.getElementById("l-team-logo-file").value = "";
+  document.getElementById("l-save-team-name").value = teams[idx].name;
   renderStartersEditor();
   updateLineupCommon();
   saveLineup();
 }
 function deleteSelectedTeam() {
-  const sel = document.getElementById('l-saved-team-select');
+  const sel = document.getElementById("l-saved-team-select");
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
@@ -268,32 +307,39 @@ function deleteSelectedTeam() {
 
 /* ----- Formations sauvegardées (positions uniquement) ----- */
 function getSavedFormations() {
-  try { return JSON.parse(localStorage.getItem(SAVED_FORMATIONS_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_FORMATIONS_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 function setSavedFormations(list) {
   localStorage.setItem(SAVED_FORMATIONS_KEY, JSON.stringify(list));
 }
 function renderSavedFormationsList() {
-  const sel = document.getElementById('l-saved-formation-select');
+  const sel = document.getElementById("l-saved-formation-select");
   const formations = getSavedFormations();
   if (formations.length === 0) {
-    sel.innerHTML = '<option value="">— Aucune formation sauvegardée —</option>';
+    sel.innerHTML =
+      '<option value="">— Aucune formation sauvegardée —</option>';
   } else {
     sel.innerHTML = formations
       .map((f, i) => `<option value="${i}">${f.name}</option>`)
-      .join('');
+      .join("");
   }
 }
 function saveCurrentAsFormation() {
-  const nameInput = document.getElementById('l-save-formation-name');
+  const nameInput = document.getElementById("l-save-formation-name");
   const name = nameInput.value.trim();
-  if (!name) { alert('Donne un nom à la formation.'); return; }
+  if (!name) {
+    alert("Donne un nom à la formation.");
+    return;
+  }
   const formations = getSavedFormations();
-  const existing = formations.findIndex(f => f.name === name);
+  const existing = formations.findIndex((f) => f.name === name);
   const entry = {
     name,
-    positions: starters.map(p => ({ x: p.x, y: p.y, gk: !!p.gk }))
+    positions: starters.map((p) => ({ x: p.x, y: p.y, gk: !!p.gk })),
   };
   if (existing >= 0) {
     if (!confirm(`Une formation "${name}" existe déjà. L'écraser ?`)) return;
@@ -302,13 +348,13 @@ function saveCurrentAsFormation() {
     formations.push(entry);
   }
   setSavedFormations(formations);
-  nameInput.value = '';
+  nameInput.value = "";
   renderSavedFormationsList();
-  const idx = formations.findIndex(f => f.name === name);
-  document.getElementById('l-saved-formation-select').value = String(idx);
+  const idx = formations.findIndex((f) => f.name === name);
+  document.getElementById("l-saved-formation-select").value = String(idx);
 }
 function loadSelectedFormation() {
-  const sel = document.getElementById('l-saved-formation-select');
+  const sel = document.getElementById("l-saved-formation-select");
   const idx = parseInt(sel.value, 10);
   const formations = getSavedFormations();
   if (isNaN(idx) || !formations[idx]) return;
@@ -318,14 +364,14 @@ function loadSelectedFormation() {
     if (!starters[i]) return;
     starters[i].x = pos.x;
     starters[i].y = pos.y;
-    if (typeof pos.gk === 'boolean') starters[i].gk = pos.gk;
+    if (typeof pos.gk === "boolean") starters[i].gk = pos.gk;
   });
-  document.getElementById('l-save-formation-name').value = formations[idx].name;
+  document.getElementById("l-save-formation-name").value = formations[idx].name;
   renderPitch();
   saveLineup();
 }
 function deleteSelectedFormation() {
-  const sel = document.getElementById('l-saved-formation-select');
+  const sel = document.getElementById("l-saved-formation-select");
   const idx = parseInt(sel.value, 10);
   const formations = getSavedFormations();
   if (isNaN(idx) || !formations[idx]) return;
@@ -336,37 +382,40 @@ function deleteSelectedFormation() {
 }
 
 function renderStartersEditor() {
-  const list = document.getElementById('l-starters');
-  list.innerHTML = '';
+  const list = document.getElementById("l-starters");
+  list.innerHTML = "";
   starters.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'player-row';
+    const row = document.createElement("div");
+    row.className = "player-row";
     row.innerHTML = `
       <input type="number" value="${p.num}" min="0" max="99" data-i="${i}" data-field="num" />
       <input type="text" value="${p.name}" data-i="${i}" data-field="name" />
       <label class="captain-cell" title="Capitaine">
-        <input type="checkbox" data-i="${i}" data-field="captain" ${p.captain ? 'checked' : ''} />
+        <input type="checkbox" data-i="${i}" data-field="captain" ${p.captain ? "checked" : ""} />
         <span>C</span>
       </label>
-      <span class="role-tag">${p.gk ? 'GK' : '#' + (i+1)}</span>
+      <span class="role-tag">${p.gk ? "GK" : "#" + (i + 1)}</span>
     `;
     list.appendChild(row);
   });
-  list.querySelectorAll('input').forEach(inp => {
-    const evtName = inp.type === 'checkbox' ? 'change' : 'input';
-    inp.addEventListener(evtName, e => {
+  list.querySelectorAll("input").forEach((inp) => {
+    const evtName = inp.type === "checkbox" ? "change" : "input";
+    inp.addEventListener(evtName, (e) => {
       const idx = +e.target.dataset.i;
       const field = e.target.dataset.field;
-      if (field === 'captain') {
+      if (field === "captain") {
         if (e.target.checked) {
           // Mutex: only one captain at a time
-          starters.forEach((s, j) => { s.captain = j === idx; });
+          starters.forEach((s, j) => {
+            s.captain = j === idx;
+          });
           renderStartersEditor();
         } else {
           starters[idx].captain = false;
         }
       } else {
-        starters[idx][field] = field === 'num' ? +e.target.value : e.target.value;
+        starters[idx][field] =
+          field === "num" ? +e.target.value : e.target.value;
       }
       renderPitch();
       saveLineup();
@@ -374,40 +423,42 @@ function renderStartersEditor() {
   });
 }
 
-const lTeam = document.getElementById('l-team');
-const lFooterRound = document.getElementById('l-footer-round');
-const lFooterLeg = document.getElementById('l-footer-leg');
-const lFooterExtra = document.getElementById('l-footer-extra');
-const lCoach = document.getElementById('l-coach');
-const lColorShirt = document.getElementById('l-color-shirt');
-const lColorGk = document.getElementById('l-color-gk');
-const lShirtStyle = document.getElementById('l-shirt-style');
-const lColorSleeves = document.getElementById('l-color-sleeves');
-const lColorStripes = document.getElementById('l-color-stripes');
-const lColorNum = document.getElementById('l-color-num');
-const lColorNumGk = document.getElementById('l-color-num-gk');
-const lColorBg = document.getElementById('l-color-bg');
+const lTeam = document.getElementById("l-team");
+const lFooterRound = document.getElementById("l-footer-round");
+const lFooterLeg = document.getElementById("l-footer-leg");
+const lFooterExtra = document.getElementById("l-footer-extra");
+const lCoach = document.getElementById("l-coach");
+const lColorShirt = document.getElementById("l-color-shirt");
+const lColorGk = document.getElementById("l-color-gk");
+const lShirtStyle = document.getElementById("l-shirt-style");
+const lColorSleeves = document.getElementById("l-color-sleeves");
+const lColorStripes = document.getElementById("l-color-stripes");
+const lColorNum = document.getElementById("l-color-num");
+const lColorNumGk = document.getElementById("l-color-num-gk");
+const lColorBg = document.getElementById("l-color-bg");
 
 function renderPitch() {
-  const pitch = document.getElementById('lb-pitch');
+  const pitch = document.getElementById("lb-pitch");
   // Clear except lines
-  pitch.querySelectorAll('.lb-player').forEach(p => p.remove());
+  pitch.querySelectorAll(".lb-player").forEach((p) => p.remove());
   starters.forEach((p, i) => {
-    const el = document.createElement('div');
-    el.className = 'lb-player';
-    el.style.left = p.x + '%';
-    el.style.top = p.y + '%';
+    const el = document.createElement("div");
+    el.className = "lb-player";
+    el.style.left = p.x + "%";
+    el.style.top = p.y + "%";
     el.dataset.index = i;
     const shirtColor = p.gk ? lColorGk.value : lColorShirt.value;
     const numColor = p.gk ? lColorNumGk.value : lColorNum.value;
     const styleOpts = p.gk
-      ? { style: 'solid' }
+      ? { style: "solid" }
       : {
           style: lShirtStyle.value,
           sleevesColor: lColorSleeves.value,
-          stripesColor: lColorStripes.value
+          stripesColor: lColorStripes.value,
         };
-    const captainBadge = p.captain ? '<span class="lb-captain-badge" aria-label="Capitaine">C</span>' : '';
+    const captainBadge = p.captain
+      ? '<span class="lb-captain-badge" aria-label="Capitaine">C</span>'
+      : "";
     el.innerHTML = `
       ${renderShirtSVG(shirtColor, numColor, p.num, styleOpts)}
       <div class="lb-player-name">${p.name}${captainBadge}</div>
@@ -419,33 +470,48 @@ function renderPitch() {
 
 function shadeColor(hex, percent) {
   // percent < 0 darkens, > 0 lightens. Returns #rrggbb.
-  const c = hex.replace('#', '');
-  const num = parseInt(c.length === 3 ? c.split('').map(x => x + x).join('') : c, 16);
+  const c = hex.replace("#", "");
+  const num = parseInt(
+    c.length === 3
+      ? c
+          .split("")
+          .map((x) => x + x)
+          .join("")
+      : c,
+    16,
+  );
   let r = (num >> 16) & 0xff;
   let g = (num >> 8) & 0xff;
   let b = num & 0xff;
   r = Math.max(0, Math.min(255, r + Math.round(255 * percent)));
   g = Math.max(0, Math.min(255, g + Math.round(255 * percent)));
   b = Math.max(0, Math.min(255, b + Math.round(255 * percent)));
-  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 function renderShirtSVG(color, numColor, number, options = {}) {
-  const { style = 'solid', sleevesColor = color, stripesColor = '#ffffff' } = options;
+  const {
+    style = "solid",
+    sleevesColor = color,
+    stripesColor = "#ffffff",
+  } = options;
   const dark = shadeColor(color, -0.25);
   const darker = shadeColor(color, -0.4);
   const light = shadeColor(color, 0.12);
-  const sleeveBase = style === 'two-tone' ? sleevesColor : color;
+  const sleeveBase = style === "two-tone" ? sleevesColor : color;
   const sleeveDark = shadeColor(sleeveBase, -0.25);
   const sleeveDarker = shadeColor(sleeveBase, -0.4);
-  const uid = 'sh' + Math.random().toString(36).slice(2, 8);
-  const stripesBlock = style === 'stripes' ? `
+  const uid = "sh" + Math.random().toString(36).slice(2, 8);
+  const stripesBlock =
+    style === "stripes"
+      ? `
       <g clip-path="url(#${uid}-body-clip)">
         <rect x="28" y="14" width="7" height="92" fill="${stripesColor}" />
         <rect x="42" y="14" width="7" height="92" fill="${stripesColor}" />
         <rect x="56" y="14" width="7" height="92" fill="${stripesColor}" />
         <rect x="70" y="14" width="7" height="92" fill="${stripesColor}" />
-      </g>` : '';
+      </g>`
+      : "";
   return `
     <svg class="lb-shirt-svg" viewBox="0 0 100 105" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -488,9 +554,10 @@ function renderShirtSVG(color, numColor, number, options = {}) {
       <!-- Hem line at bottom -->
       <path d="M 22,93 Q 50,98 78,93" fill="none" stroke="${darker}" stroke-width="0.6" opacity="0.5"/>
       <!-- Number -->
-      <text x="50" y="78" text-anchor="middle"
+      <text x="50" y="65" text-anchor="middle"
             font-family="'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif"
             font-size="40" font-weight="500"
+            letter-spacing="2"
             fill="${numColor}"
             stroke="${darker}" stroke-width="0.3"
             paint-order="stroke">${number}</text>
@@ -500,59 +567,85 @@ function renderShirtSVG(color, numColor, number, options = {}) {
 
 function makeDraggable(el, playerObj) {
   let dragging = false;
-  el.addEventListener('mousedown', e => {
+  el.addEventListener("mousedown", (e) => {
     dragging = true;
     e.preventDefault();
   });
-  document.addEventListener('mousemove', e => {
+  document.addEventListener("mousemove", (e) => {
     if (!dragging) return;
-    const pitch = document.getElementById('lb-pitch');
+    const pitch = document.getElementById("lb-pitch");
     const rect = pitch.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     playerObj.x = Math.max(2, Math.min(98, x));
     playerObj.y = Math.max(2, Math.min(98, y));
-    el.style.left = playerObj.x + '%';
-    el.style.top = playerObj.y + '%';
+    el.style.left = playerObj.x + "%";
+    el.style.top = playerObj.y + "%";
   });
-  document.addEventListener('mouseup', () => {
-    if (dragging) { dragging = false; saveLineup(); }
+  document.addEventListener("mouseup", () => {
+    if (dragging) {
+      dragging = false;
+      saveLineup();
+    }
   });
 }
 
 function renderTeamLogo() {
-  const box = document.getElementById('lb-team-logo');
-  box.innerHTML = teamLogoURL ? `<img src="${teamLogoURL}" alt="team logo" />` : '';
+  const box = document.getElementById("lb-team-logo");
+  box.innerHTML = teamLogoURL
+    ? `<img src="${teamLogoURL}" alt="team logo" />`
+    : "";
 }
 
 function updateLineupCommon() {
-  document.getElementById('lb-team-name').textContent = lTeam.value;
+  document.getElementById("lb-team-name").textContent = lTeam.value;
   const round = lFooterRound.value;
   const leg = lFooterLeg.value;
   const extra = lFooterExtra.value.trim();
   const parts = [round, leg, extra].filter(Boolean);
-  document.getElementById('lb-footer-text').textContent = parts.join(' - ');
+  document.getElementById("lb-footer-text").textContent = parts.join(" - ");
   const coachName = lCoach.value.trim();
-  document.getElementById('lb-coach').textContent = coachName ? `COACH: ${coachName}` : '';
-  const alpha = (+document.getElementById('l-bg-opacity').value) / 100;
+  document.getElementById("lb-coach").textContent = coachName
+    ? `COACH: ${coachName}`
+    : "";
+  const alpha = +document.getElementById("l-bg-opacity").value / 100;
   const bgTop = hexToRgba(lColorBg.value, alpha);
   const bgBottom = hexToRgba(shadeColor(lColorBg.value, -0.25), alpha);
-  document.getElementById('lineup-board').style.backgroundImage =
+  document.getElementById("lineup-board").style.backgroundImage =
     `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 89.83%, transparent 89.83%)`;
-  document.getElementById('l-bg-opacity-value').textContent =
-    Math.round(alpha * 100) + '%';
-  if (typeof applyBgImage === 'function') applyBgImage();
+  document.getElementById("l-bg-opacity-value").textContent =
+    Math.round(alpha * 100) + "%";
+  if (typeof applyBgImage === "function") applyBgImage();
   renderTeamLogo();
   renderPitch();
 }
 
-[lTeam, lFooterRound, lFooterLeg, lFooterExtra, lCoach, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
- lShirtStyle, lColorSleeves, lColorStripes,
- document.getElementById('l-bg-opacity')].forEach(el =>
-  el.addEventListener('input', () => { updateLineupCommon(); saveLineup(); })
+[
+  lTeam,
+  lFooterRound,
+  lFooterLeg,
+  lFooterExtra,
+  lCoach,
+  lColorShirt,
+  lColorGk,
+  lColorNum,
+  lColorNumGk,
+  lColorBg,
+  lShirtStyle,
+  lColorSleeves,
+  lColorStripes,
+  document.getElementById("l-bg-opacity"),
+].forEach((el) =>
+  el.addEventListener("input", () => {
+    updateLineupCommon();
+    saveLineup();
+  }),
 );
-[lFooterRound, lFooterLeg].forEach(el =>
-  el.addEventListener('change', () => { updateLineupCommon(); saveLineup(); })
+[lFooterRound, lFooterLeg].forEach((el) =>
+  el.addEventListener("change", () => {
+    updateLineupCommon();
+    saveLineup();
+  }),
 );
 
 loadLineup();
@@ -560,15 +653,16 @@ renderStartersEditor();
 updateLineupCommon();
 renderSavedTeamsList();
 
-document.getElementById('l-reset').addEventListener('click', () => {
-  if (confirm('Réinitialiser la composition aux valeurs par défaut ?')) resetLineup();
+document.getElementById("l-reset").addEventListener("click", () => {
+  if (confirm("Réinitialiser la composition aux valeurs par défaut ?"))
+    resetLineup();
 });
 
-document.getElementById('l-team-logo-file').addEventListener('change', e => {
+document.getElementById("l-team-logo-file").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = (ev) => {
     teamLogoURL = ev.target.result;
     renderTeamLogo();
     saveLineup();
@@ -576,20 +670,32 @@ document.getElementById('l-team-logo-file').addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-document.getElementById('l-team-logo-clear').addEventListener('click', () => {
+document.getElementById("l-team-logo-clear").addEventListener("click", () => {
   teamLogoURL = null;
-  document.getElementById('l-team-logo-file').value = '';
+  document.getElementById("l-team-logo-file").value = "";
   renderTeamLogo();
   saveLineup();
 });
 
-document.getElementById('l-save-team').addEventListener('click', saveCurrentAsTeam);
-document.getElementById('l-load-team').addEventListener('click', loadSelectedTeam);
-document.getElementById('l-delete-team').addEventListener('click', deleteSelectedTeam);
+document
+  .getElementById("l-save-team")
+  .addEventListener("click", saveCurrentAsTeam);
+document
+  .getElementById("l-load-team")
+  .addEventListener("click", loadSelectedTeam);
+document
+  .getElementById("l-delete-team")
+  .addEventListener("click", deleteSelectedTeam);
 
-document.getElementById('l-save-formation').addEventListener('click', saveCurrentAsFormation);
-document.getElementById('l-load-formation').addEventListener('click', loadSelectedFormation);
-document.getElementById('l-delete-formation').addEventListener('click', deleteSelectedFormation);
+document
+  .getElementById("l-save-formation")
+  .addEventListener("click", saveCurrentAsFormation);
+document
+  .getElementById("l-load-formation")
+  .addEventListener("click", loadSelectedFormation);
+document
+  .getElementById("l-delete-formation")
+  .addEventListener("click", deleteSelectedFormation);
 renderSavedFormationsList();
 
 /* ----- Export / Import JSON (équipes + formations) ----- */
@@ -598,11 +704,13 @@ function exportSavesToJson() {
     version: 1,
     exportedAt: new Date().toISOString(),
     teams: getSavedTeams(),
-    formations: getSavedFormations()
+    formations: getSavedFormations(),
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = `ucl-saves-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
@@ -613,102 +721,123 @@ function exportSavesToJson() {
 
 function importSavesFromJson(file) {
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = (ev) => {
     let parsed;
     try {
       parsed = JSON.parse(ev.target.result);
     } catch (e) {
-      alert('Fichier JSON invalide : ' + e.message);
+      alert("Fichier JSON invalide : " + e.message);
       return;
     }
     const importedTeams = Array.isArray(parsed.teams) ? parsed.teams : [];
-    const importedFormations = Array.isArray(parsed.formations) ? parsed.formations : [];
+    const importedFormations = Array.isArray(parsed.formations)
+      ? parsed.formations
+      : [];
     if (!importedTeams.length && !importedFormations.length) {
-      alert('Aucune équipe ni formation trouvée dans le fichier.');
+      alert("Aucune équipe ni formation trouvée dans le fichier.");
       return;
     }
     const msg = `Importer ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s) ?\n\nLes entrées avec le même nom seront écrasées par celles du fichier.`;
     if (!confirm(msg)) return;
     const teams = getSavedTeams();
-    importedTeams.forEach(t => {
-      if (!t || typeof t.name !== 'string') return;
-      const i = teams.findIndex(x => x.name === t.name);
-      if (i >= 0) teams[i] = t; else teams.push(t);
+    importedTeams.forEach((t) => {
+      if (!t || typeof t.name !== "string") return;
+      const i = teams.findIndex((x) => x.name === t.name);
+      if (i >= 0) teams[i] = t;
+      else teams.push(t);
     });
     setSavedTeams(teams);
     const formations = getSavedFormations();
-    importedFormations.forEach(f => {
-      if (!f || typeof f.name !== 'string') return;
-      const i = formations.findIndex(x => x.name === f.name);
-      if (i >= 0) formations[i] = f; else formations.push(f);
+    importedFormations.forEach((f) => {
+      if (!f || typeof f.name !== "string") return;
+      const i = formations.findIndex((x) => x.name === f.name);
+      if (i >= 0) formations[i] = f;
+      else formations.push(f);
     });
     setSavedFormations(formations);
     renderSavedTeamsList();
     renderSavedFormationsList();
-    alert(`Import terminé : ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s).`);
+    alert(
+      `Import terminé : ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s).`,
+    );
   };
   reader.readAsText(file);
 }
 
-document.getElementById('l-export-json').addEventListener('click', exportSavesToJson);
-document.getElementById('l-import-json-btn').addEventListener('click', () => {
-  document.getElementById('l-import-json-file').click();
+document
+  .getElementById("l-export-json")
+  .addEventListener("click", exportSavesToJson);
+document.getElementById("l-import-json-btn").addEventListener("click", () => {
+  document.getElementById("l-import-json-file").click();
 });
-document.getElementById('l-import-json-file').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  importSavesFromJson(file);
-  e.target.value = '';
-});
+document
+  .getElementById("l-import-json-file")
+  .addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    importSavesFromJson(file);
+    e.target.value = "";
+  });
 
 /* Toggle grille d'alignement */
-const GRID_PREF_KEY = 'ucl-lineup-grid-v1';
-const gridCheckbox = document.getElementById('l-show-grid');
-gridCheckbox.checked = localStorage.getItem(GRID_PREF_KEY) === '1';
-document.getElementById('lb-pitch').classList.toggle('show-grid', gridCheckbox.checked);
-gridCheckbox.addEventListener('change', () => {
-  document.getElementById('lb-pitch').classList.toggle('show-grid', gridCheckbox.checked);
-  localStorage.setItem(GRID_PREF_KEY, gridCheckbox.checked ? '1' : '0');
+const GRID_PREF_KEY = "ucl-lineup-grid-v1";
+const gridCheckbox = document.getElementById("l-show-grid");
+gridCheckbox.checked = localStorage.getItem(GRID_PREF_KEY) === "1";
+document
+  .getElementById("lb-pitch")
+  .classList.toggle("show-grid", gridCheckbox.checked);
+gridCheckbox.addEventListener("change", () => {
+  document
+    .getElementById("lb-pitch")
+    .classList.toggle("show-grid", gridCheckbox.checked);
+  localStorage.setItem(GRID_PREF_KEY, gridCheckbox.checked ? "1" : "0");
 });
 
 /* Toggle terrain rayé */
-const STRIPES_PREF_KEY = 'ucl-lineup-stripes-v1';
-const stripesCheckbox = document.getElementById('l-pitch-stripes');
-stripesCheckbox.checked = localStorage.getItem(STRIPES_PREF_KEY) === '1';
-document.getElementById('lb-pitch').classList.toggle('show-stripes', stripesCheckbox.checked);
-stripesCheckbox.addEventListener('change', () => {
-  document.getElementById('lb-pitch').classList.toggle('show-stripes', stripesCheckbox.checked);
-  localStorage.setItem(STRIPES_PREF_KEY, stripesCheckbox.checked ? '1' : '0');
+const STRIPES_PREF_KEY = "ucl-lineup-stripes-v1";
+const stripesCheckbox = document.getElementById("l-pitch-stripes");
+stripesCheckbox.checked = localStorage.getItem(STRIPES_PREF_KEY) === "1";
+document
+  .getElementById("lb-pitch")
+  .classList.toggle("show-stripes", stripesCheckbox.checked);
+stripesCheckbox.addEventListener("change", () => {
+  document
+    .getElementById("lb-pitch")
+    .classList.toggle("show-stripes", stripesCheckbox.checked);
+  localStorage.setItem(STRIPES_PREF_KEY, stripesCheckbox.checked ? "1" : "0");
 });
 
 /* Toggle image de fond du terrain + sélecteur d'image */
-const BG_IMAGE_PREF_KEY = 'ucl-lineup-bg-image-v1';
-const BG_IMAGE_FILE_KEY = 'ucl-lineup-bg-image-file-v1';
+const BG_IMAGE_PREF_KEY = "ucl-lineup-bg-image-v1";
+const BG_IMAGE_FILE_KEY = "ucl-lineup-bg-image-file-v1";
 function applyBgImage() {
-  const checkbox = document.getElementById('l-bg-image-toggle');
-  const select = document.getElementById('l-bg-image-select');
-  const pitch = document.getElementById('lb-pitch');
-  const imgDiv = document.getElementById('lb-bg-image');
+  const checkbox = document.getElementById("l-bg-image-toggle");
+  const select = document.getElementById("l-bg-image-select");
+  const pitch = document.getElementById("lb-pitch");
+  const imgDiv = document.getElementById("lb-bg-image");
   if (!checkbox || !pitch || !imgDiv || !select) return;
-  const alpha = (+document.getElementById('l-bg-opacity').value) / 100;
+  const alpha = +document.getElementById("l-bg-opacity").value / 100;
   const hasFile = !!select.value;
-  pitch.classList.toggle('has-bg-image', checkbox.checked && hasFile);
-  imgDiv.style.backgroundImage = hasFile ? `url('./${select.value}')` : 'none';
+  pitch.classList.toggle("has-bg-image", checkbox.checked && hasFile);
+  imgDiv.style.backgroundImage = hasFile ? `url('./${select.value}')` : "none";
   imgDiv.style.opacity = alpha;
 }
-const bgImageCheckbox = document.getElementById('l-bg-image-toggle');
-const bgImageSelect = document.getElementById('l-bg-image-select');
-bgImageCheckbox.checked = localStorage.getItem(BG_IMAGE_PREF_KEY) === '1';
+const bgImageCheckbox = document.getElementById("l-bg-image-toggle");
+const bgImageSelect = document.getElementById("l-bg-image-select");
+bgImageCheckbox.checked = localStorage.getItem(BG_IMAGE_PREF_KEY) === "1";
 const savedBgFile = localStorage.getItem(BG_IMAGE_FILE_KEY);
-if (savedBgFile && [...bgImageSelect.options].some(o => o.value === savedBgFile)) {
+if (
+  savedBgFile &&
+  [...bgImageSelect.options].some((o) => o.value === savedBgFile)
+) {
   bgImageSelect.value = savedBgFile;
 }
 applyBgImage();
-bgImageCheckbox.addEventListener('change', () => {
-  localStorage.setItem(BG_IMAGE_PREF_KEY, bgImageCheckbox.checked ? '1' : '0');
+bgImageCheckbox.addEventListener("change", () => {
+  localStorage.setItem(BG_IMAGE_PREF_KEY, bgImageCheckbox.checked ? "1" : "0");
   applyBgImage();
 });
-bgImageSelect.addEventListener('change', () => {
+bgImageSelect.addEventListener("change", () => {
   localStorage.setItem(BG_IMAGE_FILE_KEY, bgImageSelect.value);
   applyBgImage();
 });
@@ -716,46 +845,61 @@ bgImageSelect.addEventListener('change', () => {
 /* ============================================================
    3) SCORE BANNER
    ============================================================ */
-const sTime = document.getElementById('s-time');
-const sHome = document.getElementById('s-home');
-const sHomeScore = document.getElementById('s-home-score');
-const sHomeColor = document.getElementById('s-home-color');
-const sAway = document.getElementById('s-away');
-const sAwayScore = document.getElementById('s-away-score');
-const sAwayColor = document.getElementById('s-away-color');
-const sBg = document.getElementById('s-bg');
+const sTime = document.getElementById("s-time");
+const sHome = document.getElementById("s-home");
+const sHomeScore = document.getElementById("s-home-score");
+const sHomeColor = document.getElementById("s-home-color");
+const sAway = document.getElementById("s-away");
+const sAwayScore = document.getElementById("s-away-score");
+const sAwayColor = document.getElementById("s-away-color");
+const sBg = document.getElementById("s-bg");
 
 function updateScoreBanner() {
-  document.getElementById('sb-time').innerHTML = `⚽ ${sTime.value}`;
-  document.getElementById('sb-home').textContent = sHome.value;
-  document.getElementById('sb-home-score').textContent = sHomeScore.value;
-  document.getElementById('sb-away').textContent = sAway.value;
-  document.getElementById('sb-away-score').textContent = sAwayScore.value;
-  document.getElementById('sb-home-color').style.background = sHomeColor.value;
-  document.getElementById('sb-away-color').style.background = sAwayColor.value;
-  document.querySelectorAll('#score-banner .sb-team, #score-banner .sb-score, #score-banner .sb-sep')
-    .forEach(el => el.style.background = sBg.value);
+  document.getElementById("sb-time").innerHTML = `⚽ ${sTime.value}`;
+  document.getElementById("sb-home").textContent = sHome.value;
+  document.getElementById("sb-home-score").textContent = sHomeScore.value;
+  document.getElementById("sb-away").textContent = sAway.value;
+  document.getElementById("sb-away-score").textContent = sAwayScore.value;
+  document.getElementById("sb-home-color").style.background = sHomeColor.value;
+  document.getElementById("sb-away-color").style.background = sAwayColor.value;
+  document
+    .querySelectorAll(
+      "#score-banner .sb-team, #score-banner .sb-score, #score-banner .sb-sep",
+    )
+    .forEach((el) => (el.style.background = sBg.value));
 }
 
-[sTime, sHome, sHomeScore, sHomeColor, sAway, sAwayScore, sAwayColor, sBg].forEach(el =>
-  el.addEventListener('input', updateScoreBanner)
-);
+[
+  sTime,
+  sHome,
+  sHomeScore,
+  sHomeColor,
+  sAway,
+  sAwayScore,
+  sAwayColor,
+  sBg,
+].forEach((el) => el.addEventListener("input", updateScoreBanner));
 updateScoreBanner();
 
 /* ============================================================
    4) BRACKET BOARD
    ============================================================ */
-const MATCH_LABELS = ['QF1 — Haut Gauche', 'QF2 — Bas Gauche', 'QF3 — Haut Droite', 'QF4 — Bas Droite'];
+const MATCH_LABELS = [
+  "QF1 — Haut Gauche",
+  "QF2 — Bas Gauche",
+  "QF3 — Haut Droite",
+  "QF4 — Bas Droite",
+];
 
 const defaultBracketTeams = [
-  { name: 'ATLETICO MADRID', color: '#cb3524', letter: 'A', logoURL: null },
-  { name: 'DORTMUND', color: '#fde100', letter: 'D', logoURL: null },
-  { name: 'PSG', color: '#004170', letter: 'P', logoURL: null },
-  { name: 'BARCELONA', color: '#a50044', letter: 'B', logoURL: null },
-  { name: 'ARSENAL', color: '#ef0107', letter: 'A', logoURL: null },
-  { name: 'BAYERN MUNICH', color: '#dc052d', letter: 'B', logoURL: null },
-  { name: 'REAL MADRID', color: '#e6e6e6', letter: 'R', logoURL: null },
-  { name: 'MAN CITY', color: '#6cabdd', letter: 'C', logoURL: null }
+  { name: "ATLETICO MADRID", color: "#cb3524", letter: "A", logoURL: null },
+  { name: "DORTMUND", color: "#fde100", letter: "D", logoURL: null },
+  { name: "PSG", color: "#004170", letter: "P", logoURL: null },
+  { name: "BARCELONA", color: "#a50044", letter: "B", logoURL: null },
+  { name: "ARSENAL", color: "#ef0107", letter: "A", logoURL: null },
+  { name: "BAYERN MUNICH", color: "#dc052d", letter: "B", logoURL: null },
+  { name: "REAL MADRID", color: "#e6e6e6", letter: "R", logoURL: null },
+  { name: "MAN CITY", color: "#6cabdd", letter: "C", logoURL: null },
 ];
 
 // Default inline SVG approximating the UEFA Champions League starball + wordmark.
@@ -801,28 +945,30 @@ let centralLogoURL = null;
   const img = new Image();
   img.onload = () => {
     if (centralLogoURL === null) {
-      centralLogoURL = './ucl-logo.png';
-      if (typeof renderBracket === 'function') renderBracket();
+      centralLogoURL = "./ucl-logo.png";
+      if (typeof renderBracket === "function") renderBracket();
     }
   };
-  img.onerror = () => { /* file not present — keep SVG fallback */ };
-  img.src = './ucl-logo.png';
+  img.onerror = () => {
+    /* file not present — keep SVG fallback */
+  };
+  img.src = "./ucl-logo.png";
 })();
 
 let bracketTeams = JSON.parse(JSON.stringify(defaultBracketTeams));
 
 function renderBracketEditor() {
-  const list = document.getElementById('b-teams');
-  list.innerHTML = '';
+  const list = document.getElementById("b-teams");
+  list.innerHTML = "";
   bracketTeams.forEach((t, i) => {
     if (i % 2 === 0) {
-      const label = document.createElement('div');
-      label.className = 'match-label';
+      const label = document.createElement("div");
+      label.className = "match-label";
       label.textContent = MATCH_LABELS[i / 2];
       list.appendChild(label);
     }
-    const card = document.createElement('div');
-    card.className = 'team-card';
+    const card = document.createElement("div");
+    card.className = "team-card";
     const thumb = t.logoURL
       ? `<img src="${t.logoURL}" alt="logo" />`
       : `<div class="team-thumb-letter" style="background:${t.color};">${t.letter}</div>`;
@@ -838,33 +984,36 @@ function renderBracketEditor() {
           📁
           <input type="file" accept="image/*" data-i="${i}" data-field="logoURL" hidden />
         </label>
-        ${t.logoURL ? `<button class="remove-logo-btn" data-i="${i}" title="Supprimer le logo">×</button>` : ''}
+        ${t.logoURL ? `<button class="remove-logo-btn" data-i="${i}" title="Supprimer le logo">×</button>` : ""}
       </div>
     `;
     list.appendChild(card);
   });
 
-  list.querySelectorAll('input[type="text"], input[type="color"]').forEach(inp => {
-    inp.addEventListener('input', e => {
-      const idx = +e.target.dataset.i;
-      const field = e.target.dataset.field;
-      bracketTeams[idx][field] = e.target.value;
-      renderBracket();
-      // Re-render the thumbnail if name/letter/color changed and no logoURL
-      if (!bracketTeams[idx].logoURL) {
-        const thumb = list.querySelector(`.team-thumb[data-i="${idx}"]`);
-        if (thumb) thumb.innerHTML = `<div class="team-thumb-letter" style="background:${bracketTeams[idx].color};">${bracketTeams[idx].letter}</div>`;
-      }
+  list
+    .querySelectorAll('input[type="text"], input[type="color"]')
+    .forEach((inp) => {
+      inp.addEventListener("input", (e) => {
+        const idx = +e.target.dataset.i;
+        const field = e.target.dataset.field;
+        bracketTeams[idx][field] = e.target.value;
+        renderBracket();
+        // Re-render the thumbnail if name/letter/color changed and no logoURL
+        if (!bracketTeams[idx].logoURL) {
+          const thumb = list.querySelector(`.team-thumb[data-i="${idx}"]`);
+          if (thumb)
+            thumb.innerHTML = `<div class="team-thumb-letter" style="background:${bracketTeams[idx].color};">${bracketTeams[idx].letter}</div>`;
+        }
+      });
     });
-  });
 
-  list.querySelectorAll('input[type="file"]').forEach(inp => {
-    inp.addEventListener('change', e => {
+  list.querySelectorAll('input[type="file"]').forEach((inp) => {
+    inp.addEventListener("change", (e) => {
       const idx = +e.target.dataset.i;
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = ev => {
+      reader.onload = (ev) => {
         bracketTeams[idx].logoURL = ev.target.result;
         renderBracketEditor();
         renderBracket();
@@ -873,8 +1022,8 @@ function renderBracketEditor() {
     });
   });
 
-  list.querySelectorAll('.remove-logo-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
+  list.querySelectorAll(".remove-logo-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
       const idx = +e.target.dataset.i;
       bracketTeams[idx].logoURL = null;
       renderBracketEditor();
@@ -893,19 +1042,20 @@ function setVenueText(el, text) {
 }
 
 function renderBracket() {
-  document.getElementById('br-tournament-title').textContent = document.getElementById('b-title').value;
-  const venueText = document.getElementById('b-final').value;
-  setVenueText(document.getElementById('br-venue-title'), venueText);
-  setVenueText(document.getElementById('br-final-venue'), venueText);
+  document.getElementById("br-tournament-title").textContent =
+    document.getElementById("b-title").value;
+  const venueText = document.getElementById("b-final").value;
+  setVenueText(document.getElementById("br-venue-title"), venueText);
+  setVenueText(document.getElementById("br-final-venue"), venueText);
 
-  const bg = document.getElementById('b-bg').value;
-  document.getElementById('bracket-board').style.background =
+  const bg = document.getElementById("b-bg").value;
+  document.getElementById("bracket-board").style.background =
     `radial-gradient(ellipse 60% 40% at 75% 30%, rgba(80, 140, 255, 0.18) 0%, transparent 60%),
      radial-gradient(ellipse 50% 35% at 20% 70%, rgba(60, 100, 200, 0.12) 0%, transparent 60%),
      linear-gradient(135deg, ${bg} 0%, #050a1a 100%)`;
 
   // Central UCL logo: uploaded PNG or default SVG
-  const logoBox = document.getElementById('br-ucl-logo');
+  const logoBox = document.getElementById("br-ucl-logo");
   logoBox.innerHTML = centralLogoURL
     ? `<img src="${centralLogoURL}" alt="UCL logo" />`
     : DEFAULT_UCL_SVG;
@@ -929,24 +1079,24 @@ function renderBracketLogo(team) {
   return `<div class="team-logo-placeholder" style="background:${team.color};color:#fff;">${team.letter}</div>`;
 }
 
-document.getElementById('b-title').addEventListener('input', renderBracket);
-document.getElementById('b-final').addEventListener('input', renderBracket);
-document.getElementById('b-bg').addEventListener('input', renderBracket);
+document.getElementById("b-title").addEventListener("input", renderBracket);
+document.getElementById("b-final").addEventListener("input", renderBracket);
+document.getElementById("b-bg").addEventListener("input", renderBracket);
 
-document.getElementById('b-logo-file').addEventListener('change', e => {
+document.getElementById("b-logo-file").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = (ev) => {
     centralLogoURL = ev.target.result;
     renderBracket();
   };
   reader.readAsDataURL(file);
 });
 
-document.getElementById('b-logo-clear').addEventListener('click', () => {
+document.getElementById("b-logo-clear").addEventListener("click", () => {
   centralLogoURL = null;
-  document.getElementById('b-logo-file').value = '';
+  document.getElementById("b-logo-file").value = "";
   renderBracket();
 });
 
@@ -957,37 +1107,41 @@ renderBracket();
    EXPORT TO PNG (via html-to-image-style using SVG foreignObject)
    ============================================================ */
 const EXPORT_RESOLUTION_HEIGHT = {
-  '4k': 2160,
-  '1080p': 1080,
-  '720p': 720,
-  '580p': 580
+  "4k": 2160,
+  "1080p": 1080,
+  "720p": 720,
+  "580p": 580,
 };
 
 function loadExternalScript(src, globalName) {
-  if (globalName && typeof window[globalName] !== 'undefined') return Promise.resolve();
+  if (globalName && typeof window[globalName] !== "undefined")
+    return Promise.resolve();
   return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
+    const s = document.createElement("script");
     s.src = src;
     s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load ' + src));
+    s.onerror = () => reject(new Error("Failed to load " + src));
     document.head.appendChild(s);
   });
 }
 
-document.getElementById('export-btn').addEventListener('click', async () => {
-  const active = document.querySelector('.preview-container.active');
+document.getElementById("export-btn").addEventListener("click", async () => {
+  const active = document.querySelector(".preview-container.active");
   if (!active) return;
   const target = active.firstElementChild;
-  const format = document.getElementById('export-format').value;
-  const resolution = document.getElementById('export-resolution').value;
+  const format = document.getElementById("export-format").value;
+  const resolution = document.getElementById("export-resolution").value;
   const targetHeight = EXPORT_RESOLUTION_HEIGHT[resolution] || 1080;
   const rect = target.getBoundingClientRect();
   const scale = targetHeight / rect.height;
   const baseName = `ucl-graphic-${resolution}-${Date.now()}`;
 
   try {
-    if (format === 'svg') {
-      await loadExternalScript('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js', 'htmlToImage');
+    if (format === "svg") {
+      await loadExternalScript(
+        "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js",
+        "htmlToImage",
+      );
       const dataUrl = await window.htmlToImage.toSvg(target, {
         width: rect.width * scale,
         height: rect.height * scale,
@@ -995,42 +1149,56 @@ document.getElementById('export-btn').addEventListener('click', async () => {
         backgroundColor: null,
         style: {
           transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          width: rect.width + 'px',
-          height: rect.height + 'px'
-        }
+          transformOrigin: "top left",
+          width: rect.width + "px",
+          height: rect.height + "px",
+        },
       });
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.download = `${baseName}.svg`;
       link.href = dataUrl;
       link.click();
       return;
     }
 
-    await loadExternalScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas');
+    await loadExternalScript(
+      "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",
+      "html2canvas",
+    );
     const canvas = await html2canvas(target, { backgroundColor: null, scale });
 
-    if (format === 'pdf') {
-      await loadExternalScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'jspdf');
+    if (format === "pdf") {
+      await loadExternalScript(
+        "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
+        "jspdf",
+      );
       const { jsPDF } = window.jspdf;
-      const orientation = canvas.width >= canvas.height ? 'landscape' : 'portrait';
+      const orientation =
+        canvas.width >= canvas.height ? "landscape" : "portrait";
       const pdf = new jsPDF({
         orientation,
-        unit: 'px',
+        unit: "px",
         format: [canvas.width, canvas.height],
-        hotfixes: ['px_scaling']
+        hotfixes: ["px_scaling"],
       });
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.addImage(
+        canvas.toDataURL("image/png"),
+        "PNG",
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
       pdf.save(`${baseName}.pdf`);
       return;
     }
 
     // Default: PNG
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.download = `${baseName}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = canvas.toDataURL("image/png");
     link.click();
   } catch (err) {
-    alert('Export échoué : ' + err.message);
+    alert("Export échoué : " + err.message);
   }
 });

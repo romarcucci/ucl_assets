@@ -447,10 +447,10 @@ function renderShirtSVG(color, numColor, number, options = {}) {
         </clipPath>
       </defs>
       <!-- Left sleeve -->
-      <path d="M 22,16 L 5,28 L 8,46 L 26,42 Z"
+      <path d="M 26,16 L 5,28 L 8,46 L 22,42 Z"
             fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
       <!-- Right sleeve -->
-      <path d="M 78,16 L 95,28 L 92,46 L 74,42 Z"
+      <path d="M 74,16 L 95,28 L 92,46 L 78,42 Z"
             fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
       <!-- Body silhouette -->
       <path d="M 26,16

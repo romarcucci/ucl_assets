@@ -462,7 +462,8 @@ const lColorBg = document.getElementById("l-color-bg");
 
 const NUMBER_FONTS = {
   condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
-  system: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
+  system:
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
   arial: "Arial, Helvetica, sans-serif",
   impact: "Impact, 'Arial Black', 'Helvetica Inserat', sans-serif",
   cinzel: "'Cinzel', 'Trajan Pro', serif",
@@ -481,7 +482,8 @@ function renderPitch() {
     el.dataset.index = i;
     const shirtColor = p.gk ? lColorGk.value : lColorShirt.value;
     const numColor = p.gk ? lColorNumGk.value : lColorNum.value;
-    const numberFont = NUMBER_FONTS[lNumberFont.value] || NUMBER_FONTS.condensed;
+    const numberFont =
+      NUMBER_FONTS[lNumberFont.value] || NUMBER_FONTS.condensed;
     const styleOpts = p.gk
       ? { style: "solid", flat: true, numberFont }
       : {
@@ -537,7 +539,8 @@ function renderShirtSVG(color, numColor, number, options = {}) {
   const dark = flat ? bodyColor : shadeColor(bodyColor, -0.25);
   const darker = shadeColor(bodyColor, -0.4);
   const light = flat ? bodyColor : shadeColor(bodyColor, 0.12);
-  const sleeveBase = style === "two-tone" ? sleevesColor : color;
+  const sleeveBase =
+    style === "two-tone" || style === "stripes" ? sleevesColor : color;
   const sleeveDark = flat ? sleeveBase : shadeColor(sleeveBase, -0.25);
   const sleeveDarker = shadeColor(sleeveBase, -0.4);
   const uid = "sh" + Math.random().toString(36).slice(2, 8);
@@ -593,9 +596,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
             font-family="${numberFont}"
             font-size="40" font-weight="500"
             letter-spacing="2"
-            fill="${numColor}"
-            stroke="#000000" stroke-width="2" stroke-linejoin="round"
-            paint-order="stroke">${number}</text>
+            fill="${numColor}">${number}</text>
     </svg>
   `;
 }
@@ -633,13 +634,17 @@ function renderTeamLogo() {
 }
 
 function updateLineupCommon() {
-  document.getElementById("lineup-board").style.setProperty("--lb-text-color", lColorText.value);
+  document
+    .getElementById("lineup-board")
+    .style.setProperty("--lb-text-color", lColorText.value);
   document.getElementById("lb-team-name").textContent = lTeam.value;
   const round = lFooterRound.value;
   const leg = lFooterLeg.value;
   const extra = lFooterExtra.value.trim();
-  const parts = [round, leg, extra].filter(Boolean);
-  document.getElementById("lb-footer-text").textContent = parts.join(" - ");
+  const rest = [leg, extra].filter(Boolean).join(" - ");
+  document.getElementById("lb-footer-text").innerHTML = round
+    ? `<span class="lb-footer-round">${round}</span>${rest ? " " + rest : ""}`
+    : rest;
   const coachFirst = lCoachFirst.value.trim();
   const coachLast = lCoachLast.value.trim();
   const hasCoach = coachFirst || coachLast;
@@ -860,12 +865,18 @@ const DIVIDER_COLOR1_KEY = "ucl-lineup-divider-color1-v1";
 const DIVIDER_COLOR2_KEY = "ucl-lineup-divider-color2-v1";
 const dividerCheckbox = document.getElementById("l-divider-toggle");
 const dividerThickness = document.getElementById("l-divider-thickness");
-const dividerThicknessValue = document.getElementById("l-divider-thickness-value");
+const dividerThicknessValue = document.getElementById(
+  "l-divider-thickness-value",
+);
 const dividerColor1 = document.getElementById("l-divider-color-1");
 const dividerColor2 = document.getElementById("l-divider-color-2");
 dividerCheckbox.checked = localStorage.getItem(DIVIDER_PREF_KEY) === "1";
-const savedDividerThickness = parseInt(localStorage.getItem(DIVIDER_THICKNESS_KEY), 10);
-if (!isNaN(savedDividerThickness)) dividerThickness.value = savedDividerThickness;
+const savedDividerThickness = parseInt(
+  localStorage.getItem(DIVIDER_THICKNESS_KEY),
+  10,
+);
+if (!isNaN(savedDividerThickness))
+  dividerThickness.value = savedDividerThickness;
 const savedDividerColor1 = localStorage.getItem(DIVIDER_COLOR1_KEY);
 if (savedDividerColor1) dividerColor1.value = savedDividerColor1;
 const savedDividerColor2 = localStorage.getItem(DIVIDER_COLOR2_KEY);
@@ -884,7 +895,8 @@ function applyDivider() {
   if (stop1) stop1.setAttribute("stop-color", dividerColor1.value);
   if (stop2) stop2.setAttribute("stop-color", dividerColor2.value);
   if (penalty) penalty.setAttribute("stroke-width", dividerThickness.value);
-  if (dividerThicknessValue) dividerThicknessValue.textContent = dividerThickness.value + "px";
+  if (dividerThicknessValue)
+    dividerThicknessValue.textContent = dividerThickness.value + "px";
 }
 applyDivider();
 dividerCheckbox.addEventListener("change", () => {

@@ -83,197 +83,333 @@
         <section class="editor-section active" data-editor="lineup">
           <h2>Composition d'équipe</h2>
 
-          <label class="field">
-            <span>Nom de l'équipe</span>
-            <input type="text" id="l-team" value="LIVERPOOL FC" />
-          </label>
+          <details class="collapsible" open>
+            <summary>Équipe</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Nom de l'équipe</span>
+                <input type="text" id="l-team" value="LIVERPOOL FC" />
+              </label>
+              <label class="field">
+                <span>Logo de l'équipe (PNG)</span>
+                <input type="file" id="l-team-logo-file" accept="image/*" />
+              </label>
+              <button
+                class="btn-secondary"
+                id="l-team-logo-clear"
+                type="button"
+              >
+                Retirer le logo
+              </button>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Logo de l'équipe (PNG)</span>
-            <input type="file" id="l-team-logo-file" accept="image/*" />
-          </label>
-          <button class="btn-secondary" id="l-team-logo-clear" type="button">Retirer le logo</button>
+          <details class="collapsible">
+            <summary>Sous-texte (bas)</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Tour</span>
+                  <select id="l-footer-round">
+                    <option value="Quarter Finals">Quarter Finals</option>
+                    <option value="Semi Finals">Semi Finals</option>
+                    <option value="FINAL">Final</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Manche</span>
+                  <select id="l-footer-leg">
+                    <option value="First Leg">First Leg</option>
+                    <option value="Second Leg">Second Leg</option>
+                    <option value="">— Aucune —</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field">
+                <span>Extra (année, lieu…)</span>
+                <input type="text" id="l-footer-extra" placeholder="ex: 1956" />
+              </label>
+            </div>
+          </details>
 
-          <div class="row">
-            <label class="field">
-              <span>Sous-texte — Tour</span>
-              <select id="l-footer-round">
-                <option value="Quarter Finals">Quarter Finals</option>
-                <option value="Semi Finals">Semi Finals</option>
-                <option value="European Cup final">European Cup final</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>Sous-texte — Manche</span>
-              <select id="l-footer-leg">
-                <option value="First Leg">First Leg</option>
-                <option value="Second Leg">Second Leg</option>
-                <option value="">— Aucune —</option>
-              </select>
-            </label>
-          </div>
-          <label class="field">
-            <span>Sous-texte — Extra (année, lieu…)</span>
-            <input type="text" id="l-footer-extra" placeholder="ex: 1956" />
-          </label>
+          <details class="collapsible">
+            <summary>Coach</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Prénom</span>
+                  <input
+                    type="text"
+                    id="l-coach-first"
+                    value="DIDIER"
+                    placeholder="Prénom"
+                  />
+                </label>
+                <label class="field">
+                  <span>Nom (gras)</span>
+                  <input
+                    type="text"
+                    id="l-coach-last"
+                    value="DESCHAMPS"
+                    placeholder="Nom"
+                  />
+                </label>
+              </div>
+            </div>
+          </details>
 
-          <div class="row">
-            <label class="field">
-              <span>Coach — Prénom</span>
-              <input type="text" id="l-coach-first" value="DIDIER" placeholder="Prénom" />
-            </label>
-            <label class="field">
-              <span>Coach — Nom (gras)</span>
-              <input type="text" id="l-coach-last" value="DESCHAMPS" placeholder="Nom" />
-            </label>
-          </div>
+          <details class="collapsible">
+            <summary>Maillots & couleurs</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur maillot</span>
+                  <input type="color" id="l-color-shirt" value="#d40000" />
+                </label>
+                <label class="field">
+                  <span>Couleur maillot GK</span>
+                  <input type="color" id="l-color-gk" value="#222222" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Style maillot (joueurs de champ)</span>
+                <select id="l-shirt-style">
+                  <option value="solid">Uni</option>
+                  <option value="two-tone">Manches d'une autre couleur</option>
+                  <option value="stripes">Rayures verticales</option>
+                </select>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Couleur manches (si applicable)</span>
+                  <input type="color" id="l-color-sleeves" value="#ffffff" />
+                </label>
+                <label class="field">
+                  <span>Couleur rayures (si applicable)</span>
+                  <input type="color" id="l-color-stripes" value="#ffffff" />
+                </label>
+              </div>
+            </div>
+          </details>
 
-          <div class="row">
-            <label class="field">
-              <span>Couleur maillot</span>
-              <input type="color" id="l-color-shirt" value="#d40000" />
-            </label>
-            <label class="field">
-              <span>Couleur maillot GK</span>
-              <input type="color" id="l-color-gk" value="#222222" />
-            </label>
-          </div>
+          <details class="collapsible">
+            <summary>Numéros</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur numéro</span>
+                  <input type="color" id="l-color-num" value="#ffffff" />
+                </label>
+                <label class="field">
+                  <span>Couleur numéro GK</span>
+                  <input type="color" id="l-color-num-gk" value="#ffffff" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Police des numéros</span>
+                <select id="l-number-font">
+                  <option value="condensed">
+                    Barlow Condensed (par défaut)
+                  </option>
+                  <option value="system">
+                    Système (San Francisco / Segoe)
+                  </option>
+                  <option value="arial">Arial / Helvetica</option>
+                  <option value="impact">Impact</option>
+                  <option value="cinzel">Cinzel (serif)</option>
+                  <option value="mono">Monospace</option>
+                </select>
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Style maillot (joueurs de champ)</span>
-            <select id="l-shirt-style">
-              <option value="solid">Uni</option>
-              <option value="two-tone">Manches d'une autre couleur</option>
-              <option value="stripes">Rayures verticales</option>
-            </select>
-          </label>
-          <div class="row">
-            <label class="field">
-              <span>Couleur manches (si applicable)</span>
-              <input type="color" id="l-color-sleeves" value="#ffffff" />
-            </label>
-            <label class="field">
-              <span>Couleur rayures (si applicable)</span>
-              <input type="color" id="l-color-stripes" value="#ffffff" />
-            </label>
-          </div>
+          <details class="collapsible">
+            <summary>Couleur des textes</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Couleur (équipe, joueurs, coach, sous-texte)</span>
+                <input type="color" id="l-color-text" value="#ffffff" />
+              </label>
+            </div>
+          </details>
 
-          <div class="row">
-            <label class="field">
-              <span>Couleur numéro</span>
-              <input type="color" id="l-color-num" value="#ffffff" />
-            </label>
-            <label class="field">
-              <span>Couleur numéro GK</span>
-              <input type="color" id="l-color-num-gk" value="#ffffff" />
-            </label>
-          </div>
+          <details class="collapsible">
+            <summary>Fond du terrain</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Couleur fond</span>
+                <input type="color" id="l-color-bg" value="#0a2540" />
+              </label>
+              <label class="field">
+                <span
+                  >Opacité du fond
+                  <span id="l-bg-opacity-value">100%</span></span
+                >
+                <input
+                  type="range"
+                  id="l-bg-opacity"
+                  min="0"
+                  max="100"
+                  value="100"
+                />
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="l-bg-image-toggle" />
+                <span>Image de fond du terrain</span>
+              </label>
+              <label class="field">
+                <span>Choix de l'image (PNG dans le dossier projet)</span>
+                <select id="l-bg-image-select">
+                  <option value="">Aucune image</option>
+                  <option value="lineup_bg_01.png">Background 01</option>
+                  <option value="lineup_bg_02.png">Background 02</option>
+                  <option value="lineup_bg_03.png">Background 03</option>
+                  <option value="lineup_bg_04.png">Background 04</option>
+                  <option value="lineup_bg_05.png">Background 05</option>
+                </select>
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Couleur des textes (équipe, joueurs, coach, sous-texte)</span>
-            <input type="color" id="l-color-text" value="#ffffff" />
-          </label>
+          <details class="collapsible">
+            <summary>Lignes & guides du terrain</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="l-show-grid" />
+                <span>Afficher la grille d'alignement</span>
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="l-pitch-stripes" />
+                <span>Terrain rayé (10 bandes, fade droite→gauche)</span>
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="l-divider-toggle" />
+                <span>Ligne médiane + surface de réparation (teal)</span>
+              </label>
+              <label class="field">
+                <span
+                  >Épaisseur des lignes teal
+                  <span id="l-divider-thickness-value">2px</span></span
+                >
+                <input
+                  type="range"
+                  id="l-divider-thickness"
+                  min="1"
+                  max="10"
+                  value="2"
+                />
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Couleur ligne (début)</span>
+                  <input type="color" id="l-divider-color-1" value="#14b8a6" />
+                </label>
+                <label class="field">
+                  <span>Couleur ligne (fin)</span>
+                  <input type="color" id="l-divider-color-2" value="#14b8a6" />
+                </label>
+              </div>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Police des numéros</span>
-            <select id="l-number-font">
-              <option value="condensed">Barlow Condensed (par défaut)</option>
-              <option value="system">Système (San Francisco / Segoe)</option>
-              <option value="arial">Arial / Helvetica</option>
-              <option value="impact">Impact</option>
-              <option value="cinzel">Cinzel (serif)</option>
-              <option value="mono">Monospace</option>
-            </select>
-          </label>
+          <details class="collapsible" open>
+            <summary>Titulaires (glisser sur le terrain pour déplacer)</summary>
+            <div class="collapsible-body">
+              <div id="l-starters" class="player-list"></div>
+              <div class="storage-info">
+                <span>💾 Sauvegarde automatique activée</span>
+                <button class="btn-secondary" id="l-reset" type="button">
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Couleur fond</span>
-            <input type="color" id="l-color-bg" value="#0a2540" />
-          </label>
+          <details class="collapsible">
+            <summary>Équipes sauvegardées</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="l-saved-team-select"></select>
+                <button class="btn-secondary" id="l-load-team" type="button">
+                  Charger
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="l-delete-team"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="l-save-team-name"
+                  placeholder="Nom de la sauvegarde…"
+                />
+                <button class="btn-primary" id="l-save-team" type="button">
+                  💾 Enregistrer
+                </button>
+              </div>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Opacité du fond <span id="l-bg-opacity-value">100%</span></span>
-            <input type="range" id="l-bg-opacity" min="0" max="100" value="100" />
-          </label>
+          <details class="collapsible">
+            <summary>Formations sauvegardées (positions uniquement)</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="l-saved-formation-select"></select>
+                <button
+                  class="btn-secondary"
+                  id="l-load-formation"
+                  type="button"
+                >
+                  Appliquer
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="l-delete-formation"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="l-save-formation-name"
+                  placeholder="Nom de la formation (ex: 4-3-3)…"
+                />
+                <button class="btn-primary" id="l-save-formation" type="button">
+                  💾 Enregistrer formation
+                </button>
+              </div>
+            </div>
+          </details>
 
-          <label class="checkbox-field">
-            <input type="checkbox" id="l-bg-image-toggle" />
-            <span>Image de fond du terrain</span>
-          </label>
-          <label class="field">
-            <span>Choix de l'image (PNG dans le dossier projet)</span>
-            <select id="l-bg-image-select">
-              <option value="">Aucune image</option>
-              <option value="lineup_bg_01.png">Background 01</option>
-              <option value="lineup_bg_02.png">Background 02</option>
-              <option value="lineup_bg_03.png">Background 03</option>
-              <option value="lineup_bg_04.png">Background 04</option>
-              <option value="lineup_bg_05.png">Background 05</option>
-            </select>
-          </label>
-
-          <h3>Titulaires (glisser sur le terrain pour déplacer)</h3>
-          <label class="checkbox-field">
-            <input type="checkbox" id="l-show-grid" />
-            <span>Afficher la grille d'alignement</span>
-          </label>
-          <label class="checkbox-field">
-            <input type="checkbox" id="l-pitch-stripes" />
-            <span>Terrain rayé (10 bandes, fade droite→gauche)</span>
-          </label>
-          <label class="checkbox-field">
-            <input type="checkbox" id="l-divider-toggle" />
-            <span>Afficher ligne de séparation teal (sous le nom d'équipe)</span>
-          </label>
-          <label class="field">
-            <span>Épaisseur de la ligne <span id="l-divider-thickness-value">2px</span></span>
-            <input type="range" id="l-divider-thickness" min="1" max="10" value="2" />
-          </label>
-          <div class="row">
-            <label class="field">
-              <span>Couleur ligne (début)</span>
-              <input type="color" id="l-divider-color-1" value="#14b8a6" />
-            </label>
-            <label class="field">
-              <span>Couleur ligne (fin)</span>
-              <input type="color" id="l-divider-color-2" value="#14b8a6" />
-            </label>
-          </div>
-          <div id="l-starters" class="player-list"></div>
-
-          <div class="storage-info">
-            <span>💾 Sauvegarde automatique activée</span>
-            <button class="btn-secondary" id="l-reset" type="button">Réinitialiser</button>
-          </div>
-
-          <h3>Équipes sauvegardées</h3>
-          <div class="saved-teams-controls">
-            <select id="l-saved-team-select"></select>
-            <button class="btn-secondary" id="l-load-team" type="button">Charger</button>
-            <button class="btn-secondary danger" id="l-delete-team" type="button">×</button>
-          </div>
-          <div class="save-team-form">
-            <input type="text" id="l-save-team-name" placeholder="Nom de la sauvegarde…" />
-            <button class="btn-primary" id="l-save-team" type="button">💾 Enregistrer</button>
-          </div>
-
-          <h3>Formations sauvegardées (positions uniquement)</h3>
-          <div class="saved-teams-controls">
-            <select id="l-saved-formation-select"></select>
-            <button class="btn-secondary" id="l-load-formation" type="button">Appliquer</button>
-            <button class="btn-secondary danger" id="l-delete-formation" type="button">×</button>
-          </div>
-          <div class="save-team-form">
-            <input type="text" id="l-save-formation-name" placeholder="Nom de la formation (ex: 4-3-3)…" />
-            <button class="btn-primary" id="l-save-formation" type="button">💾 Enregistrer formation</button>
-          </div>
-
-          <h3>Export / Import (équipes + formations)</h3>
-          <div class="row">
-            <button class="btn-secondary" id="l-export-json" type="button">📤 Exporter JSON</button>
-            <button class="btn-secondary" id="l-import-json-btn" type="button">📥 Importer JSON</button>
-          </div>
-          <input type="file" id="l-import-json-file" accept="application/json,.json" style="display:none" />
+          <details class="collapsible">
+            <summary>Export / Import (équipes + formations)</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <button class="btn-secondary" id="l-export-json" type="button">
+                  📤 Exporter JSON
+                </button>
+                <button
+                  class="btn-secondary"
+                  id="l-import-json-btn"
+                  type="button"
+                >
+                  📥 Importer JSON
+                </button>
+              </div>
+              <input
+                type="file"
+                id="l-import-json-file"
+                accept="application/json,.json"
+                style="display: none"
+              />
+            </div>
+          </details>
         </section>
 
         <!-- ============ SCORE EDITOR ============ -->
@@ -341,7 +477,9 @@
             <span>Logo central (PNG officiel)</span>
             <input type="file" id="b-logo-file" accept="image/*" />
           </label>
-          <button class="btn-secondary" id="b-logo-clear" type="button">Réinitialiser le logo</button>
+          <button class="btn-secondary" id="b-logo-clear" type="button">
+            Réinitialiser le logo
+          </button>
 
           <h3>8 équipes (quart de finale)</h3>
           <div id="b-teams" class="player-list"></div>
@@ -358,13 +496,17 @@
         <div class="preview-toolbar">
           <span class="preview-label">Rendu en temps réel</span>
           <div class="preview-toolbar-right">
-            <label class="preview-resolution-label" for="export-format">Format :</label>
+            <label class="preview-resolution-label" for="export-format"
+              >Format :</label
+            >
             <select id="export-format">
               <option value="png" selected>PNG</option>
               <option value="svg">SVG</option>
               <option value="pdf">PDF</option>
             </select>
-            <label class="preview-resolution-label" for="export-resolution">Résolution :</label>
+            <label class="preview-resolution-label" for="export-resolution"
+              >Résolution :</label
+            >
             <select id="export-resolution">
               <option value="4k">4K (2160p)</option>
               <option value="1080p" selected>1080p</option>
@@ -424,15 +566,52 @@
             <div class="lb-body">
               <div class="lb-pitch" id="lb-pitch">
                 <div class="lb-bg-image" id="lb-bg-image"></div>
-                <svg class="lb-pitch-lines" viewBox="0 0 1060 450" preserveAspectRatio="none" overflow="visible" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg
+                  class="lb-pitch-lines"
+                  viewBox="0 0 1060 450"
+                  preserveAspectRatio="none"
+                  overflow="visible"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
                   <defs>
-                    <linearGradient id="pitch-stripes-fade" x1="1060" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stop-color="#000000" stop-opacity="0.18" />
-                      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                    <linearGradient
+                      id="pitch-stripes-fade"
+                      x1="1060"
+                      y1="0"
+                      x2="0"
+                      y2="0"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop
+                        offset="0%"
+                        stop-color="#000000"
+                        stop-opacity="0.18"
+                      />
+                      <stop
+                        offset="100%"
+                        stop-color="#000000"
+                        stop-opacity="0"
+                      />
                     </linearGradient>
-                    <linearGradient id="penalty-fade" x1="0" y1="0" x2="1060" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop id="penalty-stop-1" offset="0%" stop-color="#14b8a6" />
-                      <stop id="penalty-stop-2" offset="100%" stop-color="#14b8a6" />
+                    <linearGradient
+                      id="penalty-fade"
+                      x1="0"
+                      y1="0"
+                      x2="1060"
+                      y2="0"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop
+                        id="penalty-stop-1"
+                        offset="0%"
+                        stop-color="#14b8a6"
+                      />
+                      <stop
+                        id="penalty-stop-2"
+                        offset="100%"
+                        stop-color="#14b8a6"
+                      />
                     </linearGradient>
                   </defs>
                   <g class="lb-pitch-stripes" fill="url(#pitch-stripes-fade)">
@@ -442,19 +621,31 @@
                     <rect x="0" y="315" width="1060" height="45" />
                     <rect x="0" y="405" width="1060" height="45" />
                   </g>
-                  <g class="lb-pitch-penalty" id="lb-pitch-penalty" fill="none" stroke="url(#penalty-fade)" stroke-width="2">
+                  <g
+                    class="lb-pitch-penalty"
+                    id="lb-pitch-penalty"
+                    fill="none"
+                    stroke="url(#penalty-fade)"
+                    stroke-width="2"
+                  >
                     <path d="M 397.5,450 L 397.5,338 L 662.5,338 L 662.5,450" />
                     <path d="M 470.5,450 L 470.5,413 L 589.5,413 L 589.5,450" />
                     <path d="M 483,338 A 60,60 0 0 1 577,338" />
-                    <path d="M 450,0 C 450,44 486,80 530,80 C 574,80 610,44 610,0" />
+                    <path
+                      d="M 450,0 C 450,44 486,80 530,80 C 574,80 610,44 610,0"
+                    />
                   </g>
                 </svg>
-                <div class="lb-coach" id="lb-coach">COACH: DIDIER DESCHAMPS</div>
+                <div class="lb-coach" id="lb-coach">
+                  COACH: DIDIER DESCHAMPS
+                </div>
                 <!-- Players placed via JS -->
               </div>
             </div>
             <div class="lb-footer" id="lb-footer">
-              <span class="lb-footer-text" id="lb-footer-text">PARIS FINAL 2022</span>
+              <span class="lb-footer-text" id="lb-footer-text"
+                >PARIS FINAL 2022</span
+              >
             </div>
           </div>
         </div>
@@ -477,7 +668,9 @@
         <div class="preview-container" data-preview="bracket">
           <div class="bracket-board" id="bracket-board">
             <div class="br-top">
-              <div class="br-tournament-title" id="br-tournament-title">CHAMPIONS LEAGUE 2023/24</div>
+              <div class="br-tournament-title" id="br-tournament-title">
+                CHAMPIONS LEAGUE 2023/24
+              </div>
               <div class="br-venue-title" id="br-venue-title">LONDON 24</div>
             </div>
             <div class="br-grid">
@@ -502,7 +695,9 @@
                 <div class="br-final-card">
                   <div class="br-marker top"></div>
                   <div class="br-ucl-logo" id="br-ucl-logo"></div>
-                  <div class="br-final-venue" id="br-final-venue">LONDON 24</div>
+                  <div class="br-final-venue" id="br-final-venue">
+                    LONDON 24
+                  </div>
                   <div class="br-marker bottom"></div>
                 </div>
               </div>

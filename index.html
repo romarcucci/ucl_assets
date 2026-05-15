@@ -229,6 +229,16 @@
             <span>Épaisseur de la ligne <span id="l-divider-thickness-value">2px</span></span>
             <input type="range" id="l-divider-thickness" min="1" max="10" value="2" />
           </label>
+          <div class="row">
+            <label class="field">
+              <span>Couleur ligne (début)</span>
+              <input type="color" id="l-divider-color-1" value="#14b8a6" />
+            </label>
+            <label class="field">
+              <span>Couleur ligne (fin)</span>
+              <input type="color" id="l-divider-color-2" value="#14b8a6" />
+            </label>
+          </div>
           <div id="l-starters" class="player-list"></div>
 
           <div class="storage-info">
@@ -414,11 +424,15 @@
             <div class="lb-body">
               <div class="lb-pitch" id="lb-pitch">
                 <div class="lb-bg-image" id="lb-bg-image"></div>
-                <svg class="lb-pitch-lines" viewBox="0 0 1060 450" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg class="lb-pitch-lines" viewBox="0 0 1060 450" preserveAspectRatio="none" overflow="visible" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <defs>
                     <linearGradient id="pitch-stripes-fade" x1="1060" y1="0" x2="0" y2="0" gradientUnits="userSpaceOnUse">
                       <stop offset="0%" stop-color="#000000" stop-opacity="0.18" />
                       <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="penalty-fade" x1="0" y1="0" x2="1060" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop id="penalty-stop-1" offset="0%" stop-color="#14b8a6" />
+                      <stop id="penalty-stop-2" offset="100%" stop-color="#14b8a6" />
                     </linearGradient>
                   </defs>
                   <g class="lb-pitch-stripes" fill="url(#pitch-stripes-fade)">
@@ -427,6 +441,12 @@
                     <rect x="0" y="225" width="1060" height="45" />
                     <rect x="0" y="315" width="1060" height="45" />
                     <rect x="0" y="405" width="1060" height="45" />
+                  </g>
+                  <g class="lb-pitch-penalty" id="lb-pitch-penalty" fill="none" stroke="url(#penalty-fade)" stroke-width="2">
+                    <path d="M 397.5,450 L 397.5,338 L 662.5,338 L 662.5,450" />
+                    <path d="M 470.5,450 L 470.5,413 L 589.5,413 L 589.5,450" />
+                    <path d="M 483,338 A 60,60 0 0 1 577,338" />
+                    <path d="M 450,0 C 450,44 486,80 530,80 C 574,80 610,44 610,0" />
                   </g>
                 </svg>
                 <div class="lb-coach" id="lb-coach">COACH: DIDIER DESCHAMPS</div>

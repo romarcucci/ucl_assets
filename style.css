@@ -857,14 +857,19 @@ body {
   height: 2px;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(20, 184, 166, 0.85) 50%,
-    transparent 100%
+    var(--divider-color-1, #14b8a6) 0%,
+    var(--divider-color-2, #14b8a6) 100%
   );
   display: none;
 }
 .lineup-board.show-divider .lb-divider {
   display: block;
+}
+.lb-pitch-penalty {
+  display: none;
+}
+.lineup-board.show-divider .lb-pitch-penalty {
+  display: inline;
 }
 .lb-coach-label {
   font-size: 18px;

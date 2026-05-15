@@ -852,18 +852,34 @@ stripesCheckbox.addEventListener("change", () => {
 /* Toggle ligne séparation teal (header / pitch) */
 const DIVIDER_PREF_KEY = "ucl-lineup-divider-v1";
 const DIVIDER_THICKNESS_KEY = "ucl-lineup-divider-thickness-v1";
+const DIVIDER_COLOR1_KEY = "ucl-lineup-divider-color1-v1";
+const DIVIDER_COLOR2_KEY = "ucl-lineup-divider-color2-v1";
 const dividerCheckbox = document.getElementById("l-divider-toggle");
 const dividerThickness = document.getElementById("l-divider-thickness");
 const dividerThicknessValue = document.getElementById("l-divider-thickness-value");
+const dividerColor1 = document.getElementById("l-divider-color-1");
+const dividerColor2 = document.getElementById("l-divider-color-2");
 dividerCheckbox.checked = localStorage.getItem(DIVIDER_PREF_KEY) === "1";
 const savedDividerThickness = parseInt(localStorage.getItem(DIVIDER_THICKNESS_KEY), 10);
 if (!isNaN(savedDividerThickness)) dividerThickness.value = savedDividerThickness;
+const savedDividerColor1 = localStorage.getItem(DIVIDER_COLOR1_KEY);
+if (savedDividerColor1) dividerColor1.value = savedDividerColor1;
+const savedDividerColor2 = localStorage.getItem(DIVIDER_COLOR2_KEY);
+if (savedDividerColor2) dividerColor2.value = savedDividerColor2;
 function applyDivider() {
   const board = document.getElementById("lineup-board");
   const divider = document.getElementById("lb-divider");
+  const penalty = document.getElementById("lb-pitch-penalty");
+  const stop1 = document.getElementById("penalty-stop-1");
+  const stop2 = document.getElementById("penalty-stop-2");
   if (!board || !divider) return;
   board.classList.toggle("show-divider", dividerCheckbox.checked);
   divider.style.height = dividerThickness.value + "px";
+  board.style.setProperty("--divider-color-1", dividerColor1.value);
+  board.style.setProperty("--divider-color-2", dividerColor2.value);
+  if (stop1) stop1.setAttribute("stop-color", dividerColor1.value);
+  if (stop2) stop2.setAttribute("stop-color", dividerColor2.value);
+  if (penalty) penalty.setAttribute("stroke-width", dividerThickness.value);
   if (dividerThicknessValue) dividerThicknessValue.textContent = dividerThickness.value + "px";
 }
 applyDivider();
@@ -873,6 +889,14 @@ dividerCheckbox.addEventListener("change", () => {
 });
 dividerThickness.addEventListener("input", () => {
   localStorage.setItem(DIVIDER_THICKNESS_KEY, dividerThickness.value);
+  applyDivider();
+});
+dividerColor1.addEventListener("input", () => {
+  localStorage.setItem(DIVIDER_COLOR1_KEY, dividerColor1.value);
+  applyDivider();
+});
+dividerColor2.addEventListener("input", () => {
+  localStorage.setItem(DIVIDER_COLOR2_KEY, dividerColor2.value);
   applyDivider();
 });
 

@@ -117,10 +117,16 @@
             <input type="text" id="l-footer-extra" placeholder="ex: 1956" />
           </label>
 
-          <label class="field">
-            <span>Coach (en bas à gauche)</span>
-            <input type="text" id="l-coach" value="DIDIER DESCHAMPS" placeholder="Nom du coach (vide pour cacher)" />
-          </label>
+          <div class="row">
+            <label class="field">
+              <span>Coach — Prénom</span>
+              <input type="text" id="l-coach-first" value="DIDIER" placeholder="Prénom" />
+            </label>
+            <label class="field">
+              <span>Coach — Nom (gras)</span>
+              <input type="text" id="l-coach-last" value="DESCHAMPS" placeholder="Nom" />
+            </label>
+          </div>
 
           <div class="row">
             <label class="field">
@@ -162,6 +168,23 @@
               <input type="color" id="l-color-num-gk" value="#ffffff" />
             </label>
           </div>
+
+          <label class="field">
+            <span>Couleur des textes (équipe, joueurs, coach, sous-texte)</span>
+            <input type="color" id="l-color-text" value="#ffffff" />
+          </label>
+
+          <label class="field">
+            <span>Police des numéros</span>
+            <select id="l-number-font">
+              <option value="condensed">Barlow Condensed (par défaut)</option>
+              <option value="system">Système (San Francisco / Segoe)</option>
+              <option value="arial">Arial / Helvetica</option>
+              <option value="impact">Impact</option>
+              <option value="cinzel">Cinzel (serif)</option>
+              <option value="mono">Monospace</option>
+            </select>
+          </label>
 
           <label class="field">
             <span>Couleur fond</span>

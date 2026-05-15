@@ -588,11 +588,17 @@ body {
   width: 1100px;
   height: 600px;
   background-color: transparent;
-  background-image: linear-gradient(180deg, #0a2540 0%, #061730 89.83%, transparent 89.83%);
+  background-image: linear-gradient(
+    180deg,
+    #0a2540 0%,
+    #061730 89.83%,
+    transparent 89.83%
+  );
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-  color: #fff;
+  color: var(--lb-text-color, #ffffff);
+  --lb-text-color: #ffffff;
   display: flex;
   flex-direction: column;
 }
@@ -637,9 +643,11 @@ body {
 }
 .lb-team-name {
   flex: 0 0 auto;
-  font-family: var(--font-title);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 100;
   letter-spacing: 6px;
 }
 .lb-bt {
@@ -774,12 +782,14 @@ body {
 }
 .lb-player-name {
   margin-top: 6px;
-  font-family: var(--font-data);
-  font-weight: 700;
-  font-size: 15px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 100;
+  font-size: 20px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--lb-text-color, #ffffff);
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(0, 0, 0, 0.5);
@@ -809,23 +819,31 @@ body {
   background: #070a37;
   text-align: center;
   padding: 14px;
-  font-family: var(--font-title);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 100;
   letter-spacing: 4px;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--lb-text-color, #ffffff);
 }
 .lb-coach {
   position: absolute;
   left: 30px;
   bottom: 15px;
-  font-family: var(--font-data);
-  font-weight: 700;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 100;
   font-size: 18px;
   letter-spacing: 3px;
-  color: #ffffff;
+  color: var(--lb-text-color, #ffffff);
   text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(0, 0, 0, 0.5);
@@ -833,6 +851,24 @@ body {
 }
 .lb-coach:empty {
   display: none;
+}
+.lb-coach-label {
+  font-size: 18px;
+  font-weight: 100;
+  letter-spacing: 3px;
+  color: #14b8a6;
+  margin-bottom: 3px;
+}
+.lb-coach-name {
+  font-size: 18px;
+  font-weight: 100;
+  letter-spacing: 3px;
+}
+.lb-coach-first {
+  font-weight: 100;
+}
+.lb-coach-last {
+  font-weight: 400;
 }
 
 /* ========== 3) SCORE BANNER ========== */

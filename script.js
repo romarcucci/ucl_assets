@@ -142,7 +142,8 @@ function collectLineupData() {
     footerRound: document.getElementById("l-footer-round").value,
     footerLeg: document.getElementById("l-footer-leg").value,
     footerExtra: document.getElementById("l-footer-extra").value,
-    coach: document.getElementById("l-coach").value,
+    coachFirst: document.getElementById("l-coach-first").value,
+    coachLast: document.getElementById("l-coach-last").value,
     colorShirt: document.getElementById("l-color-shirt").value,
     colorGk: document.getElementById("l-color-gk").value,
     colorNum: document.getElementById("l-color-num").value,
@@ -151,6 +152,8 @@ function collectLineupData() {
     shirtStyle: document.getElementById("l-shirt-style").value,
     colorSleeves: document.getElementById("l-color-sleeves").value,
     colorStripes: document.getElementById("l-color-stripes").value,
+    numberFont: document.getElementById("l-number-font").value,
+    colorText: document.getElementById("l-color-text").value,
     bgOpacity: document.getElementById("l-bg-opacity").value,
     starters: JSON.parse(JSON.stringify(starters)),
     teamLogoURL: teamLogoURL,
@@ -170,7 +173,17 @@ function applyLineupData(data) {
   } else {
     document.getElementById("l-footer-extra").value = "";
   }
-  if (data.coach != null) document.getElementById("l-coach").value = data.coach;
+  if (data.coachFirst != null || data.coachLast != null) {
+    document.getElementById("l-coach-first").value = data.coachFirst || "";
+    document.getElementById("l-coach-last").value = data.coachLast || "";
+  } else if (data.coach) {
+    // Migration depuis l'ancien champ unique
+    const parts = String(data.coach).trim().split(/\s+/);
+    const first = parts.shift() || "";
+    const last = parts.join(" ");
+    document.getElementById("l-coach-first").value = first;
+    document.getElementById("l-coach-last").value = last;
+  }
   if (data.colorShirt)
     document.getElementById("l-color-shirt").value = data.colorShirt;
   if (data.colorGk) document.getElementById("l-color-gk").value = data.colorGk;
@@ -184,6 +197,10 @@ function applyLineupData(data) {
     document.getElementById("l-color-sleeves").value = data.colorSleeves;
   if (data.colorStripes)
     document.getElementById("l-color-stripes").value = data.colorStripes;
+  if (data.numberFont)
+    document.getElementById("l-number-font").value = data.numberFont;
+  if (data.colorText)
+    document.getElementById("l-color-text").value = data.colorText;
   if (data.bgOpacity != null)
     document.getElementById("l-bg-opacity").value = data.bgOpacity;
   if (Array.isArray(data.starters) && data.starters.length === 11) {
@@ -221,7 +238,8 @@ function resetLineup() {
   document.getElementById("l-footer-round").value = "Quarter Finals";
   document.getElementById("l-footer-leg").value = "First Leg";
   document.getElementById("l-footer-extra").value = "";
-  document.getElementById("l-coach").value = "DIDIER DESCHAMPS";
+  document.getElementById("l-coach-first").value = "DIDIER";
+  document.getElementById("l-coach-last").value = "DESCHAMPS";
   document.getElementById("l-color-shirt").value = "#d40000";
   document.getElementById("l-color-gk").value = "#222222";
   document.getElementById("l-color-num").value = "#ffffff";
@@ -230,6 +248,8 @@ function resetLineup() {
   document.getElementById("l-shirt-style").value = "solid";
   document.getElementById("l-color-sleeves").value = "#ffffff";
   document.getElementById("l-color-stripes").value = "#ffffff";
+  document.getElementById("l-number-font").value = "condensed";
+  document.getElementById("l-color-text").value = "#ffffff";
   document.getElementById("l-bg-opacity").value = "100";
   document.getElementById("l-team-logo-file").value = "";
   renderStartersEditor();
@@ -427,7 +447,8 @@ const lTeam = document.getElementById("l-team");
 const lFooterRound = document.getElementById("l-footer-round");
 const lFooterLeg = document.getElementById("l-footer-leg");
 const lFooterExtra = document.getElementById("l-footer-extra");
-const lCoach = document.getElementById("l-coach");
+const lCoachFirst = document.getElementById("l-coach-first");
+const lCoachLast = document.getElementById("l-coach-last");
 const lColorShirt = document.getElementById("l-color-shirt");
 const lColorGk = document.getElementById("l-color-gk");
 const lShirtStyle = document.getElementById("l-shirt-style");
@@ -435,7 +456,18 @@ const lColorSleeves = document.getElementById("l-color-sleeves");
 const lColorStripes = document.getElementById("l-color-stripes");
 const lColorNum = document.getElementById("l-color-num");
 const lColorNumGk = document.getElementById("l-color-num-gk");
+const lNumberFont = document.getElementById("l-number-font");
+const lColorText = document.getElementById("l-color-text");
 const lColorBg = document.getElementById("l-color-bg");
+
+const NUMBER_FONTS = {
+  condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
+  system: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
+  arial: "Arial, Helvetica, sans-serif",
+  impact: "Impact, 'Arial Black', 'Helvetica Inserat', sans-serif",
+  cinzel: "'Cinzel', 'Trajan Pro', serif",
+  mono: "'Courier New', Courier, monospace",
+};
 
 function renderPitch() {
   const pitch = document.getElementById("lb-pitch");
@@ -449,13 +481,15 @@ function renderPitch() {
     el.dataset.index = i;
     const shirtColor = p.gk ? lColorGk.value : lColorShirt.value;
     const numColor = p.gk ? lColorNumGk.value : lColorNum.value;
+    const numberFont = NUMBER_FONTS[lNumberFont.value] || NUMBER_FONTS.condensed;
     const styleOpts = p.gk
-      ? { style: "solid", flat: true }
+      ? { style: "solid", flat: true, numberFont }
       : {
           style: lShirtStyle.value,
           sleevesColor: lColorSleeves.value,
           stripesColor: lColorStripes.value,
           flat: true,
+          numberFont,
         };
     const captainBadge = p.captain
       ? '<span class="lb-captain-badge" aria-label="Capitaine">C</span>'
@@ -496,6 +530,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
     sleevesColor = color,
     stripesColor = "#ffffff",
     flat = false,
+    numberFont = "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
   } = options;
   const bodyColor = style === "stripes" ? stripesColor : color;
   const stripeFillColor = style === "stripes" ? color : stripesColor;
@@ -555,7 +590,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
       <path d="M 22,93 Q 50,98 78,93" fill="none" stroke="${darker}" stroke-width="0.6" opacity="0.5"/>
       <!-- Number -->
       <text x="50" y="65" text-anchor="middle"
-            font-family="'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif"
+            font-family="${numberFont}"
             font-size="40" font-weight="500"
             letter-spacing="2"
             fill="${numColor}"
@@ -598,15 +633,19 @@ function renderTeamLogo() {
 }
 
 function updateLineupCommon() {
+  document.getElementById("lineup-board").style.setProperty("--lb-text-color", lColorText.value);
   document.getElementById("lb-team-name").textContent = lTeam.value;
   const round = lFooterRound.value;
   const leg = lFooterLeg.value;
   const extra = lFooterExtra.value.trim();
   const parts = [round, leg, extra].filter(Boolean);
   document.getElementById("lb-footer-text").textContent = parts.join(" - ");
-  const coachName = lCoach.value.trim();
-  document.getElementById("lb-coach").textContent = coachName
-    ? `COACH: ${coachName}`
+  const coachFirst = lCoachFirst.value.trim();
+  const coachLast = lCoachLast.value.trim();
+  const hasCoach = coachFirst || coachLast;
+  document.getElementById("lb-coach").innerHTML = hasCoach
+    ? `<span class="lb-coach-label">HEAD COACH</span>
+       <span class="lb-coach-name">${coachFirst ? `<span class="lb-coach-first">${coachFirst}</span>` : ""}${coachFirst && coachLast ? " " : ""}${coachLast ? `<span class="lb-coach-last">${coachLast}</span>` : ""}</span>`
     : "";
   const alpha = +document.getElementById("l-bg-opacity").value / 100;
   const bgTop = hexToRgba(lColorBg.value, alpha);
@@ -625,7 +664,8 @@ function updateLineupCommon() {
   lFooterRound,
   lFooterLeg,
   lFooterExtra,
-  lCoach,
+  lCoachFirst,
+  lCoachLast,
   lColorShirt,
   lColorGk,
   lColorNum,
@@ -634,6 +674,8 @@ function updateLineupCommon() {
   lShirtStyle,
   lColorSleeves,
   lColorStripes,
+  lNumberFont,
+  lColorText,
   document.getElementById("l-bg-opacity"),
 ].forEach((el) =>
   el.addEventListener("input", () => {

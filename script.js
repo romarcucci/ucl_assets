@@ -131,6 +131,9 @@ function collectLineupData() {
     colorNum: document.getElementById('l-color-num').value,
     colorNumGk: document.getElementById('l-color-num-gk').value,
     colorBg: document.getElementById('l-color-bg').value,
+    shirtStyle: document.getElementById('l-shirt-style').value,
+    colorSleeves: document.getElementById('l-color-sleeves').value,
+    colorStripes: document.getElementById('l-color-stripes').value,
     bgOpacity: document.getElementById('l-bg-opacity').value,
     starters: JSON.parse(JSON.stringify(starters)),
     teamLogoURL: teamLogoURL
@@ -154,6 +157,9 @@ function applyLineupData(data) {
   if (data.colorNum) document.getElementById('l-color-num').value = data.colorNum;
   if (data.colorNumGk) document.getElementById('l-color-num-gk').value = data.colorNumGk;
   if (data.colorBg) document.getElementById('l-color-bg').value = data.colorBg;
+  document.getElementById('l-shirt-style').value = data.shirtStyle || 'solid';
+  if (data.colorSleeves) document.getElementById('l-color-sleeves').value = data.colorSleeves;
+  if (data.colorStripes) document.getElementById('l-color-stripes').value = data.colorStripes;
   if (data.bgOpacity != null) document.getElementById('l-bg-opacity').value = data.bgOpacity;
   if (Array.isArray(data.starters) && data.starters.length === 11) {
     starters = JSON.parse(JSON.stringify(data.starters));
@@ -189,6 +195,9 @@ function resetLineup() {
   document.getElementById('l-color-num').value = '#ffffff';
   document.getElementById('l-color-num-gk').value = '#ffffff';
   document.getElementById('l-color-bg').value = '#0a2540';
+  document.getElementById('l-shirt-style').value = 'solid';
+  document.getElementById('l-color-sleeves').value = '#ffffff';
+  document.getElementById('l-color-stripes').value = '#ffffff';
   document.getElementById('l-bg-opacity').value = '100';
   document.getElementById('l-team-logo-file').value = '';
   renderStartersEditor();
@@ -357,6 +366,9 @@ const lFooterExtra = document.getElementById('l-footer-extra');
 const lCoach = document.getElementById('l-coach');
 const lColorShirt = document.getElementById('l-color-shirt');
 const lColorGk = document.getElementById('l-color-gk');
+const lShirtStyle = document.getElementById('l-shirt-style');
+const lColorSleeves = document.getElementById('l-color-sleeves');
+const lColorStripes = document.getElementById('l-color-stripes');
 const lColorNum = document.getElementById('l-color-num');
 const lColorNumGk = document.getElementById('l-color-num-gk');
 const lColorBg = document.getElementById('l-color-bg');
@@ -373,8 +385,15 @@ function renderPitch() {
     el.dataset.index = i;
     const shirtColor = p.gk ? lColorGk.value : lColorShirt.value;
     const numColor = p.gk ? lColorNumGk.value : lColorNum.value;
+    const styleOpts = p.gk
+      ? { style: 'solid' }
+      : {
+          style: lShirtStyle.value,
+          sleevesColor: lColorSleeves.value,
+          stripesColor: lColorStripes.value
+        };
     el.innerHTML = `
-      ${renderShirtSVG(shirtColor, numColor, p.num)}
+      ${renderShirtSVG(shirtColor, numColor, p.num, styleOpts)}
       <div class="lb-player-name">${p.name}</div>
     `;
     pitch.appendChild(el);
@@ -395,11 +414,22 @@ function shadeColor(hex, percent) {
   return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
-function renderShirtSVG(color, numColor, number) {
+function renderShirtSVG(color, numColor, number, options = {}) {
+  const { style = 'solid', sleevesColor = color, stripesColor = '#ffffff' } = options;
   const dark = shadeColor(color, -0.25);
   const darker = shadeColor(color, -0.4);
   const light = shadeColor(color, 0.12);
+  const sleeveBase = style === 'two-tone' ? sleevesColor : color;
+  const sleeveDark = shadeColor(sleeveBase, -0.25);
+  const sleeveDarker = shadeColor(sleeveBase, -0.4);
   const uid = 'sh' + Math.random().toString(36).slice(2, 8);
+  const stripesBlock = style === 'stripes' ? `
+      <g clip-path="url(#${uid}-body-clip)">
+        <rect x="28" y="14" width="7" height="92" fill="${stripesColor}" />
+        <rect x="42" y="14" width="7" height="92" fill="${stripesColor}" />
+        <rect x="56" y="14" width="7" height="92" fill="${stripesColor}" />
+        <rect x="70" y="14" width="7" height="92" fill="${stripesColor}" />
+      </g>` : '';
   return `
     <svg class="lb-shirt-svg" viewBox="0 0 100 105" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -409,16 +439,19 @@ function renderShirtSVG(color, numColor, number) {
           <stop offset="100%" stop-color="${dark}"/>
         </linearGradient>
         <linearGradient id="${uid}-sleeve" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${color}"/>
-          <stop offset="100%" stop-color="${dark}"/>
+          <stop offset="0%" stop-color="${sleeveBase}"/>
+          <stop offset="100%" stop-color="${sleeveDark}"/>
         </linearGradient>
+        <clipPath id="${uid}-body-clip">
+          <path d="M 26,16 Q 33,17 40,18 L 50,32 L 60,18 Q 67,17 74,16 L 78,42 L 80,98 Q 50,103 20,98 L 22,42 Z" />
+        </clipPath>
       </defs>
       <!-- Left sleeve -->
       <path d="M 22,16 L 5,28 L 8,46 L 26,42 Z"
-            fill="url(#${uid}-sleeve)" stroke="${darker}" stroke-width="0.8" stroke-linejoin="round"/>
+            fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
       <!-- Right sleeve -->
       <path d="M 78,16 L 95,28 L 92,46 L 74,42 Z"
-            fill="url(#${uid}-sleeve)" stroke="${darker}" stroke-width="0.8" stroke-linejoin="round"/>
+            fill="url(#${uid}-sleeve)" stroke="${sleeveDarker}" stroke-width="0.8" stroke-linejoin="round"/>
       <!-- Body silhouette -->
       <path d="M 26,16
                Q 33,17 40,18
@@ -430,6 +463,7 @@ function renderShirtSVG(color, numColor, number) {
                Q 50,103 20,98
                L 22,42 Z"
             fill="url(#${uid}-body)" stroke="${darker}" stroke-width="0.8" stroke-linejoin="round"/>
+      ${stripesBlock}
       <!-- Collar V-neck (darker triangle) -->
       <path d="M 40,18 L 50,32 L 60,18 L 56,18 L 50,28 L 44,18 Z"
             fill="${darker}"/>
@@ -441,9 +475,9 @@ function renderShirtSVG(color, numColor, number) {
       <!-- Number -->
       <text x="50" y="78" text-anchor="middle"
             font-family="'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif"
-            font-size="40" font-weight="900"
+            font-size="40" font-weight="500"
             fill="${numColor}"
-            stroke="${darker}" stroke-width="0.6"
+            stroke="${darker}" stroke-width="0.3"
             paint-order="stroke">${number}</text>
     </svg>
   `;
@@ -498,6 +532,7 @@ function updateLineupCommon() {
 }
 
 [lTeam, lFooterRound, lFooterLeg, lFooterExtra, lCoach, lColorShirt, lColorGk, lColorNum, lColorNumGk, lColorBg,
+ lShirtStyle, lColorSleeves, lColorStripes,
  document.getElementById('l-bg-opacity')].forEach(el =>
   el.addEventListener('input', () => { updateLineupCommon(); saveLineup(); })
 );

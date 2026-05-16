@@ -2337,3 +2337,233 @@ document.getElementById("export-btn").addEventListener("click", async () => {
     alert("Export échoué : " + err.message);
   }
 });
+
+/* ============================================================
+   SECTION REORDER (drag-and-drop on .collapsible)
+   ============================================================ */
+(function () {
+  const STORAGE_KEY = "ucl-section-order-v2";
+
+  function slugify(text) {
+    return (text || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function summarySlug(details) {
+    const s = details.querySelector(":scope > summary");
+    return s ? slugify(s.textContent) : "";
+  }
+
+  function computeInitialId(details) {
+    const parts = [summarySlug(details)];
+    let cur = details.parentElement;
+    while (cur && !cur.classList.contains("editor-section")) {
+      if (cur.classList.contains("collapsible-body")) {
+        const pd = cur.parentElement;
+        if (pd && pd.classList.contains("collapsible")) {
+          parts.unshift(summarySlug(pd));
+        }
+      }
+      cur = cur.parentElement;
+    }
+    if (cur) parts.unshift(`editor:${cur.dataset.editor}`);
+    return parts.join(">");
+  }
+
+  function assignInitialIds() {
+    document.querySelectorAll(".collapsible").forEach((d) => {
+      if (!d.dataset.sectionId) d.dataset.sectionId = computeInitialId(d);
+    });
+  }
+
+  function parentIdent(container) {
+    if (container.classList.contains("editor-section")) {
+      return `editor:${container.dataset.editor}`;
+    }
+    const details = container.parentElement;
+    return details && details.dataset.sectionId
+      ? details.dataset.sectionId
+      : null;
+  }
+
+  function findContainerByIdent(ident) {
+    if (ident.startsWith("editor:")) {
+      const key = ident.slice(7);
+      return document.querySelector(`.editor-section[data-editor="${key}"]`);
+    }
+    const details = document.querySelector(
+      `.collapsible[data-section-id="${CSS.escape(ident)}"]`,
+    );
+    return details
+      ? details.querySelector(":scope > .collapsible-body")
+      : null;
+  }
+
+  function findById(id) {
+    return document.querySelector(
+      `.collapsible[data-section-id="${CSS.escape(id)}"]`,
+    );
+  }
+
+  function readOrders() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  }
+  function writeOrders(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function saveOrder(container) {
+    if (!container) return;
+    const ident = parentIdent(container);
+    if (!ident) return;
+    const ids = Array.from(
+      container.querySelectorAll(":scope > .collapsible"),
+    ).map((c) => c.dataset.sectionId);
+    const all = readOrders();
+    all[ident] = ids;
+    writeOrders(all);
+  }
+
+  function applySavedOrder() {
+    const all = readOrders();
+    for (const ident of Object.keys(all)) {
+      const container = findContainerByIdent(ident);
+      if (!container) continue;
+      const ids = all[ident];
+      if (!Array.isArray(ids)) continue;
+      for (const id of ids) {
+        const el = findById(id);
+        if (el && el !== container && !el.contains(container)) {
+          container.appendChild(el);
+        }
+      }
+    }
+    document.querySelectorAll(".collapsible").forEach(updateNestedClass);
+  }
+
+  let dragSrc = null;
+
+  function clearDropTargets() {
+    document
+      .querySelectorAll(".drag-over-before, .drag-over-after, .drag-over-into")
+      .forEach((el) =>
+        el.classList.remove(
+          "drag-over-before",
+          "drag-over-after",
+          "drag-over-into",
+        ),
+      );
+  }
+
+  function onDragStart(e) {
+    const summary = e.currentTarget;
+    const details = summary.parentElement;
+    if (!details || !details.classList.contains("collapsible")) return;
+    dragSrc = details;
+    details.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    try {
+      e.dataTransfer.setData("text/plain", summarySlug(details));
+    } catch {}
+    try {
+      e.dataTransfer.setDragImage(details, 10, 10);
+    } catch {}
+    e.stopPropagation();
+  }
+
+  function onDragEnd() {
+    if (dragSrc) dragSrc.classList.remove("dragging");
+    clearDropTargets();
+    dragSrc = null;
+  }
+
+  function getDropZone(e) {
+    if (!dragSrc) return null;
+    const target = e.target.closest(".collapsible");
+    if (!target || target === dragSrc) return null;
+    if (dragSrc.contains(target)) return null;
+    const summary = target.querySelector(":scope > summary");
+    let position;
+    if (summary && (summary === e.target || summary.contains(e.target))) {
+      const rect = summary.getBoundingClientRect();
+      const ratio = (e.clientY - rect.top) / rect.height;
+      if (ratio < 0.3) position = "before";
+      else if (ratio > 0.7) position = "after";
+      else position = "into";
+    } else {
+      position = "into";
+    }
+    return { target, position };
+  }
+
+  function updateNestedClass(details) {
+    const parent = details.parentElement;
+    if (!parent) return;
+    if (parent.classList.contains("collapsible-body")) {
+      details.classList.add("collapsible-nested");
+    } else {
+      details.classList.remove("collapsible-nested");
+    }
+  }
+
+  function onDragOver(e) {
+    const zone = getDropZone(e);
+    if (!zone) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    clearDropTargets();
+    zone.target.classList.add(`drag-over-${zone.position}`);
+  }
+
+  function onDrop(e) {
+    const zone = getDropZone(e);
+    if (!zone) return;
+    e.preventDefault();
+    const oldParent = dragSrc.parentElement;
+    const { target, position } = zone;
+    if (position === "before") {
+      target.before(dragSrc);
+    } else if (position === "after") {
+      target.after(dragSrc);
+    } else {
+      if (!target.hasAttribute("open")) target.setAttribute("open", "");
+      const body = target.querySelector(":scope > .collapsible-body");
+      if (body) body.appendChild(dragSrc);
+    }
+    updateNestedClass(dragSrc);
+    saveOrder(dragSrc.parentElement);
+    if (oldParent && oldParent !== dragSrc.parentElement) saveOrder(oldParent);
+    clearDropTargets();
+  }
+
+  function setupCollapsible(details) {
+    const summary = details.querySelector(":scope > summary");
+    if (!summary) return;
+    summary.setAttribute("draggable", "true");
+    summary.addEventListener("dragstart", onDragStart);
+    summary.addEventListener("dragend", onDragEnd);
+  }
+
+  function init() {
+    assignInitialIds();
+    applySavedOrder();
+    document.querySelectorAll(".collapsible").forEach(setupCollapsible);
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", onDrop);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

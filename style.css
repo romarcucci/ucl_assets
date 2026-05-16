@@ -389,6 +389,52 @@ body {
   padding: 10px 10px 4px;
 }
 
+/* Drag-and-drop reorder for .collapsible sections */
+.collapsible > summary {
+  padding-left: 26px;
+}
+.collapsible > summary::before {
+  content: "⋮⋮";
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #484f58;
+  font-size: 11px;
+  letter-spacing: -2px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.collapsible > summary:hover::before,
+.collapsible.dragging > summary::before {
+  opacity: 1;
+}
+.collapsible-nested > summary {
+  padding-left: 22px;
+}
+.collapsible-nested > summary::before {
+  left: 6px;
+  font-size: 10px;
+}
+.collapsible.dragging {
+  opacity: 0.45;
+}
+.collapsible.drag-over-before {
+  box-shadow: 0 -3px 0 0 #58a6ff;
+}
+.collapsible.drag-over-after {
+  box-shadow: 0 3px 0 0 #58a6ff;
+}
+.collapsible.drag-over-into {
+  outline: 2px solid #58a6ff;
+  outline-offset: -2px;
+}
+.collapsible.drag-over-into > summary {
+  background: rgba(88, 166, 255, 0.12);
+}
+
 /* Header actions (right) */
 .header-actions {
   margin-left: auto;

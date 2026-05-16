@@ -1382,6 +1382,24 @@ body {
   flex-direction: column;
   padding: 40px 60px;
   position: relative;
+  overflow: hidden;
+}
+.sd-bg-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  display: none;
+}
+.showdown-board.has-bg-image .sd-bg-image {
+  display: block;
+}
+.showdown-board > .sd-match,
+.showdown-board > .sd-main,
+.showdown-board > .sd-meta {
+  position: relative;
 }
 .sd-match {
   text-align: center;

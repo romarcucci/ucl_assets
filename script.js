@@ -1282,17 +1282,15 @@ renderSavedTyposList();
 
 /* ----- Export / Import JSON (équipes + formations) ----- */
 function exportSavesToJson() {
+  const state = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith("ucl-")) state[k] = localStorage.getItem(k);
+  }
   const payload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    teams: getSavedTeams(),
-    formations: getSavedFormations(),
-    styles: getSavedStyles(),
-    banners: getSavedBanners(),
-    typos: getSavedTypos(),
-    showdowns: sdShowdownCRUD.get(),
-    showdownTypos: sdTypoCRUD.get(),
-    showdownBgs: sdBgCRUD.get(),
+    state,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
@@ -1315,6 +1313,30 @@ function importSavesFromJson(file) {
       parsed = JSON.parse(ev.target.result);
     } catch (e) {
       alert("Fichier JSON invalide : " + e.message);
+      return;
+    }
+    if (parsed && typeof parsed.state === "object" && parsed.state) {
+      const entries = Object.entries(parsed.state).filter(
+        ([k, v]) =>
+          typeof k === "string" && k.startsWith("ucl-") && typeof v === "string",
+      );
+      if (entries.length === 0) {
+        alert("Aucune donnée trouvée dans le fichier.");
+        return;
+      }
+      const msg =
+        `Importer ${entries.length} entrée(s) du fichier ?\n\n` +
+        `Toutes les sauvegardes locales actuelles seront remplacées par ` +
+        `celles du fichier. La page sera rechargée après l'import.`;
+      if (!confirm(msg)) return;
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("ucl-")) toRemove.push(k);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
+      entries.forEach(([k, v]) => localStorage.setItem(k, v));
+      location.reload();
       return;
     }
     const importedTeams = Array.isArray(parsed.teams) ? parsed.teams : [];
@@ -2237,6 +2259,102 @@ sdShowdownCRUD.render();
 sdTypoCRUD.render();
 sdBgCRUD.render();
 updateShowdown();
+
+/* ----- Showdown background image ----- */
+const SD_BG_IMAGE_PREF_KEY = "ucl-showdown-bg-image-v1";
+const SD_BG_IMAGE_FILE_KEY = "ucl-showdown-bg-image-file-v1";
+const SD_BG_IMAGE_OPACITY_KEY = "ucl-showdown-bg-image-opacity-v1";
+const SD_BG_IMAGE_FADE_KEY = "ucl-showdown-bg-image-fade-v1";
+const SD_BG_IMAGE_FADE_DIR_KEY = "ucl-showdown-bg-image-fade-dir-v1";
+const SD_BG_IMAGE_FADE_END_KEY = "ucl-showdown-bg-image-fade-end-v1";
+
+const sdBgImgToggle = document.getElementById("sd-bg-image-toggle");
+const sdBgImgSelect = document.getElementById("sd-bg-image-select");
+const sdBgImgOpacity = document.getElementById("sd-bg-image-opacity");
+const sdBgImgOpacityValue = document.getElementById("sd-bg-image-opacity-value");
+const sdBgImgFadeToggle = document.getElementById("sd-bg-image-fade-toggle");
+const sdBgImgFadeDir = document.getElementById("sd-bg-image-fade-dir");
+const sdBgImgFadeEnd = document.getElementById("sd-bg-image-fade-end");
+const sdBgImgFadeEndValue = document.getElementById("sd-bg-image-fade-end-value");
+
+function applySdBgImage() {
+  const board = document.getElementById("showdown-board");
+  const imgDiv = document.getElementById("sd-bg-image");
+  if (!board || !imgDiv) return;
+  const imgOpacity = +sdBgImgOpacity.value / 100;
+  if (sdBgImgOpacityValue)
+    sdBgImgOpacityValue.textContent = sdBgImgOpacity.value + "%";
+  const fadeEndRatio = +sdBgImgFadeEnd.value / 100;
+  if (sdBgImgFadeEndValue)
+    sdBgImgFadeEndValue.textContent = sdBgImgFadeEnd.value + "%";
+  const hasFile = !!sdBgImgSelect.value;
+  board.classList.toggle("has-bg-image", sdBgImgToggle.checked && hasFile);
+  imgDiv.style.backgroundImage = hasFile
+    ? `url('./${sdBgImgSelect.value}')`
+    : "none";
+  imgDiv.style.opacity = imgOpacity;
+  if (sdBgImgFadeToggle.checked) {
+    const dirMap = {
+      right: "to right",
+      left: "to left",
+      bottom: "to bottom",
+      top: "to top",
+    };
+    const dir = dirMap[sdBgImgFadeDir.value] || "to right";
+    const grad = `linear-gradient(${dir}, rgba(0,0,0,1), rgba(0,0,0,${fadeEndRatio}))`;
+    imgDiv.style.maskImage = grad;
+    imgDiv.style.webkitMaskImage = grad;
+  } else {
+    imgDiv.style.maskImage = "";
+    imgDiv.style.webkitMaskImage = "";
+  }
+}
+
+sdBgImgToggle.checked = localStorage.getItem(SD_BG_IMAGE_PREF_KEY) === "1";
+const savedSdBgFile = localStorage.getItem(SD_BG_IMAGE_FILE_KEY);
+if (
+  savedSdBgFile &&
+  [...sdBgImgSelect.options].some((o) => o.value === savedSdBgFile)
+) {
+  sdBgImgSelect.value = savedSdBgFile;
+}
+const savedSdImgOp = localStorage.getItem(SD_BG_IMAGE_OPACITY_KEY);
+if (savedSdImgOp != null) sdBgImgOpacity.value = savedSdImgOp;
+sdBgImgFadeToggle.checked = localStorage.getItem(SD_BG_IMAGE_FADE_KEY) === "1";
+const savedSdFadeDir = localStorage.getItem(SD_BG_IMAGE_FADE_DIR_KEY);
+if (savedSdFadeDir) sdBgImgFadeDir.value = savedSdFadeDir;
+const savedSdFadeEnd = localStorage.getItem(SD_BG_IMAGE_FADE_END_KEY);
+if (savedSdFadeEnd != null) sdBgImgFadeEnd.value = savedSdFadeEnd;
+
+applySdBgImage();
+
+sdBgImgToggle.addEventListener("change", () => {
+  localStorage.setItem(SD_BG_IMAGE_PREF_KEY, sdBgImgToggle.checked ? "1" : "0");
+  applySdBgImage();
+});
+sdBgImgSelect.addEventListener("change", () => {
+  localStorage.setItem(SD_BG_IMAGE_FILE_KEY, sdBgImgSelect.value);
+  applySdBgImage();
+});
+sdBgImgOpacity.addEventListener("input", () => {
+  localStorage.setItem(SD_BG_IMAGE_OPACITY_KEY, sdBgImgOpacity.value);
+  applySdBgImage();
+});
+sdBgImgFadeToggle.addEventListener("change", () => {
+  localStorage.setItem(
+    SD_BG_IMAGE_FADE_KEY,
+    sdBgImgFadeToggle.checked ? "1" : "0",
+  );
+  applySdBgImage();
+});
+sdBgImgFadeDir.addEventListener("change", () => {
+  localStorage.setItem(SD_BG_IMAGE_FADE_DIR_KEY, sdBgImgFadeDir.value);
+  applySdBgImage();
+});
+sdBgImgFadeEnd.addEventListener("input", () => {
+  localStorage.setItem(SD_BG_IMAGE_FADE_END_KEY, sdBgImgFadeEnd.value);
+  applySdBgImage();
+});
 
 /* ============================================================
    EXPORT TO PNG (via html-to-image-style using SVG foreignObject)

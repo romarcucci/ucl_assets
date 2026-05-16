@@ -27,7 +27,7 @@
           class="btn-header"
           id="l-export-json"
           type="button"
-          title="Exporter toutes les sauvegardes (équipes, formations, styles) en JSON"
+          title="Exporter toutes les données locales (sauvegardes, préférences, ordre des sections) en JSON"
         >
           📤 Export
         </button>
@@ -1252,11 +1252,21 @@
                     <span>Choix de l'image</span>
                     <select id="sd-bg-image-select">
                       <option value="">Aucune image</option>
-                      <option value="lineup_bg_01.png">Background 01</option>
-                      <option value="lineup_bg_02.png">Background 02</option>
-                      <option value="lineup_bg_03.png">Background 03</option>
-                      <option value="lineup_bg_04.png">Background 04</option>
-                      <option value="lineup_bg_05.png">Background 05</option>
+                      <option value="backgrounds/lineup_bg_01.png">
+                        Background 01
+                      </option>
+                      <option value="backgrounds/lineup_bg_02.png">
+                        Background 02
+                      </option>
+                      <option value="backgrounds/lineup_bg_03.png">
+                        Background 03
+                      </option>
+                      <option value="backgrounds/lineup_bg_04.png">
+                        Background 04
+                      </option>
+                      <option value="backgrounds/lineup_bg_05.png">
+                        Background 05
+                      </option>
                     </select>
                   </label>
                   <label class="field">
@@ -1865,6 +1875,7 @@
         <!-- Showdown preview -->
         <div class="preview-container" data-preview="showdown">
           <div class="showdown-board" id="showdown-board">
+            <div class="sd-bg-image" id="sd-bg-image"></div>
             <div class="sd-match" id="sd-match">QUARTER FINALS - FIRST LEG</div>
             <div class="sd-main">
               <div class="sd-team sd-team-left">

@@ -614,7 +614,6 @@ body {
 .player-banner {
   display: flex;
   align-items: stretch;
-  width: 700px;
   height: 130px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
@@ -625,6 +624,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 12px;
+  flex-shrink: 0;
 }
 .pb-logo svg,
 .pb-logo img {
@@ -633,9 +633,9 @@ body {
   object-fit: contain;
 }
 .pb-bars {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 .pb-top {
   flex: 1;
@@ -646,17 +646,18 @@ body {
   gap: 24px;
   padding: 0 30px;
 }
-.pb-number {
-  font-family: var(--font-data);
-  font-size: 44px;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
 .pb-name {
   font-family: var(--font-title);
   font-size: 30px;
   font-weight: 700;
   letter-spacing: 2px;
+}
+.pb-minute {
+  margin-left: auto;
+  font-family: var(--font-data);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 .pb-bottom {
   flex: 1;
@@ -879,11 +880,9 @@ body {
 }
 .lb-player-name {
   margin-top: 6px;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-weight: 100;
-  font-size: 20px;
+  font-family: var(--lb-player-font, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  font-weight: var(--lb-player-weight, 100);
+  font-size: var(--lb-player-size, 20px);
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--lb-text-color, #ffffff);
@@ -1320,4 +1319,103 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #484f58;
+}
+
+/* ========== 5) SHOWDOWN BOARD ========== */
+.showdown-board {
+  width: 1100px;
+  height: 520px;
+  background: linear-gradient(180deg, #0a1228 0%, #050a1a 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  padding: 40px 60px;
+  position: relative;
+}
+.sd-match {
+  text-align: center;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto,
+    sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 8px;
+}
+.sd-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+.sd-team {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.sd-logo {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sd-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+.sd-logo:empty::before {
+  content: "—";
+  font-size: 80px;
+  color: rgba(255, 255, 255, 0.18);
+}
+.sd-team-name {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto,
+    sans-serif;
+  font-size: 38px;
+  font-weight: 100;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-align: center;
+}
+.sd-vs {
+  font-family: "Cinzel", "Trajan Pro", serif;
+  font-size: 70px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  flex-shrink: 0;
+  padding: 0 40px;
+}
+.sd-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto,
+    sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 12px;
+}
+.sd-meta-sep {
+  color: rgba(255, 255, 255, 0.4);
+}
+.sd-meta-item:empty {
+  display: none;
+}
+.sd-meta-item:empty + .sd-meta-sep {
+  display: none;
 }

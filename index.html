@@ -20,11 +20,31 @@
         <button class="tab" data-tab="player">Bannière joueur</button>
         <button class="tab" data-tab="score">Score live</button>
         <button class="tab" data-tab="bracket">Tableau final</button>
+        <button class="tab" data-tab="showdown">Showdown</button>
       </nav>
       <div class="header-actions">
-        <button class="btn-header" id="l-export-json" type="button" title="Exporter toutes les sauvegardes (équipes, formations, styles) en JSON">📤 Export</button>
-        <button class="btn-header" id="l-import-json-btn" type="button" title="Importer un fichier JSON de sauvegardes">📥 Import</button>
-        <input type="file" id="l-import-json-file" accept="application/json,.json" style="display: none" />
+        <button
+          class="btn-header"
+          id="l-export-json"
+          type="button"
+          title="Exporter toutes les sauvegardes (équipes, formations, styles) en JSON"
+        >
+          📤 Export
+        </button>
+        <button
+          class="btn-header"
+          id="l-import-json-btn"
+          type="button"
+          title="Importer un fichier JSON de sauvegardes"
+        >
+          📥 Import
+        </button>
+        <input
+          type="file"
+          id="l-import-json-file"
+          accept="application/json,.json"
+          style="display: none"
+        />
       </div>
     </header>
 
@@ -35,53 +55,326 @@
         <section class="editor-section" data-editor="player">
           <h2>Bannière joueur</h2>
 
-          <label class="field">
-            <span>Numéro</span>
-            <input type="number" id="p-number" value="20" min="0" max="99" />
-          </label>
+          <details class="collapsible" open>
+            <summary>Contenu</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Nom du joueur</span>
+                  <input type="text" id="p-name" value="VINÍCIUS JÚNIOR" />
+                </label>
+                <label class="field">
+                  <span>Minute</span>
+                  <input
+                    type="text"
+                    id="p-minute"
+                    value="45'"
+                    placeholder="ex: 45'"
+                  />
+                </label>
+              </div>
+              <label class="field">
+                <span>Nom du club</span>
+                <input type="text" id="p-club-name" value="REAL MADRID" />
+              </label>
+              <label class="field">
+                <span>Logo (préréglage)</span>
+                <select id="p-club">
+                  <option value="rma">Real Madrid</option>
+                  <option value="lfc">Liverpool</option>
+                  <option value="bar">FC Barcelona</option>
+                  <option value="psg">PSG</option>
+                  <option value="bay">Bayern Munich</option>
+                  <option value="custom">Personnalisé</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Logo personnalisé (PNG)</span>
+                <input type="file" id="p-logo-file" accept="image/*" />
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Nom du joueur</span>
-            <input type="text" id="p-name" value="VINÍCIUS JÚNIOR" />
-          </label>
+          <details class="collapsible">
+            <summary>Mise en page</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span
+                  >Largeur des zones de texte
+                  <span id="p-zone-width-value">570px</span></span
+                >
+                <input
+                  type="range"
+                  id="p-zone-width"
+                  min="300"
+                  max="900"
+                  value="570"
+                />
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Statistique (ligne 2)</span>
-            <input type="text" id="p-stat" value="4 GOALS IN 13 MATCHES" />
-          </label>
+          <details class="collapsible">
+            <summary>Zone logo (gauche)</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur 1</span>
+                  <input type="color" id="p-logo-color-1" value="#ffffff" />
+                </label>
+                <label class="field">
+                  <span>Couleur 2</span>
+                  <input type="color" id="p-logo-color-2" value="#ffffff" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Direction du gradient</span>
+                <select id="p-logo-direction">
+                  <option value="180">↓ Vertical (haut → bas)</option>
+                  <option value="0">↑ Vertical inverse</option>
+                  <option value="90">→ Horizontal</option>
+                  <option value="270">← Horizontal inverse</option>
+                  <option value="135">↘ Diagonal</option>
+                  <option value="45">↗ Diagonal</option>
+                </select>
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Club (préréglage)</span>
-            <select id="p-club">
-              <option value="rma">Real Madrid</option>
-              <option value="lfc">Liverpool</option>
-              <option value="bar">FC Barcelona</option>
-              <option value="psg">PSG</option>
-              <option value="bay">Bayern Munich</option>
-              <option value="custom">Personnalisé</option>
-            </select>
-          </label>
+          <details class="collapsible">
+            <summary>Zone haut (nom + minute)</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur 1</span>
+                  <input type="color" id="p-top-color-1" value="#0a1a4a" />
+                </label>
+                <label class="field">
+                  <span>Couleur 2</span>
+                  <input type="color" id="p-top-color-2" value="#162a6e" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Direction du gradient</span>
+                <select id="p-top-direction">
+                  <option value="180">↓ Vertical (haut → bas)</option>
+                  <option value="0">↑ Vertical inverse</option>
+                  <option value="90">→ Horizontal</option>
+                  <option value="270">← Horizontal inverse</option>
+                  <option value="135">↘ Diagonal</option>
+                  <option value="45">↗ Diagonal</option>
+                </select>
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Logo personnalisé (URL ou upload)</span>
-            <input type="file" id="p-logo-file" accept="image/*" />
-          </label>
+          <details class="collapsible">
+            <summary>Zone bas (nom du club)</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur 1</span>
+                  <input type="color" id="p-bottom-color-1" value="#162a6e" />
+                </label>
+                <label class="field">
+                  <span>Couleur 2</span>
+                  <input type="color" id="p-bottom-color-2" value="#162a6e" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Direction du gradient</span>
+                <select id="p-bottom-direction">
+                  <option value="180">↓ Vertical (haut → bas)</option>
+                  <option value="0">↑ Vertical inverse</option>
+                  <option value="90">→ Horizontal</option>
+                  <option value="270">← Horizontal inverse</option>
+                  <option value="135">↘ Diagonal</option>
+                  <option value="45">↗ Diagonal</option>
+                </select>
+              </label>
+            </div>
+          </details>
 
-          <div class="row">
-            <label class="field">
-              <span>Couleur bande principale</span>
-              <input type="color" id="p-color-main" value="#0a1a4a" />
-            </label>
-            <label class="field">
-              <span>Couleur bande basse</span>
-              <input type="color" id="p-color-low" value="#162a6e" />
-            </label>
-          </div>
+          <details class="collapsible">
+            <summary>Texte</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Couleur du texte</span>
+                <input type="color" id="p-color-text" value="#ffffff" />
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Couleur du texte</span>
-            <input type="color" id="p-color-text" value="#ffffff" />
-          </label>
+          <details class="collapsible">
+            <summary>Bannières sauvegardées</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="p-saved-select"></select>
+                <button class="btn-secondary" id="p-load" type="button">
+                  Charger
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="p-delete"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="p-save-name"
+                  placeholder="Nom de la bannière…"
+                />
+                <button class="btn-primary" id="p-save" type="button">
+                  💾 Enregistrer
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Typographie</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Nom du joueur (haut)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="p-name-font">
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="system">Système</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="p-name-size-value">30px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="p-name-size"
+                        min="12"
+                        max="60"
+                        value="30"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="p-name-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700" selected>700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Minute (haut, à droite)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="p-minute-font">
+                      <option value="condensed" selected>
+                        Barlow Condensed
+                      </option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="system">Système</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="p-minute-size-value">30px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="p-minute-size"
+                        min="12"
+                        max="60"
+                        value="30"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="p-minute-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700" selected>700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Nom du club (bas)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="p-clubname-font">
+                      <option value="condensed" selected>
+                        Barlow Condensed
+                      </option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="system">Système</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="p-clubname-size-value">24px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="p-clubname-size"
+                        min="12"
+                        max="60"
+                        value="24"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="p-clubname-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600" selected>600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
         </section>
 
         <!-- ============ LINEUP EDITOR ============ -->
@@ -102,7 +395,13 @@
                     <span>Logo de l'équipe (PNG)</span>
                     <input type="file" id="l-team-logo-file" accept="image/*" />
                   </label>
-                  <button class="btn-secondary" id="l-team-logo-clear" type="button">Retirer le logo</button>
+                  <button
+                    class="btn-secondary"
+                    id="l-team-logo-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
                 </div>
               </details>
 
@@ -112,11 +411,21 @@
                   <div class="row">
                     <label class="field">
                       <span>Prénom</span>
-                      <input type="text" id="l-coach-first" value="DIDIER" placeholder="Prénom" />
+                      <input
+                        type="text"
+                        id="l-coach-first"
+                        value="DIDIER"
+                        placeholder="Prénom"
+                      />
                     </label>
                     <label class="field">
                       <span>Nom (gras)</span>
-                      <input type="text" id="l-coach-last" value="DESCHAMPS" placeholder="Nom" />
+                      <input
+                        type="text"
+                        id="l-coach-last"
+                        value="DESCHAMPS"
+                        placeholder="Nom"
+                      />
                     </label>
                   </div>
                 </div>
@@ -145,7 +454,11 @@
                   </div>
                   <label class="field">
                     <span>Extra (année, lieu…)</span>
-                    <input type="text" id="l-footer-extra" placeholder="ex: 1956" />
+                    <input
+                      type="text"
+                      id="l-footer-extra"
+                      placeholder="ex: 1956"
+                    />
                   </label>
                 </div>
               </details>
@@ -165,12 +478,30 @@
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
                     <select id="l-saved-team-select"></select>
-                    <button class="btn-secondary" id="l-load-team" type="button">Charger</button>
-                    <button class="btn-secondary danger" id="l-delete-team" type="button">×</button>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-team"
+                      type="button"
+                    >
+                      Charger
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-team"
+                      type="button"
+                    >
+                      ×
+                    </button>
                   </div>
                   <div class="save-team-form">
-                    <input type="text" id="l-save-team-name" placeholder="Nom de la sauvegarde…" />
-                    <button class="btn-primary" id="l-save-team" type="button">💾 Enregistrer</button>
+                    <input
+                      type="text"
+                      id="l-save-team-name"
+                      placeholder="Nom de la sauvegarde…"
+                    />
+                    <button class="btn-primary" id="l-save-team" type="button">
+                      💾 Enregistrer
+                    </button>
                   </div>
                 </div>
               </details>
@@ -197,18 +528,28 @@
                     <span>Style maillot (joueurs de champ)</span>
                     <select id="l-shirt-style">
                       <option value="solid">Uni</option>
-                      <option value="two-tone">Manches d'une autre couleur</option>
+                      <option value="two-tone">
+                        Manches d'une autre couleur
+                      </option>
                       <option value="stripes">Rayures verticales</option>
                     </select>
                   </label>
                   <div class="row">
                     <label class="field">
                       <span>Couleur manches (si applicable)</span>
-                      <input type="color" id="l-color-sleeves" value="#ffffff" />
+                      <input
+                        type="color"
+                        id="l-color-sleeves"
+                        value="#ffffff"
+                      />
                     </label>
                     <label class="field">
                       <span>Couleur rayures (si applicable)</span>
-                      <input type="color" id="l-color-stripes" value="#ffffff" />
+                      <input
+                        type="color"
+                        id="l-color-stripes"
+                        value="#ffffff"
+                      />
                     </label>
                   </div>
                 </div>
@@ -230,8 +571,12 @@
                   <label class="field">
                     <span>Police des numéros</span>
                     <select id="l-number-font">
-                      <option value="condensed">Barlow Condensed (par défaut)</option>
-                      <option value="system">Système (San Francisco / Segoe)</option>
+                      <option value="condensed">
+                        Barlow Condensed (par défaut)
+                      </option>
+                      <option value="system">
+                        Système (San Francisco / Segoe)
+                      </option>
                       <option value="arial">Arial / Helvetica</option>
                       <option value="impact">Impact</option>
                       <option value="cinzel">Cinzel (serif)</option>
@@ -260,8 +605,17 @@
                     </label>
                   </div>
                   <label class="field">
-                    <span>Opacité du fond <span id="l-bg-opacity-value">100%</span></span>
-                    <input type="range" id="l-bg-opacity" min="0" max="100" value="100" />
+                    <span
+                      >Opacité du fond
+                      <span id="l-bg-opacity-value">100%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="l-bg-opacity"
+                      min="0"
+                      max="100"
+                      value="100"
+                    />
                   </label>
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-bg-image-toggle" />
@@ -271,16 +625,35 @@
                     <span>Choix de l'image (PNG dans le dossier projet)</span>
                     <select id="l-bg-image-select">
                       <option value="">Aucune image</option>
-                      <option value="lineup_bg_01.png">Background 01</option>
-                      <option value="lineup_bg_02.png">Background 02</option>
-                      <option value="lineup_bg_03.png">Background 03</option>
-                      <option value="lineup_bg_04.png">Background 04</option>
-                      <option value="lineup_bg_05.png">Background 05</option>
+                      <option value="backgrounds/lineup_bg_01.png">
+                        Background 01
+                      </option>
+                      <option value="backgrounds/lineup_bg_02.png">
+                        Background 02
+                      </option>
+                      <option value="backgrounds/lineup_bg_03.png">
+                        Background 03
+                      </option>
+                      <option value="backgrounds/lineup_bg_04.png">
+                        Background 04
+                      </option>
+                      <option value="backgrounds/lineup_bg_05.png">
+                        Background 05
+                      </option>
                     </select>
                   </label>
                   <label class="field">
-                    <span>Opacité de l'image <span id="l-bg-image-opacity-value">50%</span></span>
-                    <input type="range" id="l-bg-image-opacity" min="0" max="100" value="50" />
+                    <span
+                      >Opacité de l'image
+                      <span id="l-bg-image-opacity-value">50%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="l-bg-image-opacity"
+                      min="0"
+                      max="100"
+                      value="50"
+                    />
                   </label>
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-bg-image-fade-toggle" />
@@ -297,8 +670,17 @@
                       </select>
                     </label>
                     <label class="field">
-                      <span>Opacité fin <span id="l-bg-image-fade-end-value">0%</span></span>
-                      <input type="range" id="l-bg-image-fade-end" min="0" max="100" value="0" />
+                      <span
+                        >Opacité fin
+                        <span id="l-bg-image-fade-end-value">0%</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-bg-image-fade-end"
+                        min="0"
+                        max="100"
+                        value="0"
+                      />
                     </label>
                   </div>
                 </div>
@@ -320,17 +702,34 @@
                     <span>Ligne médiane + surface de réparation (teal)</span>
                   </label>
                   <label class="field">
-                    <span>Épaisseur des lignes teal <span id="l-divider-thickness-value">2px</span></span>
-                    <input type="range" id="l-divider-thickness" min="1" max="10" value="2" />
+                    <span
+                      >Épaisseur des lignes teal
+                      <span id="l-divider-thickness-value">2px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="l-divider-thickness"
+                      min="1"
+                      max="10"
+                      value="2"
+                    />
                   </label>
                   <div class="row">
                     <label class="field">
                       <span>Couleur ligne (début)</span>
-                      <input type="color" id="l-divider-color-1" value="#14b8a6" />
+                      <input
+                        type="color"
+                        id="l-divider-color-1"
+                        value="#14b8a6"
+                      />
                     </label>
                     <label class="field">
                       <span>Couleur ligne (fin)</span>
-                      <input type="color" id="l-divider-color-2" value="#14b8a6" />
+                      <input
+                        type="color"
+                        id="l-divider-color-2"
+                        value="#14b8a6"
+                      />
                     </label>
                   </div>
                 </div>
@@ -341,12 +740,242 @@
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
                     <select id="l-saved-style-select"></select>
-                    <button class="btn-secondary" id="l-load-style" type="button">Appliquer</button>
-                    <button class="btn-secondary danger" id="l-delete-style" type="button">×</button>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-style"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-style"
+                      type="button"
+                    >
+                      ×
+                    </button>
                   </div>
                   <div class="save-team-form">
-                    <input type="text" id="l-save-style-name" placeholder="Nom du style (ex: Bleu nuit)…" />
-                    <button class="btn-primary" id="l-save-style" type="button">💾 Enregistrer style</button>
+                    <input
+                      type="text"
+                      id="l-save-style-name"
+                      placeholder="Nom du style (ex: Bleu nuit)…"
+                    />
+                    <button class="btn-primary" id="l-save-style" type="button">
+                      💾 Enregistrer style
+                    </button>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Typographie</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Nom de l'équipe</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="l-team-font">
+                      <option value="system" selected>
+                        Système (San Francisco / Segoe)
+                      </option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="l-team-size-value">26px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-team-size"
+                        min="14"
+                        max="50"
+                        value="26"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="l-team-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Sous-texte (bas)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="l-footer-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="l-footer-size-value">15px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-footer-size"
+                        min="10"
+                        max="32"
+                        value="15"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids (normal)</span>
+                      <select id="l-footer-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Coach</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="l-coach-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="l-coach-size-value">18px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-coach-size"
+                        min="10"
+                        max="36"
+                        value="18"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids (prénom)</span>
+                      <select id="l-coach-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Nom des joueurs</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="l-player-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="l-player-size-value">20px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-player-size"
+                        min="10"
+                        max="40"
+                        value="20"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="l-player-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Typographies sauvegardées</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="l-saved-typo-select"></select>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-typo"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-typo"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="l-save-typo-name"
+                      placeholder="Nom de la typographie…"
+                    />
+                    <button class="btn-primary" id="l-save-typo" type="button">
+                      💾 Enregistrer typographie
+                    </button>
                   </div>
                 </div>
               </details>
@@ -359,20 +988,46 @@
               <div id="l-starters" class="player-list"></div>
               <div class="storage-info">
                 <span>💾 Sauvegarde automatique activée</span>
-                <button class="btn-secondary" id="l-reset" type="button">Réinitialiser</button>
+                <button class="btn-secondary" id="l-reset" type="button">
+                  Réinitialiser
+                </button>
               </div>
 
               <details class="collapsible collapsible-nested">
-                <summary>Formations sauvegardées (positions uniquement)</summary>
+                <summary>
+                  Formations sauvegardées (positions uniquement)
+                </summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
                     <select id="l-saved-formation-select"></select>
-                    <button class="btn-secondary" id="l-load-formation" type="button">Appliquer</button>
-                    <button class="btn-secondary danger" id="l-delete-formation" type="button">×</button>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-formation"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-formation"
+                      type="button"
+                    >
+                      ×
+                    </button>
                   </div>
                   <div class="save-team-form">
-                    <input type="text" id="l-save-formation-name" placeholder="Nom de la formation (ex: 4-3-3)…" />
-                    <button class="btn-primary" id="l-save-formation" type="button">💾 Enregistrer formation</button>
+                    <input
+                      type="text"
+                      id="l-save-formation-name"
+                      placeholder="Nom de la formation (ex: 4-3-3)…"
+                    />
+                    <button
+                      class="btn-primary"
+                      id="l-save-formation"
+                      type="button"
+                    >
+                      💾 Enregistrer formation
+                    </button>
                   </div>
                 </div>
               </details>
@@ -457,6 +1112,510 @@
             <input type="color" id="b-bg" value="#0a1228" />
           </label>
         </section>
+
+        <!-- ============ SHOWDOWN EDITOR ============ -->
+        <section class="editor-section" data-editor="showdown">
+          <h2>Showdown (panel match)</h2>
+
+          <details class="collapsible" open>
+            <summary>Contenu</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested" open>
+                <summary>Équipe 1 (gauche)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Nom équipe 1</span>
+                    <input type="text" id="sd-name-1-input" value="PSG" />
+                  </label>
+                  <label class="field">
+                    <span>Logo équipe 1 (PNG)</span>
+                    <input type="file" id="sd-logo-1-file" accept="image/*" />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="sd-logo-1-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Équipe 2 (droite)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Nom équipe 2</span>
+                    <input
+                      type="text"
+                      id="sd-name-2-input"
+                      value="REAL MADRID"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Logo équipe 2 (PNG)</span>
+                    <input type="file" id="sd-logo-2-file" accept="image/*" />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="sd-logo-2-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Match</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Tour</span>
+                      <select id="sd-round">
+                        <option value="Round of 16">Round of 16</option>
+                        <option value="Quarter Finals" selected>
+                          Quarter Finals
+                        </option>
+                        <option value="Semi Finals">Semi Finals</option>
+                        <option value="FINAL">Final</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Manche</span>
+                      <select id="sd-leg">
+                        <option value="First Leg" selected>First Leg</option>
+                        <option value="Second Leg">Second Leg</option>
+                        <option value="">— Aucune —</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Lieu</span>
+                    <input type="text" id="sd-place" value="PARIS" />
+                  </label>
+                  <label class="field">
+                    <span>Date</span>
+                    <input
+                      type="text"
+                      id="sd-date"
+                      value="12 MAR 2026"
+                      placeholder="ex: 12 MAR 2026"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Arbitre</span>
+                    <input type="text" id="sd-referee" value="D. ORSATO" />
+                  </label>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Fond</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur 1</span>
+                  <input type="color" id="sd-bg-color-1" value="#0a1228" />
+                </label>
+                <label class="field">
+                  <span>Couleur 2</span>
+                  <input type="color" id="sd-bg-color-2" value="#050a1a" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Direction du gradient</span>
+                <select id="sd-bg-direction">
+                  <option value="180" selected>↓ Vertical (haut → bas)</option>
+                  <option value="0">↑ Vertical inverse</option>
+                  <option value="90">→ Horizontal</option>
+                  <option value="270">← Horizontal inverse</option>
+                  <option value="135">↘ Diagonal</option>
+                  <option value="45">↗ Diagonal</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Couleur du texte</span>
+                <input type="color" id="sd-color-text" value="#ffffff" />
+              </label>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Image de fond</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-bg-image-toggle" />
+                    <span>Activer l'image de fond</span>
+                  </label>
+                  <label class="field">
+                    <span>Choix de l'image</span>
+                    <select id="sd-bg-image-select">
+                      <option value="">Aucune image</option>
+                      <option value="lineup_bg_01.png">Background 01</option>
+                      <option value="lineup_bg_02.png">Background 02</option>
+                      <option value="lineup_bg_03.png">Background 03</option>
+                      <option value="lineup_bg_04.png">Background 04</option>
+                      <option value="lineup_bg_05.png">Background 05</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Opacité de l'image
+                      <span id="sd-bg-image-opacity-value">50%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-bg-image-opacity"
+                      min="0"
+                      max="100"
+                      value="50"
+                    />
+                  </label>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-bg-image-fade-toggle" />
+                    <span>Dégradé d'opacité sur l'image</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Direction du fade</span>
+                      <select id="sd-bg-image-fade-dir">
+                        <option value="right">→ vers droite</option>
+                        <option value="left">← vers gauche</option>
+                        <option value="bottom">↓ vers bas</option>
+                        <option value="top">↑ vers haut</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span
+                        >Opacité fin
+                        <span id="sd-bg-image-fade-end-value">0%</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-bg-image-fade-end"
+                        min="0"
+                        max="100"
+                        value="0"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Ligne de bordure (haut)</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-topline-toggle" />
+                    <span>Afficher la ligne du haut</span>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Épaisseur
+                      <span id="sd-topline-thickness-value">2px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-topline-thickness"
+                      min="1"
+                      max="10"
+                      value="2"
+                    />
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur début</span>
+                      <input
+                        type="color"
+                        id="sd-topline-color-1"
+                        value="#14b8a6"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Couleur fin</span>
+                      <input
+                        type="color"
+                        id="sd-topline-color-2"
+                        value="#14b8a6"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Typographie</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Tour (haut)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-match-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="sd-match-size-value">22px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-match-size"
+                        min="12"
+                        max="48"
+                        value="22"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-match-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600" selected>600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Noms d'équipes</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-name-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="sd-name-size-value">38px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-name-size"
+                        min="16"
+                        max="80"
+                        value="38"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-name-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>VS (centre)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-vs-font">
+                      <option value="cinzel" selected>Cinzel (serif)</option>
+                      <option value="system">Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="sd-vs-size-value">70px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-vs-size"
+                        min="24"
+                        max="140"
+                        value="70"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-vs-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700" selected>700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Métadonnées (lieu, date, arbitre)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-meta-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="sd-meta-size-value">16px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-meta-size"
+                        min="10"
+                        max="32"
+                        value="16"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-meta-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400" selected>400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Typographies sauvegardées</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="sd-saved-typo-select"></select>
+                    <button
+                      class="btn-secondary"
+                      id="sd-load-typo"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="sd-delete-typo"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="sd-save-typo-name"
+                      placeholder="Nom de la typo…"
+                    />
+                    <button class="btn-primary" id="sd-save-typo" type="button">
+                      💾 Enregistrer
+                    </button>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Fonds sauvegardés</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="sd-saved-bg-select"></select>
+                <button class="btn-secondary" id="sd-load-bg" type="button">
+                  Appliquer
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="sd-delete-bg"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="sd-save-bg-name"
+                  placeholder="Nom du fond…"
+                />
+                <button class="btn-primary" id="sd-save-bg" type="button">
+                  💾 Enregistrer fond
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Showdowns sauvegardés (complet)</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="sd-saved-select"></select>
+                <button class="btn-secondary" id="sd-load" type="button">
+                  Charger
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="sd-delete"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="sd-save-name"
+                  placeholder="Nom du showdown…"
+                />
+                <button class="btn-primary" id="sd-save" type="button">
+                  💾 Enregistrer
+                </button>
+              </div>
+            </div>
+          </details>
+        </section>
       </aside>
 
       <!-- ============ PREVIEW PANEL (RIGHT) ============ -->
@@ -511,13 +1670,13 @@
                 </text>
               </svg>
             </div>
-            <div class="pb-bars">
+            <div class="pb-bars" id="pb-bars">
               <div class="pb-top" id="pb-top">
-                <span class="pb-number" id="pb-number">20</span>
                 <span class="pb-name" id="pb-name">VINÍCIUS JÚNIOR</span>
+                <span class="pb-minute" id="pb-minute">45'</span>
               </div>
               <div class="pb-bottom" id="pb-bottom">
-                <span id="pb-stat">4 GOALS IN 13 MATCHES</span>
+                <span id="pb-club-name">REAL MADRID</span>
               </div>
             </div>
           </div>
@@ -608,7 +1767,9 @@
                     stroke-width="2"
                   >
                     <path d="M 371,450 L 371,315.6 L 689,315.6 L 689,450" />
-                    <path d="M 458.6,450 L 458.6,405.6 L 601.4,405.6 L 601.4,450" />
+                    <path
+                      d="M 458.6,450 L 458.6,405.6 L 601.4,405.6 L 601.4,450"
+                    />
                     <path d="M 473.64,315.6 A 72,72 0 0 1 586.36,315.6" />
                     <path
                       d="M 450,0 C 450,44 486,80 530,80 C 574,80 610,44 610,0"
@@ -697,6 +1858,33 @@
                   <div class="br-team-card" data-team-i="7"></div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showdown preview -->
+        <div class="preview-container" data-preview="showdown">
+          <div class="showdown-board" id="showdown-board">
+            <div class="sd-match" id="sd-match">QUARTER FINALS - FIRST LEG</div>
+            <div class="sd-main">
+              <div class="sd-team sd-team-left">
+                <div class="sd-logo" id="sd-logo-1"></div>
+                <div class="sd-team-name" id="sd-name-1">PSG</div>
+              </div>
+              <div class="sd-vs" id="sd-vs">VS</div>
+              <div class="sd-team sd-team-right">
+                <div class="sd-logo" id="sd-logo-2"></div>
+                <div class="sd-team-name" id="sd-name-2">REAL MADRID</div>
+              </div>
+            </div>
+            <div class="sd-meta">
+              <span class="sd-meta-item" id="sd-meta-place">PARIS</span>
+              <span class="sd-meta-sep">·</span>
+              <span class="sd-meta-item" id="sd-meta-date">12 MAR 2026</span>
+              <span class="sd-meta-sep">·</span>
+              <span class="sd-meta-item" id="sd-meta-referee"
+                >RÉF: D. ORSATO</span
+              >
             </div>
           </div>
         </div>

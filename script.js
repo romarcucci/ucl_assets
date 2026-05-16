@@ -1167,7 +1167,7 @@ function updateLineupCommon() {
   const bgTop = hexToRgba(lColorBg.value, alpha);
   const bgBottom = hexToRgba(shadeColor(lColorBg.value, -0.25), alpha);
   document.getElementById("lineup-board").style.backgroundImage =
-    `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 89.83%, transparent 89.83%)`;
+    `linear-gradient(180deg, ${bgTop} 0%, ${bgBottom} 100%)`;
   document.getElementById("l-bg-opacity-value").textContent =
     Math.round(alpha * 100) + "%";
   const dividerEl = document.getElementById("lb-divider");
@@ -2354,6 +2354,59 @@ sdBgImgFadeDir.addEventListener("change", () => {
 sdBgImgFadeEnd.addEventListener("input", () => {
   localStorage.setItem(SD_BG_IMAGE_FADE_END_KEY, sdBgImgFadeEnd.value);
   applySdBgImage();
+});
+
+/* ----- Showdown top border line ----- */
+const SD_TOPLINE_PREF_KEY = "ucl-showdown-topline-v1";
+const SD_TOPLINE_THICKNESS_KEY = "ucl-showdown-topline-thickness-v1";
+const SD_TOPLINE_COLOR1_KEY = "ucl-showdown-topline-color1-v1";
+const SD_TOPLINE_COLOR2_KEY = "ucl-showdown-topline-color2-v1";
+
+const sdToplineToggle = document.getElementById("sd-topline-toggle");
+const sdToplineThickness = document.getElementById("sd-topline-thickness");
+const sdToplineThicknessValue = document.getElementById(
+  "sd-topline-thickness-value",
+);
+const sdToplineColor1 = document.getElementById("sd-topline-color-1");
+const sdToplineColor2 = document.getElementById("sd-topline-color-2");
+
+function applySdTopLine() {
+  const board = document.getElementById("showdown-board");
+  const line = document.getElementById("sd-top-line");
+  if (!board || !line) return;
+  board.classList.toggle("show-topline", sdToplineToggle.checked);
+  line.style.height = sdToplineThickness.value + "px";
+  if (sdToplineThicknessValue)
+    sdToplineThicknessValue.textContent = sdToplineThickness.value + "px";
+  line.style.background = `linear-gradient(90deg, ${sdToplineColor1.value} 0%, ${sdToplineColor2.value} 100%)`;
+}
+
+sdToplineToggle.checked = localStorage.getItem(SD_TOPLINE_PREF_KEY) === "1";
+const savedSdToplineThickness = localStorage.getItem(SD_TOPLINE_THICKNESS_KEY);
+if (savedSdToplineThickness != null)
+  sdToplineThickness.value = savedSdToplineThickness;
+const savedSdToplineColor1 = localStorage.getItem(SD_TOPLINE_COLOR1_KEY);
+if (savedSdToplineColor1) sdToplineColor1.value = savedSdToplineColor1;
+const savedSdToplineColor2 = localStorage.getItem(SD_TOPLINE_COLOR2_KEY);
+if (savedSdToplineColor2) sdToplineColor2.value = savedSdToplineColor2;
+
+applySdTopLine();
+
+sdToplineToggle.addEventListener("change", () => {
+  localStorage.setItem(SD_TOPLINE_PREF_KEY, sdToplineToggle.checked ? "1" : "0");
+  applySdTopLine();
+});
+sdToplineThickness.addEventListener("input", () => {
+  localStorage.setItem(SD_TOPLINE_THICKNESS_KEY, sdToplineThickness.value);
+  applySdTopLine();
+});
+sdToplineColor1.addEventListener("input", () => {
+  localStorage.setItem(SD_TOPLINE_COLOR1_KEY, sdToplineColor1.value);
+  applySdTopLine();
+});
+sdToplineColor2.addEventListener("input", () => {
+  localStorage.setItem(SD_TOPLINE_COLOR2_KEY, sdToplineColor2.value);
+  applySdTopLine();
 });
 
 /* ============================================================

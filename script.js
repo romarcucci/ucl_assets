@@ -135,6 +135,7 @@ function hexToRgba(hex, alpha) {
 const LINEUP_STORAGE_KEY = "ucl-lineup-v1";
 const SAVED_TEAMS_KEY = "ucl-lineup-teams-v1";
 const SAVED_FORMATIONS_KEY = "ucl-lineup-formations-v1";
+const SAVED_STYLES_KEY = "ucl-lineup-styles-v1";
 
 function collectLineupData() {
   return {
@@ -399,6 +400,119 @@ function deleteSelectedFormation() {
   formations.splice(idx, 1);
   setSavedFormations(formations);
   renderSavedFormationsList();
+}
+
+/* ----- Styles de fond sauvegardés (couleurs + opacité + image + lignes) ----- */
+function getSavedStyles() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_STYLES_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+function setSavedStyles(list) {
+  localStorage.setItem(SAVED_STYLES_KEY, JSON.stringify(list));
+}
+function renderSavedStylesList() {
+  const sel = document.getElementById("l-saved-style-select");
+  if (!sel) return;
+  const styles = getSavedStyles();
+  if (styles.length === 0) {
+    sel.innerHTML = '<option value="">— Aucun style sauvegardé —</option>';
+  } else {
+    sel.innerHTML = styles
+      .map((s, i) => `<option value="${i}">${s.name}</option>`)
+      .join("");
+  }
+}
+function collectStyleData() {
+  return {
+    colorBg: document.getElementById("l-color-bg").value,
+    bgOpacity: document.getElementById("l-bg-opacity").value,
+    bgImageEnabled: document.getElementById("l-bg-image-toggle").checked,
+    bgImageFile: document.getElementById("l-bg-image-select").value,
+    showStripes: document.getElementById("l-pitch-stripes").checked,
+    showDivider: document.getElementById("l-divider-toggle").checked,
+    dividerThickness: document.getElementById("l-divider-thickness").value,
+    dividerColor1: document.getElementById("l-divider-color-1").value,
+    dividerColor2: document.getElementById("l-divider-color-2").value,
+  };
+}
+function applyStyleData(data) {
+  if (data.colorBg) document.getElementById("l-color-bg").value = data.colorBg;
+  if (data.bgOpacity != null) document.getElementById("l-bg-opacity").value = data.bgOpacity;
+  if (typeof data.bgImageEnabled === "boolean") {
+    document.getElementById("l-bg-image-toggle").checked = data.bgImageEnabled;
+    localStorage.setItem(BG_IMAGE_PREF_KEY, data.bgImageEnabled ? "1" : "0");
+  }
+  if (data.bgImageFile != null) {
+    document.getElementById("l-bg-image-select").value = data.bgImageFile;
+    localStorage.setItem(BG_IMAGE_FILE_KEY, data.bgImageFile);
+  }
+  if (typeof data.showStripes === "boolean") {
+    document.getElementById("l-pitch-stripes").checked = data.showStripes;
+    localStorage.setItem(STRIPES_PREF_KEY, data.showStripes ? "1" : "0");
+    document.getElementById("lb-pitch").classList.toggle("show-stripes", data.showStripes);
+  }
+  if (typeof data.showDivider === "boolean") {
+    document.getElementById("l-divider-toggle").checked = data.showDivider;
+    localStorage.setItem(DIVIDER_PREF_KEY, data.showDivider ? "1" : "0");
+  }
+  if (data.dividerThickness) {
+    document.getElementById("l-divider-thickness").value = data.dividerThickness;
+    localStorage.setItem(DIVIDER_THICKNESS_KEY, data.dividerThickness);
+  }
+  if (data.dividerColor1) {
+    document.getElementById("l-divider-color-1").value = data.dividerColor1;
+    localStorage.setItem(DIVIDER_COLOR1_KEY, data.dividerColor1);
+  }
+  if (data.dividerColor2) {
+    document.getElementById("l-divider-color-2").value = data.dividerColor2;
+    localStorage.setItem(DIVIDER_COLOR2_KEY, data.dividerColor2);
+  }
+  if (typeof applyBgImage === "function") applyBgImage();
+  if (typeof applyDivider === "function") applyDivider();
+  updateLineupCommon();
+}
+function saveCurrentAsStyle() {
+  const nameInput = document.getElementById("l-save-style-name");
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert("Donne un nom au style.");
+    return;
+  }
+  const styles = getSavedStyles();
+  const existing = styles.findIndex((s) => s.name === name);
+  const entry = { name, data: collectStyleData() };
+  if (existing >= 0) {
+    if (!confirm(`Un style "${name}" existe déjà. L'écraser ?`)) return;
+    styles[existing] = entry;
+  } else {
+    styles.push(entry);
+  }
+  setSavedStyles(styles);
+  nameInput.value = "";
+  renderSavedStylesList();
+  const idx = styles.findIndex((s) => s.name === name);
+  document.getElementById("l-saved-style-select").value = String(idx);
+}
+function loadSelectedStyle() {
+  const sel = document.getElementById("l-saved-style-select");
+  const idx = parseInt(sel.value, 10);
+  const styles = getSavedStyles();
+  if (isNaN(idx) || !styles[idx]) return;
+  applyStyleData(styles[idx].data);
+  document.getElementById("l-save-style-name").value = styles[idx].name;
+}
+function deleteSelectedStyle() {
+  const sel = document.getElementById("l-saved-style-select");
+  const idx = parseInt(sel.value, 10);
+  const styles = getSavedStyles();
+  if (isNaN(idx) || !styles[idx]) return;
+  if (!confirm(`Supprimer le style "${styles[idx].name}" ?`)) return;
+  styles.splice(idx, 1);
+  setSavedStyles(styles);
+  renderSavedStylesList();
 }
 
 function renderStartersEditor() {
@@ -749,6 +863,11 @@ document
   .addEventListener("click", deleteSelectedFormation);
 renderSavedFormationsList();
 
+document.getElementById("l-save-style").addEventListener("click", saveCurrentAsStyle);
+document.getElementById("l-load-style").addEventListener("click", loadSelectedStyle);
+document.getElementById("l-delete-style").addEventListener("click", deleteSelectedStyle);
+renderSavedStylesList();
+
 /* ----- Export / Import JSON (équipes + formations) ----- */
 function exportSavesToJson() {
   const payload = {
@@ -756,6 +875,7 @@ function exportSavesToJson() {
     exportedAt: new Date().toISOString(),
     teams: getSavedTeams(),
     formations: getSavedFormations(),
+    styles: getSavedStyles(),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
@@ -784,11 +904,12 @@ function importSavesFromJson(file) {
     const importedFormations = Array.isArray(parsed.formations)
       ? parsed.formations
       : [];
-    if (!importedTeams.length && !importedFormations.length) {
-      alert("Aucune équipe ni formation trouvée dans le fichier.");
+    const importedStyles = Array.isArray(parsed.styles) ? parsed.styles : [];
+    if (!importedTeams.length && !importedFormations.length && !importedStyles.length) {
+      alert("Aucune équipe, formation ou style trouvé dans le fichier.");
       return;
     }
-    const msg = `Importer ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s) ?\n\nLes entrées avec le même nom seront écrasées par celles du fichier.`;
+    const msg = `Importer ${importedTeams.length} équipe(s), ${importedFormations.length} formation(s) et ${importedStyles.length} style(s) ?\n\nLes entrées avec le même nom seront écrasées par celles du fichier.`;
     if (!confirm(msg)) return;
     const teams = getSavedTeams();
     importedTeams.forEach((t) => {
@@ -806,10 +927,19 @@ function importSavesFromJson(file) {
       else formations.push(f);
     });
     setSavedFormations(formations);
+    const styles = getSavedStyles();
+    importedStyles.forEach((s) => {
+      if (!s || typeof s.name !== "string") return;
+      const i = styles.findIndex((x) => x.name === s.name);
+      if (i >= 0) styles[i] = s;
+      else styles.push(s);
+    });
+    setSavedStyles(styles);
     renderSavedTeamsList();
     renderSavedFormationsList();
+    renderSavedStylesList();
     alert(
-      `Import terminé : ${importedTeams.length} équipe(s) et ${importedFormations.length} formation(s).`,
+      `Import terminé : ${importedTeams.length} équipe(s), ${importedFormations.length} formation(s) et ${importedStyles.length} style(s).`,
     );
   };
   reader.readAsText(file);

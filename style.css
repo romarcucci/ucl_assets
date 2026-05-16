@@ -369,6 +369,47 @@ body {
 .collapsible-body {
   padding: 12px 12px 6px;
 }
+/* Nested collapsibles (sub-sections) */
+.collapsible-nested {
+  background: #161b22;
+  border-color: #21262d;
+  margin-bottom: 6px;
+}
+.collapsible-nested > summary {
+  font-size: 11px;
+  color: #8b949e;
+  letter-spacing: 0.3px;
+  padding: 7px 28px 7px 10px;
+}
+.collapsible-nested[open] > summary {
+  color: #c9d1d9;
+  border-bottom-color: #21262d;
+}
+.collapsible-nested > .collapsible-body {
+  padding: 10px 10px 4px;
+}
+
+/* Header actions (right) */
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.btn-header {
+  background: #21262d;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-header:hover {
+  background: #30363d;
+  border-color: #58a6ff;
+}
 
 /* Checkbox field */
 .checkbox-field {
@@ -770,9 +811,18 @@ body {
   background-repeat: no-repeat;
   pointer-events: none;
   display: none;
+  filter: grayscale(100%) brightness(0.55) contrast(0.85);
+  mix-blend-mode: luminosity;
 }
-.lb-pitch.has-bg-image .lb-bg-image {
+.lineup-board.has-bg-image .lb-bg-image {
   display: block;
+}
+/* Ensure flex children paint above the absolutely-positioned bg-image */
+.lineup-board > .lb-header,
+.lineup-board > .lb-divider,
+.lineup-board > .lb-body,
+.lineup-board > .lb-footer {
+  position: relative;
 }
 .lb-pitch:not(.show-stripes) .lb-pitch-stripes {
   display: none;
@@ -902,17 +952,21 @@ body {
 .lb-coach:empty {
   display: none;
 }
-.lb-divider {
+.lb-divider,
+.lb-top-line {
   flex-shrink: 0;
   height: 2px;
   background: linear-gradient(
     90deg,
     var(--divider-color-1, #14b8a6) 0%,
+    var(--divider-color-1, #14b8a6) 25%,
+    var(--divider-color-2, #14b8a6) 75%,
     var(--divider-color-2, #14b8a6) 100%
   );
   display: none;
 }
-.lineup-board.show-divider .lb-divider {
+.lineup-board.show-divider .lb-divider,
+.lineup-board.show-divider .lb-top-line {
   display: block;
 }
 .lb-pitch-penalty {

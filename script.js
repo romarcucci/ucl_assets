@@ -289,7 +289,11 @@ function saveCurrentAsTeam() {
   }
   const teams = getSavedTeams();
   const existing = teams.findIndex((t) => t.name === name);
-  const entry = { name, data: collectLineupData() };
+  // Exclude background-related fields from team saves — those live in "Styles de fond"
+  const teamData = collectLineupData();
+  delete teamData.colorBg;
+  delete teamData.bgOpacity;
+  const entry = { name, data: teamData };
   if (existing >= 0) {
     if (!confirm(`Une équipe "${name}" existe déjà. L'écraser ?`)) return;
     teams[existing] = entry;
@@ -431,6 +435,10 @@ function collectStyleData() {
     bgOpacity: document.getElementById("l-bg-opacity").value,
     bgImageEnabled: document.getElementById("l-bg-image-toggle").checked,
     bgImageFile: document.getElementById("l-bg-image-select").value,
+    bgImageOpacity: document.getElementById("l-bg-image-opacity").value,
+    bgImageFadeEnabled: document.getElementById("l-bg-image-fade-toggle").checked,
+    bgImageFadeDir: document.getElementById("l-bg-image-fade-dir").value,
+    bgImageFadeEnd: document.getElementById("l-bg-image-fade-end").value,
     showStripes: document.getElementById("l-pitch-stripes").checked,
     showDivider: document.getElementById("l-divider-toggle").checked,
     dividerThickness: document.getElementById("l-divider-thickness").value,
@@ -448,6 +456,22 @@ function applyStyleData(data) {
   if (data.bgImageFile != null) {
     document.getElementById("l-bg-image-select").value = data.bgImageFile;
     localStorage.setItem(BG_IMAGE_FILE_KEY, data.bgImageFile);
+  }
+  if (data.bgImageOpacity != null) {
+    document.getElementById("l-bg-image-opacity").value = data.bgImageOpacity;
+    localStorage.setItem(BG_IMAGE_OPACITY_KEY, data.bgImageOpacity);
+  }
+  if (typeof data.bgImageFadeEnabled === "boolean") {
+    document.getElementById("l-bg-image-fade-toggle").checked = data.bgImageFadeEnabled;
+    localStorage.setItem(BG_IMAGE_FADE_KEY, data.bgImageFadeEnabled ? "1" : "0");
+  }
+  if (data.bgImageFadeDir) {
+    document.getElementById("l-bg-image-fade-dir").value = data.bgImageFadeDir;
+    localStorage.setItem(BG_IMAGE_FADE_DIR_KEY, data.bgImageFadeDir);
+  }
+  if (data.bgImageFadeEnd != null) {
+    document.getElementById("l-bg-image-fade-end").value = data.bgImageFadeEnd;
+    localStorage.setItem(BG_IMAGE_FADE_END_KEY, data.bgImageFadeEnd);
   }
   if (typeof data.showStripes === "boolean") {
     document.getElementById("l-pitch-stripes").checked = data.showStripes;
@@ -1020,9 +1044,15 @@ function applyDivider() {
   if (!board || !divider) return;
   board.classList.toggle("show-divider", dividerCheckbox.checked);
   divider.style.height = dividerThickness.value + "px";
+  const topLine = document.getElementById("lb-top-line");
+  if (topLine) topLine.style.height = dividerThickness.value + "px";
   board.style.setProperty("--divider-color-1", dividerColor1.value);
   board.style.setProperty("--divider-color-2", dividerColor2.value);
   if (stop1) stop1.setAttribute("stop-color", dividerColor1.value);
+  const stop1b = document.getElementById("penalty-stop-1b");
+  const stop2a = document.getElementById("penalty-stop-2a");
+  if (stop1b) stop1b.setAttribute("stop-color", dividerColor1.value);
+  if (stop2a) stop2a.setAttribute("stop-color", dividerColor2.value);
   if (stop2) stop2.setAttribute("stop-color", dividerColor2.value);
   if (penalty) penalty.setAttribute("stroke-width", dividerThickness.value);
   if (dividerThicknessValue)
@@ -1052,14 +1082,41 @@ const BG_IMAGE_FILE_KEY = "ucl-lineup-bg-image-file-v1";
 function applyBgImage() {
   const checkbox = document.getElementById("l-bg-image-toggle");
   const select = document.getElementById("l-bg-image-select");
-  const pitch = document.getElementById("lb-pitch");
+  const board = document.getElementById("lineup-board");
   const imgDiv = document.getElementById("lb-bg-image");
-  if (!checkbox || !pitch || !imgDiv || !select) return;
-  const alpha = +document.getElementById("l-bg-opacity").value / 100;
+  if (!checkbox || !board || !imgDiv || !select) return;
+  const opSlider = document.getElementById("l-bg-image-opacity");
+  const opValueSpan = document.getElementById("l-bg-image-opacity-value");
+  const fadeToggle = document.getElementById("l-bg-image-fade-toggle");
+  const fadeDir = document.getElementById("l-bg-image-fade-dir");
+  const fadeEnd = document.getElementById("l-bg-image-fade-end");
+  const fadeEndSpan = document.getElementById("l-bg-image-fade-end-value");
+
+  const imgOpacity = (+opSlider.value) / 100;
+  if (opValueSpan) opValueSpan.textContent = opSlider.value + "%";
+  const fadeEndRatio = (+fadeEnd.value) / 100;
+  if (fadeEndSpan) fadeEndSpan.textContent = fadeEnd.value + "%";
+
   const hasFile = !!select.value;
-  pitch.classList.toggle("has-bg-image", checkbox.checked && hasFile);
+  board.classList.toggle("has-bg-image", checkbox.checked && hasFile);
   imgDiv.style.backgroundImage = hasFile ? `url('./${select.value}')` : "none";
-  imgDiv.style.opacity = alpha;
+  imgDiv.style.opacity = imgOpacity;
+
+  if (fadeToggle.checked) {
+    const dirMap = {
+      right: "to right",
+      left: "to left",
+      bottom: "to bottom",
+      top: "to top",
+    };
+    const dir = dirMap[fadeDir.value] || "to right";
+    const grad = `linear-gradient(${dir}, rgba(0,0,0,1), rgba(0,0,0,${fadeEndRatio}))`;
+    imgDiv.style.maskImage = grad;
+    imgDiv.style.webkitMaskImage = grad;
+  } else {
+    imgDiv.style.maskImage = "";
+    imgDiv.style.webkitMaskImage = "";
+  }
 }
 const bgImageCheckbox = document.getElementById("l-bg-image-toggle");
 const bgImageSelect = document.getElementById("l-bg-image-select");
@@ -1080,6 +1137,40 @@ bgImageSelect.addEventListener("change", () => {
   localStorage.setItem(BG_IMAGE_FILE_KEY, bgImageSelect.value);
   applyBgImage();
 });
+
+/* Opacité image + fade gradient persistance */
+const BG_IMAGE_OPACITY_KEY = "ucl-lineup-bg-image-opacity-v1";
+const BG_IMAGE_FADE_KEY = "ucl-lineup-bg-image-fade-v1";
+const BG_IMAGE_FADE_DIR_KEY = "ucl-lineup-bg-image-fade-dir-v1";
+const BG_IMAGE_FADE_END_KEY = "ucl-lineup-bg-image-fade-end-v1";
+const bgImageOpacity = document.getElementById("l-bg-image-opacity");
+const bgImageFadeToggle = document.getElementById("l-bg-image-fade-toggle");
+const bgImageFadeDir = document.getElementById("l-bg-image-fade-dir");
+const bgImageFadeEnd = document.getElementById("l-bg-image-fade-end");
+const savedImgOp = localStorage.getItem(BG_IMAGE_OPACITY_KEY);
+if (savedImgOp != null) bgImageOpacity.value = savedImgOp;
+bgImageFadeToggle.checked = localStorage.getItem(BG_IMAGE_FADE_KEY) === "1";
+const savedFadeDir = localStorage.getItem(BG_IMAGE_FADE_DIR_KEY);
+if (savedFadeDir) bgImageFadeDir.value = savedFadeDir;
+const savedFadeEnd = localStorage.getItem(BG_IMAGE_FADE_END_KEY);
+if (savedFadeEnd != null) bgImageFadeEnd.value = savedFadeEnd;
+bgImageOpacity.addEventListener("input", () => {
+  localStorage.setItem(BG_IMAGE_OPACITY_KEY, bgImageOpacity.value);
+  applyBgImage();
+});
+bgImageFadeToggle.addEventListener("change", () => {
+  localStorage.setItem(BG_IMAGE_FADE_KEY, bgImageFadeToggle.checked ? "1" : "0");
+  applyBgImage();
+});
+bgImageFadeDir.addEventListener("change", () => {
+  localStorage.setItem(BG_IMAGE_FADE_DIR_KEY, bgImageFadeDir.value);
+  applyBgImage();
+});
+bgImageFadeEnd.addEventListener("input", () => {
+  localStorage.setItem(BG_IMAGE_FADE_END_KEY, bgImageFadeEnd.value);
+  applyBgImage();
+});
+applyBgImage();
 
 /* ============================================================
    3) SCORE BANNER

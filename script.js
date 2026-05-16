@@ -2559,6 +2559,9 @@ document.getElementById("export-btn").addEventListener("click", async () => {
     document.querySelectorAll(".collapsible").forEach(setupCollapsible);
     document.addEventListener("dragover", onDragOver);
     document.addEventListener("drop", onDrop);
+    document
+      .querySelectorAll(".editor-panel")
+      .forEach((p) => p.classList.add("ready"));
   }
 
   if (document.readyState === "loading") {

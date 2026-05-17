@@ -1063,47 +1063,350 @@
         <section class="editor-section" data-editor="score">
           <h2>Bandeau score live</h2>
 
-          <label class="field">
-            <span>Temps (ex: 0:18, 45+2)</span>
-            <input type="text" id="s-time" value="0:18" />
-          </label>
+          <details class="collapsible">
+            <summary>Équipes</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Équipe domicile</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Code (3 lettres)</span>
+                      <input
+                        type="text"
+                        id="s-home"
+                        value="LIV"
+                        maxlength="4"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Score</span>
+                      <input
+                        type="number"
+                        id="s-home-score"
+                        value="0"
+                        min="0"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Couleur</span>
+                      <input type="color" id="s-home-color" value="#c00000" />
+                    </label>
+                  </div>
+                </div>
+              </details>
 
-          <h3>Équipe domicile</h3>
-          <div class="row">
-            <label class="field">
-              <span>Code (3 lettres)</span>
-              <input type="text" id="s-home" value="LIV" maxlength="4" />
-            </label>
-            <label class="field">
-              <span>Score</span>
-              <input type="number" id="s-home-score" value="0" min="0" />
-            </label>
-            <label class="field">
-              <span>Couleur</span>
-              <input type="color" id="s-home-color" value="#c00000" />
-            </label>
-          </div>
+              <details class="collapsible collapsible-nested">
+                <summary>Équipe extérieure</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Code (3 lettres)</span>
+                      <input
+                        type="text"
+                        id="s-away"
+                        value="RMA"
+                        maxlength="4"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Score</span>
+                      <input
+                        type="number"
+                        id="s-away-score"
+                        value="0"
+                        min="0"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Couleur</span>
+                      <input type="color" id="s-away-color" value="#1a3a8a" />
+                    </label>
+                  </div>
+                </div>
+              </details>
 
-          <h3>Équipe extérieure</h3>
-          <div class="row">
-            <label class="field">
-              <span>Code (3 lettres)</span>
-              <input type="text" id="s-away" value="RMA" maxlength="4" />
-            </label>
-            <label class="field">
-              <span>Score</span>
-              <input type="number" id="s-away-score" value="0" min="0" />
-            </label>
-            <label class="field">
-              <span>Couleur</span>
-              <input type="color" id="s-away-color" value="#1a3a8a" />
-            </label>
-          </div>
+              <label class="field">
+                <span
+                  >Largeur des bandeaux d'équipe
+                  <span id="s-band-width-value">6px</span></span
+                >
+                <input
+                  type="range"
+                  id="s-band-width"
+                  min="0"
+                  max="30"
+                  value="6"
+                />
+              </label>
+            </div>
+          </details>
 
-          <label class="field">
-            <span>Couleur fond central</span>
-            <input type="color" id="s-bg" value="#0a1a4a" />
-          </label>
+          <details class="collapsible">
+            <summary>Logo central (ballon)</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Couleur du fond</span>
+                  <input
+                    type="color"
+                    id="s-ball-box-color"
+                    value="#1a1a1a"
+                  />
+                </label>
+                <label class="field">
+                  <span>Couleur du ballon</span>
+                  <input type="color" id="s-ball-color" value="#ffffff" />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Trophée (séparateur)</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Couleur du trophée</span>
+                <input type="color" id="s-trophy-color" value="#ffffff" />
+              </label>
+              <label class="field">
+                <span
+                  >Taille du trophée
+                  <span id="s-trophy-size-value">24px</span></span
+                >
+                <input
+                  type="range"
+                  id="s-trophy-size"
+                  min="0"
+                  max="48"
+                  value="24"
+                />
+              </label>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Fond central</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Couleur</span>
+                <input type="color" id="s-bg" value="#0a1a4a" />
+              </label>
+              <label class="field">
+                <span
+                  >Opacité
+                  <span id="s-bg-opacity-value">100%</span></span
+                >
+                <input
+                  type="range"
+                  id="s-bg-opacity"
+                  min="0"
+                  max="100"
+                  value="100"
+                />
+              </label>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Image de fond</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="s-bg-image-toggle" />
+                <span>Activer l'image de fond</span>
+              </label>
+              <label class="field">
+                <span>Choix de l'image</span>
+                <select id="s-bg-image-select">
+                  <option value="">Aucune image</option>
+                  <option value="backgrounds/lineup_bg_01.png">
+                    Background 01
+                  </option>
+                  <option value="backgrounds/lineup_bg_02.png">
+                    Background 02
+                  </option>
+                  <option value="backgrounds/lineup_bg_03.png">
+                    Background 03
+                  </option>
+                  <option value="backgrounds/lineup_bg_04.png">
+                    Background 04
+                  </option>
+                  <option value="backgrounds/lineup_bg_05.png">
+                    Background 05
+                  </option>
+                </select>
+              </label>
+              <label class="field">
+                <span
+                  >Opacité de l'image
+                  <span id="s-bg-image-opacity-value">50%</span></span
+                >
+                <input
+                  type="range"
+                  id="s-bg-image-opacity"
+                  min="0"
+                  max="100"
+                  value="50"
+                />
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="s-bg-image-fade-toggle" />
+                <span>Dégradé d'opacité sur l'image</span>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Direction du fade</span>
+                  <select id="s-bg-image-fade-dir">
+                    <option value="right">→ vers droite</option>
+                    <option value="left">← vers gauche</option>
+                    <option value="bottom">↓ vers bas</option>
+                    <option value="top">↑ vers haut</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span
+                    >Opacité fin
+                    <span id="s-bg-image-fade-end-value">0%</span></span
+                  >
+                  <input
+                    type="range"
+                    id="s-bg-image-fade-end"
+                    min="0"
+                    max="100"
+                    value="0"
+                  />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Typographie</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Codes équipe</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="s-team-font">
+                      <option value="condensed" selected>
+                        Barlow Condensed
+                      </option>
+                      <option value="system">Système</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="s-team-size-value">20px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="s-team-size"
+                        min="10"
+                        max="40"
+                        value="20"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="s-team-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800" selected>800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Score</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="s-score-font">
+                      <option value="condensed" selected>
+                        Barlow Condensed
+                      </option>
+                      <option value="system">Système</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="s-score-size-value">24px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="s-score-size"
+                        min="10"
+                        max="48"
+                        value="24"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="s-score-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900" selected>900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Sauvegardes</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="s-saved-select"></select>
+                <button class="btn-secondary" id="s-load" type="button">
+                  Charger
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="s-delete"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="s-save-name"
+                  placeholder="Nom de la sauvegarde…"
+                />
+                <button class="btn-primary" id="s-save" type="button">
+                  💾 Enregistrer
+                </button>
+              </div>
+            </div>
+          </details>
         </section>
 
         <!-- ============ BRACKET EDITOR ============ -->
@@ -1214,10 +1517,6 @@
                       </select>
                     </label>
                   </div>
-                  <label class="field">
-                    <span>Texte central</span>
-                    <input type="text" id="sd-vs-text" value="" />
-                  </label>
                   <label class="field">
                     <span>Lieu</span>
                     <input type="text" id="sd-place" value="PARIS" />
@@ -1489,46 +1788,55 @@
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>VS (centre)</summary>
+                <summary>Logos (tailles)</summary>
                 <div class="collapsible-body">
-                  <label class="field">
-                    <span>Police</span>
-                    <select id="sd-vs-font">
-                      <option value="cinzel" selected>Cinzel (serif)</option>
-                      <option value="system">Système</option>
-                      <option value="condensed">Barlow Condensed</option>
-                      <option value="arial">Arial / Helvetica</option>
-                      <option value="impact">Impact</option>
-                      <option value="mono">Monospace</option>
-                    </select>
+                  <label class="checkbox-field">
+                    <input
+                      type="checkbox"
+                      id="sd-center-logo-toggle"
+                      checked
+                    />
+                    <span>Afficher le logo central</span>
                   </label>
-                  <div class="row">
-                    <label class="field">
-                      <span
-                        >Taille <span id="sd-vs-size-value">70px</span></span
-                      >
-                      <input
-                        type="range"
-                        id="sd-vs-size"
-                        min="24"
-                        max="140"
-                        value="70"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Poids</span>
-                      <select id="sd-vs-weight">
-                        <option value="100">100 Thin</option>
-                        <option value="300">300 Light</option>
-                        <option value="400">400 Regular</option>
-                        <option value="500">500 Medium</option>
-                        <option value="600">600 Semibold</option>
-                        <option value="700" selected>700 Bold</option>
-                        <option value="800">800 Extra-Bold</option>
-                        <option value="900">900 Black</option>
-                      </select>
-                    </label>
-                  </div>
+                  <label class="field">
+                    <span
+                      >Logo central
+                      <span id="sd-center-logo-size-value">200px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-center-logo-size"
+                      min="60"
+                      max="300"
+                      value="200"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Logos d'équipe
+                      <span id="sd-team-logo-size-value">200px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-team-logo-size"
+                      min="80"
+                      max="300"
+                      value="200"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Écart entre les équipes
+                      <span id="sd-team-gap-value">0px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-team-gap"
+                      min="-300"
+                      max="60"
+                      value="0"
+                    />
+                  </label>
                 </div>
               </details>
 
@@ -1843,11 +2151,14 @@
         <!-- Score preview -->
         <div class="preview-container" data-preview="score">
           <div class="score-banner" id="score-banner">
-            <div class="sb-time" id="sb-time">⚽ 0:18</div>
+            <div class="sb-bg-image" id="sb-bg-image"></div>
+            <div class="sb-ball-box" id="sb-ball-box">
+              <div class="sb-ball" id="sb-ball"></div>
+            </div>
             <div class="sb-home-color" id="sb-home-color"></div>
             <div class="sb-team sb-home" id="sb-home">LIV</div>
             <div class="sb-score" id="sb-home-score">0</div>
-            <div class="sb-sep">|</div>
+            <div class="sb-sep"><div class="sb-trophy"></div></div>
             <div class="sb-score" id="sb-away-score">0</div>
             <div class="sb-team sb-away" id="sb-away">RMA</div>
             <div class="sb-away-color" id="sb-away-color"></div>
@@ -1929,7 +2240,12 @@
                 <div class="sd-logo" id="sd-logo-1"></div>
                 <div class="sd-team-name" id="sd-name-1">PSG</div>
               </div>
-              <div class="sd-vs" id="sd-vs"></div>
+              <img
+                class="sd-center-logo"
+                id="sd-center-logo"
+                src="./Logos/ucl_logo.png"
+                alt="UCL"
+              />
               <div class="sd-team sd-team-right">
                 <div class="sd-logo" id="sd-logo-2"></div>
                 <div class="sd-team-name" id="sd-name-2">REAL MADRID</div>

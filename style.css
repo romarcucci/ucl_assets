@@ -147,6 +147,60 @@ body {
   background: #0d1117;
   cursor: pointer;
 }
+.color-picker-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.color-picker-row > input[type="color"] {
+  flex: 1 1 auto;
+  min-width: 50px;
+}
+.color-save-btn {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: #58a6ff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.color-save-btn:hover {
+  background: #21262d;
+  border-color: #58a6ff;
+}
+.color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1 1 100%;
+}
+.color-palette:empty {
+  display: none;
+}
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #30363d;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    transform 0.1s,
+    border-color 0.1s;
+}
+.color-swatch:hover {
+  transform: scale(1.15);
+  border-color: #58a6ff;
+}
 .field input[type="file"] {
   width: 100%;
   padding: 6px;
@@ -1053,25 +1107,57 @@ body {
 
 /* ========== 3) SCORE BANNER ========== */
 .score-banner {
-  display: flex;
+  display: inline-flex;
   align-items: stretch;
   height: 50px;
-  min-width: 380px;
   font-family: var(--font-data);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
 }
-.sb-time {
-  background: #1a1a1a;
-  color: #fff;
+.sb-bg-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  display: none;
+}
+.score-banner.has-bg-image .sb-bg-image {
+  display: block;
+}
+.score-banner > .sb-ball-box,
+.score-banner > .sb-home-color,
+.score-banner > .sb-away-color,
+.score-banner > .sb-team,
+.score-banner > .sb-score,
+.score-banner > .sb-sep {
+  position: relative;
+  z-index: 1;
+}
+.sb-ball-box {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 14px;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  justify-content: center;
+  background: #1a1a1a;
+}
+.sb-ball {
+  width: 30px;
+  height: 30px;
+  background-color: #ffffff;
+  mask-image: url("./Logos/ucl_ball.png");
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url("./Logos/ucl_ball.png");
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
 }
 .sb-home-color,
 .sb-away-color {
@@ -1103,10 +1189,23 @@ body {
 }
 .sb-sep {
   background: #0a1a4a;
-  color: rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
-  font-weight: 300;
+  justify-content: center;
+  padding: 0 8px;
+}
+.sb-trophy {
+  width: 24px;
+  height: 24px;
+  background-color: #ffffff;
+  mask-image: url("./Logos/trophy_logo.png");
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url("./Logos/trophy_logo.png");
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
 }
 
 /* ========== 4) BRACKET ========== */
@@ -1431,6 +1530,14 @@ body {
   align-items: center;
   gap: 4px;
 }
+.sd-center-logo {
+  height: 200px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  padding: 0 30px;
+  filter: brightness(0) invert(1);
+}
 .sd-match {
   text-align: center;
   font-family:
@@ -1450,11 +1557,12 @@ body {
   gap: 30px;
 }
 .sd-team {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
+  overflow: visible;
 }
 .sd-logo {
   width: 200px;
@@ -1483,17 +1591,7 @@ body {
   letter-spacing: 4px;
   text-transform: uppercase;
   text-align: center;
-}
-.sd-vs {
-  font-family: "Cinzel", "Trajan Pro", serif;
-  font-size: 70px;
-  font-weight: 700;
-  letter-spacing: 6px;
-  flex-shrink: 0;
-  padding: 0 40px;
-}
-.sd-vs:empty {
-  display: none;
+  white-space: nowrap;
 }
 .sd-meta-item {
   font-family:

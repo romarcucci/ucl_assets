@@ -1696,7 +1696,6 @@ applyBgImage();
 /* ============================================================
    3) SCORE BANNER
    ============================================================ */
-const sTime = document.getElementById("s-time");
 const sHome = document.getElementById("s-home");
 const sHomeScore = document.getElementById("s-home-score");
 const sHomeColor = document.getElementById("s-home-color");
@@ -1704,24 +1703,91 @@ const sAway = document.getElementById("s-away");
 const sAwayScore = document.getElementById("s-away-score");
 const sAwayColor = document.getElementById("s-away-color");
 const sBg = document.getElementById("s-bg");
+const sBgOpacity = document.getElementById("s-bg-opacity");
+const sBgOpacityValue = document.getElementById("s-bg-opacity-value");
+const sBallBoxColor = document.getElementById("s-ball-box-color");
+const sBallColor = document.getElementById("s-ball-color");
+const sBandWidth = document.getElementById("s-band-width");
+const sBandWidthValue = document.getElementById("s-band-width-value");
+const sTrophyColor = document.getElementById("s-trophy-color");
+const sTrophySize = document.getElementById("s-trophy-size");
+const sTrophySizeValue = document.getElementById("s-trophy-size-value");
+const sTeamFont = document.getElementById("s-team-font");
+const sTeamSize = document.getElementById("s-team-size");
+const sTeamSizeValue = document.getElementById("s-team-size-value");
+const sTeamWeight = document.getElementById("s-team-weight");
+const sScoreFont = document.getElementById("s-score-font");
+const sScoreSize = document.getElementById("s-score-size");
+const sScoreSizeValue = document.getElementById("s-score-size-value");
+const sScoreWeight = document.getElementById("s-score-weight");
+
+const S_FONTS = {
+  condensed:
+    "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
+  system:
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
+  cinzel: "'Cinzel', 'Trajan Pro', serif",
+  arial: "Arial, Helvetica, sans-serif",
+  impact: "Impact, 'Arial Black', 'Helvetica Inserat', sans-serif",
+  mono: "'Courier New', Courier, monospace",
+};
 
 function updateScoreBanner() {
-  document.getElementById("sb-time").innerHTML = `⚽ ${sTime.value}`;
   document.getElementById("sb-home").textContent = sHome.value;
   document.getElementById("sb-home-score").textContent = sHomeScore.value;
   document.getElementById("sb-away").textContent = sAway.value;
   document.getElementById("sb-away-score").textContent = sAwayScore.value;
   document.getElementById("sb-home-color").style.background = sHomeColor.value;
   document.getElementById("sb-away-color").style.background = sAwayColor.value;
+  document.getElementById("sb-ball-box").style.background = sBallBoxColor.value;
+  document.getElementById("sb-ball").style.backgroundColor = sBallColor.value;
+  const bandPx = sBandWidth.value + "px";
+  document.getElementById("sb-home-color").style.width = bandPx;
+  document.getElementById("sb-away-color").style.width = bandPx;
+  if (sBandWidthValue) sBandWidthValue.textContent = sBandWidth.value + "px";
+
+  const trophyEl = document.querySelector("#score-banner .sb-trophy");
+  if (trophyEl) {
+    const tPx = sTrophySize.value + "px";
+    trophyEl.style.width = tPx;
+    trophyEl.style.height = tPx;
+    trophyEl.style.backgroundColor = sTrophyColor.value;
+  }
+  if (sTrophySizeValue)
+    sTrophySizeValue.textContent = sTrophySize.value + "px";
+
+  const teamFont = S_FONTS[sTeamFont.value] || S_FONTS.condensed;
+  ["sb-home", "sb-away"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.fontFamily = teamFont;
+      el.style.fontSize = sTeamSize.value + "px";
+      el.style.fontWeight = sTeamWeight.value;
+    }
+  });
+  if (sTeamSizeValue) sTeamSizeValue.textContent = sTeamSize.value + "px";
+
+  const scoreFont = S_FONTS[sScoreFont.value] || S_FONTS.condensed;
+  ["sb-home-score", "sb-away-score"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.fontFamily = scoreFont;
+      el.style.fontSize = sScoreSize.value + "px";
+      el.style.fontWeight = sScoreWeight.value;
+    }
+  });
+  if (sScoreSizeValue) sScoreSizeValue.textContent = sScoreSize.value + "px";
+  const bgAlpha = +sBgOpacity.value / 100;
+  const bgRgba = hexToRgba(sBg.value, bgAlpha);
+  if (sBgOpacityValue) sBgOpacityValue.textContent = sBgOpacity.value + "%";
   document
     .querySelectorAll(
       "#score-banner .sb-team, #score-banner .sb-score, #score-banner .sb-sep",
     )
-    .forEach((el) => (el.style.background = sBg.value));
+    .forEach((el) => (el.style.background = bgRgba));
 }
 
 [
-  sTime,
   sHome,
   sHomeScore,
   sHomeColor,
@@ -1729,8 +1795,350 @@ function updateScoreBanner() {
   sAwayScore,
   sAwayColor,
   sBg,
+  sBgOpacity,
+  sBallBoxColor,
+  sBallColor,
+  sBandWidth,
+  sTrophyColor,
+  sTrophySize,
+  sTeamSize,
+  sScoreSize,
 ].forEach((el) => el.addEventListener("input", updateScoreBanner));
+[sTeamFont, sTeamWeight, sScoreFont, sScoreWeight].forEach((el) =>
+  el.addEventListener("change", updateScoreBanner),
+);
 updateScoreBanner();
+
+/* ----- Score banner background image ----- */
+const S_BG_IMAGE_PREF_KEY = "ucl-score-bg-image-v1";
+const S_BG_IMAGE_FILE_KEY = "ucl-score-bg-image-file-v1";
+const S_BG_IMAGE_OPACITY_KEY = "ucl-score-bg-image-opacity-v1";
+const S_BG_IMAGE_FADE_KEY = "ucl-score-bg-image-fade-v1";
+const S_BG_IMAGE_FADE_DIR_KEY = "ucl-score-bg-image-fade-dir-v1";
+const S_BG_IMAGE_FADE_END_KEY = "ucl-score-bg-image-fade-end-v1";
+const S_BALL_BOX_COLOR_KEY = "ucl-score-ball-box-color-v1";
+const S_BALL_COLOR_KEY = "ucl-score-ball-color-v1";
+const S_BG_OPACITY_KEY = "ucl-score-bg-opacity-v1";
+const S_BAND_WIDTH_KEY = "ucl-score-band-width-v1";
+const S_TROPHY_COLOR_KEY = "ucl-score-trophy-color-v1";
+const S_TROPHY_SIZE_KEY = "ucl-score-trophy-size-v1";
+const S_TEAM_TYPO_KEY = "ucl-score-team-typo-v1";
+const S_SCORE_TYPO_KEY = "ucl-score-score-typo-v1";
+
+const sBgImgToggle = document.getElementById("s-bg-image-toggle");
+const sBgImgSelect = document.getElementById("s-bg-image-select");
+const sBgImgOpacity = document.getElementById("s-bg-image-opacity");
+const sBgImgOpacityValue = document.getElementById("s-bg-image-opacity-value");
+const sBgImgFadeToggle = document.getElementById("s-bg-image-fade-toggle");
+const sBgImgFadeDir = document.getElementById("s-bg-image-fade-dir");
+const sBgImgFadeEnd = document.getElementById("s-bg-image-fade-end");
+const sBgImgFadeEndValue = document.getElementById("s-bg-image-fade-end-value");
+
+function applyScoreBgImage() {
+  const board = document.getElementById("score-banner");
+  const imgDiv = document.getElementById("sb-bg-image");
+  if (!board || !imgDiv) return;
+  const imgOpacity = +sBgImgOpacity.value / 100;
+  if (sBgImgOpacityValue)
+    sBgImgOpacityValue.textContent = sBgImgOpacity.value + "%";
+  const fadeEndRatio = +sBgImgFadeEnd.value / 100;
+  if (sBgImgFadeEndValue)
+    sBgImgFadeEndValue.textContent = sBgImgFadeEnd.value + "%";
+  const hasFile = !!sBgImgSelect.value;
+  board.classList.toggle("has-bg-image", sBgImgToggle.checked && hasFile);
+  imgDiv.style.backgroundImage = hasFile
+    ? `url('./${sBgImgSelect.value}')`
+    : "none";
+  imgDiv.style.opacity = imgOpacity;
+  if (sBgImgFadeToggle.checked) {
+    const dirMap = {
+      right: "to right",
+      left: "to left",
+      bottom: "to bottom",
+      top: "to top",
+    };
+    const dir = dirMap[sBgImgFadeDir.value] || "to right";
+    const grad = `linear-gradient(${dir}, rgba(0,0,0,1), rgba(0,0,0,${fadeEndRatio}))`;
+    imgDiv.style.maskImage = grad;
+    imgDiv.style.webkitMaskImage = grad;
+  } else {
+    imgDiv.style.maskImage = "";
+    imgDiv.style.webkitMaskImage = "";
+  }
+}
+
+// Load saved state
+sBgImgToggle.checked = localStorage.getItem(S_BG_IMAGE_PREF_KEY) === "1";
+const savedSBgFile = localStorage.getItem(S_BG_IMAGE_FILE_KEY);
+if (
+  savedSBgFile &&
+  [...sBgImgSelect.options].some((o) => o.value === savedSBgFile)
+) {
+  sBgImgSelect.value = savedSBgFile;
+}
+const savedSImgOp = localStorage.getItem(S_BG_IMAGE_OPACITY_KEY);
+if (savedSImgOp != null) sBgImgOpacity.value = savedSImgOp;
+sBgImgFadeToggle.checked = localStorage.getItem(S_BG_IMAGE_FADE_KEY) === "1";
+const savedSFadeDir = localStorage.getItem(S_BG_IMAGE_FADE_DIR_KEY);
+if (savedSFadeDir) sBgImgFadeDir.value = savedSFadeDir;
+const savedSFadeEnd = localStorage.getItem(S_BG_IMAGE_FADE_END_KEY);
+if (savedSFadeEnd != null) sBgImgFadeEnd.value = savedSFadeEnd;
+const savedBallBoxColor = localStorage.getItem(S_BALL_BOX_COLOR_KEY);
+if (savedBallBoxColor) sBallBoxColor.value = savedBallBoxColor;
+const savedBallColor = localStorage.getItem(S_BALL_COLOR_KEY);
+if (savedBallColor) sBallColor.value = savedBallColor;
+const savedSBgOpacity = localStorage.getItem(S_BG_OPACITY_KEY);
+if (savedSBgOpacity != null) sBgOpacity.value = savedSBgOpacity;
+const savedSBandWidth = localStorage.getItem(S_BAND_WIDTH_KEY);
+if (savedSBandWidth != null) sBandWidth.value = savedSBandWidth;
+const savedTrophyColor = localStorage.getItem(S_TROPHY_COLOR_KEY);
+if (savedTrophyColor) sTrophyColor.value = savedTrophyColor;
+const savedTrophySize = localStorage.getItem(S_TROPHY_SIZE_KEY);
+if (savedTrophySize != null) sTrophySize.value = savedTrophySize;
+try {
+  const t = JSON.parse(localStorage.getItem(S_TEAM_TYPO_KEY) || "null");
+  if (t) {
+    if (t.font) sTeamFont.value = t.font;
+    if (t.size != null) sTeamSize.value = t.size;
+    if (t.weight) sTeamWeight.value = t.weight;
+  }
+} catch {}
+try {
+  const t = JSON.parse(localStorage.getItem(S_SCORE_TYPO_KEY) || "null");
+  if (t) {
+    if (t.font) sScoreFont.value = t.font;
+    if (t.size != null) sScoreSize.value = t.size;
+    if (t.weight) sScoreWeight.value = t.weight;
+  }
+} catch {}
+
+applyScoreBgImage();
+updateScoreBanner();
+
+sBgImgToggle.addEventListener("change", () => {
+  localStorage.setItem(S_BG_IMAGE_PREF_KEY, sBgImgToggle.checked ? "1" : "0");
+  applyScoreBgImage();
+});
+sBgImgSelect.addEventListener("change", () => {
+  localStorage.setItem(S_BG_IMAGE_FILE_KEY, sBgImgSelect.value);
+  applyScoreBgImage();
+});
+sBgImgOpacity.addEventListener("input", () => {
+  localStorage.setItem(S_BG_IMAGE_OPACITY_KEY, sBgImgOpacity.value);
+  applyScoreBgImage();
+});
+sBgImgFadeToggle.addEventListener("change", () => {
+  localStorage.setItem(
+    S_BG_IMAGE_FADE_KEY,
+    sBgImgFadeToggle.checked ? "1" : "0",
+  );
+  applyScoreBgImage();
+});
+sBgImgFadeDir.addEventListener("change", () => {
+  localStorage.setItem(S_BG_IMAGE_FADE_DIR_KEY, sBgImgFadeDir.value);
+  applyScoreBgImage();
+});
+sBgImgFadeEnd.addEventListener("input", () => {
+  localStorage.setItem(S_BG_IMAGE_FADE_END_KEY, sBgImgFadeEnd.value);
+  applyScoreBgImage();
+});
+sBallBoxColor.addEventListener("input", () => {
+  localStorage.setItem(S_BALL_BOX_COLOR_KEY, sBallBoxColor.value);
+});
+sBallColor.addEventListener("input", () => {
+  localStorage.setItem(S_BALL_COLOR_KEY, sBallColor.value);
+});
+sBgOpacity.addEventListener("input", () => {
+  localStorage.setItem(S_BG_OPACITY_KEY, sBgOpacity.value);
+});
+sBandWidth.addEventListener("input", () => {
+  localStorage.setItem(S_BAND_WIDTH_KEY, sBandWidth.value);
+});
+sTrophyColor.addEventListener("input", () => {
+  localStorage.setItem(S_TROPHY_COLOR_KEY, sTrophyColor.value);
+});
+sTrophySize.addEventListener("input", () => {
+  localStorage.setItem(S_TROPHY_SIZE_KEY, sTrophySize.value);
+});
+function saveTeamTypo() {
+  localStorage.setItem(
+    S_TEAM_TYPO_KEY,
+    JSON.stringify({
+      font: sTeamFont.value,
+      size: sTeamSize.value,
+      weight: sTeamWeight.value,
+    }),
+  );
+}
+function saveScoreTypo() {
+  localStorage.setItem(
+    S_SCORE_TYPO_KEY,
+    JSON.stringify({
+      font: sScoreFont.value,
+      size: sScoreSize.value,
+      weight: sScoreWeight.value,
+    }),
+  );
+}
+[sTeamFont, sTeamSize, sTeamWeight].forEach((el) =>
+  el.addEventListener("input", saveTeamTypo),
+);
+[sTeamFont, sTeamWeight].forEach((el) =>
+  el.addEventListener("change", saveTeamTypo),
+);
+[sScoreFont, sScoreSize, sScoreWeight].forEach((el) =>
+  el.addEventListener("input", saveScoreTypo),
+);
+[sScoreFont, sScoreWeight].forEach((el) =>
+  el.addEventListener("change", saveScoreTypo),
+);
+
+/* ----- Score banner save/load ----- */
+const S_SAVED_KEY = "ucl-score-saves-v1";
+
+function collectScoreData() {
+  return {
+    home: sHome.value,
+    homeScore: sHomeScore.value,
+    homeColor: sHomeColor.value,
+    away: sAway.value,
+    awayScore: sAwayScore.value,
+    awayColor: sAwayColor.value,
+    bg: sBg.value,
+    bgOpacity: sBgOpacity.value,
+    ballBoxColor: sBallBoxColor.value,
+    ballColor: sBallColor.value,
+    bandWidth: sBandWidth.value,
+    trophyColor: sTrophyColor.value,
+    trophySize: sTrophySize.value,
+    teamTypo: {
+      font: sTeamFont.value,
+      size: sTeamSize.value,
+      weight: sTeamWeight.value,
+    },
+    scoreTypo: {
+      font: sScoreFont.value,
+      size: sScoreSize.value,
+      weight: sScoreWeight.value,
+    },
+    bgImage: {
+      enabled: sBgImgToggle.checked,
+      file: sBgImgSelect.value,
+      opacity: sBgImgOpacity.value,
+      fadeEnabled: sBgImgFadeToggle.checked,
+      fadeDir: sBgImgFadeDir.value,
+      fadeEnd: sBgImgFadeEnd.value,
+    },
+  };
+}
+
+function applyScoreData(d) {
+  if (!d) return;
+  if (d.home != null) sHome.value = d.home;
+  if (d.homeScore != null) sHomeScore.value = d.homeScore;
+  if (d.homeColor) sHomeColor.value = d.homeColor;
+  if (d.away != null) sAway.value = d.away;
+  if (d.awayScore != null) sAwayScore.value = d.awayScore;
+  if (d.awayColor) sAwayColor.value = d.awayColor;
+  if (d.bg) sBg.value = d.bg;
+  if (d.bgOpacity != null) sBgOpacity.value = d.bgOpacity;
+  if (d.ballBoxColor) sBallBoxColor.value = d.ballBoxColor;
+  if (d.ballColor) sBallColor.value = d.ballColor;
+  if (d.bandWidth != null) sBandWidth.value = d.bandWidth;
+  if (d.trophyColor) sTrophyColor.value = d.trophyColor;
+  if (d.trophySize != null) sTrophySize.value = d.trophySize;
+  if (d.teamTypo) {
+    if (d.teamTypo.font) sTeamFont.value = d.teamTypo.font;
+    if (d.teamTypo.size != null) sTeamSize.value = d.teamTypo.size;
+    if (d.teamTypo.weight) sTeamWeight.value = d.teamTypo.weight;
+  }
+  if (d.scoreTypo) {
+    if (d.scoreTypo.font) sScoreFont.value = d.scoreTypo.font;
+    if (d.scoreTypo.size != null) sScoreSize.value = d.scoreTypo.size;
+    if (d.scoreTypo.weight) sScoreWeight.value = d.scoreTypo.weight;
+  }
+  if (d.bgImage) {
+    const b = d.bgImage;
+    if (typeof b.enabled === "boolean") sBgImgToggle.checked = b.enabled;
+    if (b.file != null) sBgImgSelect.value = b.file;
+    if (b.opacity != null) sBgImgOpacity.value = b.opacity;
+    if (typeof b.fadeEnabled === "boolean")
+      sBgImgFadeToggle.checked = b.fadeEnabled;
+    if (b.fadeDir) sBgImgFadeDir.value = b.fadeDir;
+    if (b.fadeEnd != null) sBgImgFadeEnd.value = b.fadeEnd;
+  }
+  updateScoreBanner();
+  applyScoreBgImage();
+}
+
+function getSavedScores() {
+  try {
+    return JSON.parse(localStorage.getItem(S_SAVED_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+function setSavedScores(list) {
+  localStorage.setItem(S_SAVED_KEY, JSON.stringify(list));
+}
+function renderSavedScoresList() {
+  const sel = document.getElementById("s-saved-select");
+  if (!sel) return;
+  const list = getSavedScores();
+  sel.innerHTML =
+    list.length === 0
+      ? '<option value="">— Aucune sauvegarde —</option>'
+      : list.map((s, i) => `<option value="${i}">${s.name}</option>`).join("");
+}
+
+function saveCurrentScore() {
+  const nameInput = document.getElementById("s-save-name");
+  const name = nameInput.value.trim();
+  if (!name) {
+    alert("Donne un nom à la sauvegarde.");
+    return;
+  }
+  const list = getSavedScores();
+  const idx = list.findIndex((x) => x.name === name);
+  const entry = { name, data: collectScoreData() };
+  if (idx >= 0) {
+    if (!confirm(`Une sauvegarde "${name}" existe déjà. L'écraser ?`)) return;
+    list[idx] = entry;
+  } else {
+    list.push(entry);
+  }
+  setSavedScores(list);
+  renderSavedScoresList();
+  nameInput.value = "";
+}
+
+function loadCurrentScore() {
+  const sel = document.getElementById("s-saved-select");
+  const idx = +sel.value;
+  if (isNaN(idx)) return;
+  const list = getSavedScores();
+  if (!list[idx]) return;
+  applyScoreData(list[idx].data);
+}
+
+function deleteCurrentScore() {
+  const sel = document.getElementById("s-saved-select");
+  const idx = +sel.value;
+  if (isNaN(idx)) return;
+  const list = getSavedScores();
+  if (!list[idx]) return;
+  if (!confirm(`Supprimer "${list[idx].name}" ?`)) return;
+  list.splice(idx, 1);
+  setSavedScores(list);
+  renderSavedScoresList();
+}
+
+document.getElementById("s-save").addEventListener("click", saveCurrentScore);
+document.getElementById("s-load").addEventListener("click", loadCurrentScore);
+document
+  .getElementById("s-delete")
+  .addEventListener("click", deleteCurrentScore);
+renderSavedScoresList();
 
 /* ============================================================
    4) BRACKET BOARD
@@ -1979,7 +2387,6 @@ const sdLogo1Clear = document.getElementById("sd-logo-1-clear");
 const sdLogo2Clear = document.getElementById("sd-logo-2-clear");
 const sdRound = document.getElementById("sd-round");
 const sdLeg = document.getElementById("sd-leg");
-const sdVsText = document.getElementById("sd-vs-text");
 const sdPlace = document.getElementById("sd-place");
 const sdDate = document.getElementById("sd-date");
 const sdReferee = document.getElementById("sd-referee");
@@ -1997,10 +2404,15 @@ const sdNameFont = document.getElementById("sd-name-font");
 const sdNameSize = document.getElementById("sd-name-size");
 const sdNameSizeValue = document.getElementById("sd-name-size-value");
 const sdNameWeight = document.getElementById("sd-name-weight");
-const sdVsFont = document.getElementById("sd-vs-font");
-const sdVsSize = document.getElementById("sd-vs-size");
-const sdVsSizeValue = document.getElementById("sd-vs-size-value");
-const sdVsWeight = document.getElementById("sd-vs-weight");
+const sdCenterLogoToggle = document.getElementById("sd-center-logo-toggle");
+const sdCenterLogoSize = document.getElementById("sd-center-logo-size");
+const sdCenterLogoSizeValue = document.getElementById(
+  "sd-center-logo-size-value",
+);
+const sdTeamLogoSize = document.getElementById("sd-team-logo-size");
+const sdTeamLogoSizeValue = document.getElementById("sd-team-logo-size-value");
+const sdTeamGap = document.getElementById("sd-team-gap");
+const sdTeamGapValue = document.getElementById("sd-team-gap-value");
 const sdMetaFont = document.getElementById("sd-meta-font");
 const sdMetaSize = document.getElementById("sd-meta-size");
 const sdMetaSizeValue = document.getElementById("sd-meta-size-value");
@@ -2021,7 +2433,6 @@ function updateShowdown() {
   const round = sdRound.value;
   const leg = sdLeg.value;
   document.getElementById("sd-match").textContent = leg ? `${round} - ${leg}` : round;
-  document.getElementById("sd-vs").textContent = sdVsText.value;
   document.getElementById("sd-meta-place").textContent = sdPlace.value;
   document.getElementById("sd-meta-date").textContent = sdDate.value;
   document.getElementById("sd-meta-referee").textContent = sdReferee.value;
@@ -2050,11 +2461,38 @@ function updateShowdown() {
   });
   if (sdNameSizeValue) sdNameSizeValue.textContent = sdNameSize.value + "px";
 
-  const vsEl = document.getElementById("sd-vs");
-  vsEl.style.fontFamily = SD_FONTS[sdVsFont.value] || SD_FONTS.cinzel;
-  vsEl.style.fontSize = sdVsSize.value + "px";
-  vsEl.style.fontWeight = sdVsWeight.value;
-  if (sdVsSizeValue) sdVsSizeValue.textContent = sdVsSize.value + "px";
+  const centerLogo = document.getElementById("sd-center-logo");
+  if (centerLogo) {
+    centerLogo.style.height = sdCenterLogoSize.value + "px";
+    centerLogo.style.display = sdCenterLogoToggle.checked ? "" : "none";
+  }
+  if (sdCenterLogoSizeValue)
+    sdCenterLogoSizeValue.textContent = sdCenterLogoSize.value + "px";
+  const teamLogoPx = sdTeamLogoSize.value + "px";
+  ["sd-logo-1", "sd-logo-2"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.width = teamLogoPx;
+      el.style.height = teamLogoPx;
+    }
+  });
+  document.querySelectorAll("#showdown-board .sd-team").forEach((el) => {
+    el.style.width = teamLogoPx;
+  });
+  if (sdTeamLogoSizeValue)
+    sdTeamLogoSizeValue.textContent = sdTeamLogoSize.value + "px";
+  const teamGap = +sdTeamGap.value;
+  const padX = Math.max(0, 60 - teamGap);
+  const sdMain = document.querySelector("#showdown-board .sd-main");
+  if (sdMain) {
+    sdMain.style.paddingLeft = "";
+    sdMain.style.paddingRight = "";
+  }
+  if (board) {
+    board.style.paddingLeft = padX + "px";
+    board.style.paddingRight = padX + "px";
+  }
+  if (sdTeamGapValue) sdTeamGapValue.textContent = teamGap + "px";
 
   const metaFont = SD_FONTS[sdMetaFont.value] || SD_FONTS.system;
   document
@@ -2079,7 +2517,6 @@ function collectShowdownData() {
     logo2URL: sdLogo2URL,
     round: sdRound.value,
     leg: sdLeg.value,
-    vsText: sdVsText.value,
     place: sdPlace.value,
     date: sdDate.value,
     referee: sdReferee.value,
@@ -2103,7 +2540,10 @@ function collectShowdownTypoData() {
   return {
     matchFont: sdMatchFont.value, matchSize: sdMatchSize.value, matchWeight: sdMatchWeight.value,
     nameFont: sdNameFont.value, nameSize: sdNameSize.value, nameWeight: sdNameWeight.value,
-    vsFont: sdVsFont.value, vsSize: sdVsSize.value, vsWeight: sdVsWeight.value,
+    centerLogoEnabled: sdCenterLogoToggle.checked,
+    centerLogoSize: sdCenterLogoSize.value,
+    teamLogoSize: sdTeamLogoSize.value,
+    teamGap: sdTeamGap.value,
     metaFont: sdMetaFont.value, metaSize: sdMetaSize.value, metaWeight: sdMetaWeight.value,
   };
 }
@@ -2125,9 +2565,11 @@ function applyShowdownTypoData(d) {
   if (d.nameFont) sdNameFont.value = d.nameFont;
   if (d.nameSize) sdNameSize.value = d.nameSize;
   if (d.nameWeight) sdNameWeight.value = d.nameWeight;
-  if (d.vsFont) sdVsFont.value = d.vsFont;
-  if (d.vsSize) sdVsSize.value = d.vsSize;
-  if (d.vsWeight) sdVsWeight.value = d.vsWeight;
+  if (typeof d.centerLogoEnabled === "boolean")
+    sdCenterLogoToggle.checked = d.centerLogoEnabled;
+  if (d.centerLogoSize != null) sdCenterLogoSize.value = d.centerLogoSize;
+  if (d.teamLogoSize != null) sdTeamLogoSize.value = d.teamLogoSize;
+  if (d.teamGap != null) sdTeamGap.value = d.teamGap;
   if (d.metaFont) sdMetaFont.value = d.metaFont;
   if (d.metaSize) sdMetaSize.value = d.metaSize;
   if (d.metaWeight) sdMetaWeight.value = d.metaWeight;
@@ -2141,7 +2583,6 @@ function applyShowdownData(d) {
   sdLogo2URL = d.logo2URL || null;
   if (d.round) sdRound.value = d.round;
   if (d.leg != null) sdLeg.value = d.leg;
-  if (d.vsText != null) sdVsText.value = d.vsText;
   if (d.place != null) sdPlace.value = d.place;
   if (d.date != null) sdDate.value = d.date;
   if (d.referee != null) sdReferee.value = d.referee;
@@ -2310,15 +2751,15 @@ sdLogo2Clear.addEventListener("click", () => {
 
 // All input/change listeners for auto-update + auto-save
 const sdInputEls = [
-  sdName1Input, sdName2Input, sdVsText, sdPlace, sdDate, sdReferee,
+  sdName1Input, sdName2Input, sdPlace, sdDate, sdReferee,
   sdBgColor1, sdBgColor2, sdBgOpacity, sdColorText,
-  sdMatchSize, sdNameSize, sdVsSize, sdMetaSize,
+  sdMatchSize, sdNameSize, sdCenterLogoSize, sdTeamLogoSize, sdTeamGap, sdMetaSize,
 ];
 const sdChangeEls = [
   sdRound, sdLeg, sdBgDir,
+  sdCenterLogoToggle,
   sdMatchFont, sdMatchWeight,
   sdNameFont, sdNameWeight,
-  sdVsFont, sdVsWeight,
   sdMetaFont, sdMetaWeight,
 ];
 sdInputEls.forEach((el) => el.addEventListener("input", () => { updateShowdown(); saveShowdown(); }));
@@ -2859,6 +3300,101 @@ document.getElementById("export-btn").addEventListener("click", async () => {
     document
       .querySelectorAll(".editor-panel")
       .forEach((p) => p.classList.add("ready"));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+/* ============================================================
+   SAVED COLOR PALETTE (shared across all color inputs)
+   ============================================================ */
+(function () {
+  const KEY = "ucl-saved-colors-v1";
+
+  function getColors() {
+    try {
+      return JSON.parse(localStorage.getItem(KEY) || "[]");
+    } catch {
+      return [];
+    }
+  }
+  function setColors(list) {
+    localStorage.setItem(KEY, JSON.stringify(list));
+    renderAll();
+  }
+  function addColor(color) {
+    const c = (color || "").toLowerCase();
+    if (!c || !/^#[0-9a-f]{6}$/.test(c)) return;
+    const list = getColors();
+    if (list.includes(c)) return;
+    list.push(c);
+    setColors(list);
+  }
+  function removeColor(color) {
+    const c = (color || "").toLowerCase();
+    setColors(getColors().filter((x) => x !== c));
+  }
+
+  function renderAll() {
+    const list = getColors();
+    document.querySelectorAll(".color-palette").forEach((paletteEl) => {
+      const input = paletteEl.parentElement.querySelector(
+        'input[type="color"]',
+      );
+      paletteEl.innerHTML = "";
+      list.forEach((color) => {
+        const sw = document.createElement("button");
+        sw.type = "button";
+        sw.className = "color-swatch";
+        sw.style.background = color;
+        sw.title = `${color} — clic pour appliquer, clic droit pour retirer`;
+        sw.addEventListener("click", () => {
+          if (!input) return;
+          input.value = color;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        sw.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          removeColor(color);
+        });
+        paletteEl.appendChild(sw);
+      });
+    });
+  }
+
+  function wrapInput(input) {
+    if (input.dataset.colorWrapped === "1") return;
+    input.dataset.colorWrapped = "1";
+    const row = document.createElement("div");
+    row.className = "color-picker-row";
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "color-save-btn";
+    saveBtn.textContent = "+";
+    saveBtn.title = "Sauvegarder cette couleur dans la palette";
+    saveBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      addColor(input.value);
+    });
+    const palette = document.createElement("div");
+    palette.className = "color-palette";
+    const parent = input.parentNode;
+    parent.insertBefore(row, input);
+    row.appendChild(input);
+    row.appendChild(saveBtn);
+    row.appendChild(palette);
+  }
+
+  function init() {
+    document
+      .querySelectorAll('.field input[type="color"]')
+      .forEach(wrapInput);
+    renderAll();
   }
 
   if (document.readyState === "loading") {

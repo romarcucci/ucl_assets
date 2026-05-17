@@ -1416,10 +1416,20 @@ body {
 .showdown-board.show-topline .sd-top-line {
   display: block;
 }
-.showdown-board > .sd-match,
+.showdown-board > .sd-header,
 .showdown-board > .sd-main,
-.showdown-board > .sd-meta {
+.showdown-board > .sd-referee-block {
   position: relative;
+}
+.showdown-board > .sd-referee-block {
+  position: absolute;
+}
+.sd-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 .sd-match {
   text-align: center;
@@ -1431,7 +1441,6 @@ body {
   letter-spacing: 4px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 8px;
 }
 .sd-main {
   flex: 1;
@@ -1483,11 +1492,10 @@ body {
   flex-shrink: 0;
   padding: 0 40px;
 }
-.sd-meta {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 18px;
+.sd-vs:empty {
+  display: none;
+}
+.sd-meta-item {
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto,
     sans-serif;
@@ -1496,14 +1504,42 @@ body {
   letter-spacing: 2px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
-  margin-top: 12px;
-}
-.sd-meta-sep {
-  color: rgba(255, 255, 255, 0.4);
 }
 .sd-meta-item:empty {
   display: none;
 }
-.sd-meta-item:empty + .sd-meta-sep {
+.sd-referee-block {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  line-height: 1.1;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 100;
+  font-size: 18px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: none;
+  pointer-events: none;
+}
+.sd-referee-label {
+  color: #14b8a6;
+  margin-bottom: 3px;
+}
+.sd-referee-name {
+  color: var(--lb-text-color, #ffffff);
+  font-weight: 400;
+}
+.sd-referee-name:empty,
+.sd-referee-name:empty + * {
+  display: none;
+}
+.sd-referee-block:has(.sd-referee-name:empty) {
   display: none;
 }

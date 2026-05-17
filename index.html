@@ -695,8 +695,32 @@
                   </label>
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-pitch-stripes" />
-                    <span>Terrain rayé (10 bandes, fade droite→gauche)</span>
+                    <span>Terrain rayé (10 bandes)</span>
                   </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Direction du fade</span>
+                      <select id="l-stripes-fade-dir">
+                        <option value="left" selected>← vers gauche</option>
+                        <option value="right">→ vers droite</option>
+                        <option value="bottom">↓ vers bas</option>
+                        <option value="top">↑ vers haut</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span
+                        >Largeur des rayures
+                        <span id="l-stripes-width-value">100%</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-stripes-width"
+                        min="0"
+                        max="100"
+                        value="100"
+                      />
+                    </label>
+                  </div>
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-divider-toggle" />
                     <span>Ligne médiane + surface de réparation (teal)</span>
@@ -1191,6 +1215,10 @@
                     </label>
                   </div>
                   <label class="field">
+                    <span>Texte central</span>
+                    <input type="text" id="sd-vs-text" value="" />
+                  </label>
+                  <label class="field">
                     <span>Lieu</span>
                     <input type="text" id="sd-place" value="PARIS" />
                   </label>
@@ -1235,6 +1263,19 @@
                   <option value="135">↘ Diagonal</option>
                   <option value="45">↗ Diagonal</option>
                 </select>
+              </label>
+              <label class="field">
+                <span
+                  >Opacité du fond
+                  <span id="sd-bg-opacity-value">100%</span></span
+                >
+                <input
+                  type="range"
+                  id="sd-bg-opacity"
+                  min="0"
+                  max="100"
+                  value="100"
+                />
               </label>
               <label class="field">
                 <span>Couleur du texte</span>
@@ -1876,25 +1917,28 @@
           <div class="showdown-board" id="showdown-board">
             <div class="sd-bg-image" id="sd-bg-image"></div>
             <div class="sd-top-line" id="sd-top-line"></div>
-            <div class="sd-match" id="sd-match">QUARTER FINALS - FIRST LEG</div>
+            <div class="sd-header">
+              <div class="sd-match" id="sd-match">
+                QUARTER FINALS - FIRST LEG
+              </div>
+              <div class="sd-meta-item" id="sd-meta-place">PARIS</div>
+              <div class="sd-meta-item" id="sd-meta-date">12 MAR 2026</div>
+            </div>
             <div class="sd-main">
               <div class="sd-team sd-team-left">
                 <div class="sd-logo" id="sd-logo-1"></div>
                 <div class="sd-team-name" id="sd-name-1">PSG</div>
               </div>
-              <div class="sd-vs" id="sd-vs">VS</div>
+              <div class="sd-vs" id="sd-vs"></div>
               <div class="sd-team sd-team-right">
                 <div class="sd-logo" id="sd-logo-2"></div>
                 <div class="sd-team-name" id="sd-name-2">REAL MADRID</div>
               </div>
             </div>
-            <div class="sd-meta">
-              <span class="sd-meta-item" id="sd-meta-place">PARIS</span>
-              <span class="sd-meta-sep">·</span>
-              <span class="sd-meta-item" id="sd-meta-date">12 MAR 2026</span>
-              <span class="sd-meta-sep">·</span>
-              <span class="sd-meta-item" id="sd-meta-referee"
-                >RÉF: D. ORSATO</span
+            <div class="sd-referee-block" id="sd-referee-block">
+              <span class="sd-referee-label">REFEREE</span>
+              <span class="sd-referee-name" id="sd-meta-referee"
+                >D. ORSATO</span
               >
             </div>
           </div>

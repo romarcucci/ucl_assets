@@ -1454,16 +1454,83 @@ gridCheckbox.addEventListener("change", () => {
 
 /* Toggle terrain rayé */
 const STRIPES_PREF_KEY = "ucl-lineup-stripes-v1";
+const STRIPES_FADE_DIR_KEY = "ucl-lineup-stripes-fade-dir-v1";
+const STRIPES_WIDTH_KEY = "ucl-lineup-stripes-width-v1";
 const stripesCheckbox = document.getElementById("l-pitch-stripes");
+const stripesFadeDir = document.getElementById("l-stripes-fade-dir");
+const stripesWidth = document.getElementById("l-stripes-width");
+const stripesWidthValue = document.getElementById("l-stripes-width-value");
 stripesCheckbox.checked = localStorage.getItem(STRIPES_PREF_KEY) === "1";
+const savedStripesFadeDir = localStorage.getItem(STRIPES_FADE_DIR_KEY);
+if (savedStripesFadeDir) stripesFadeDir.value = savedStripesFadeDir;
+const savedStripesWidth = localStorage.getItem(STRIPES_WIDTH_KEY);
+if (savedStripesWidth != null) stripesWidth.value = savedStripesWidth;
 document
   .getElementById("lb-pitch")
   .classList.toggle("show-stripes", stripesCheckbox.checked);
+
+function applyStripesFade() {
+  const grad = document.getElementById("pitch-stripes-fade");
+  if (!grad) return;
+  const widthPct = +stripesWidth.value;
+  const widthPx = (widthPct / 100) * 1060;
+  if (stripesWidthValue) stripesWidthValue.textContent = widthPct + "%";
+
+  const dir = stripesFadeDir.value;
+  const leftAlign = dir === "right";
+  const stripeX = leftAlign ? 0 : 1060 - widthPx;
+
+  document.querySelectorAll(".lb-pitch-stripes rect").forEach((r) => {
+    r.setAttribute("x", stripeX);
+    r.setAttribute("width", widthPx);
+  });
+
+  let gx1, gy1, gx2, gy2;
+  if (dir === "left") {
+    gx1 = 1060;
+    gy1 = 0;
+    gx2 = 1060 - widthPx;
+    gy2 = 0;
+  } else if (dir === "right") {
+    gx1 = 0;
+    gy1 = 0;
+    gx2 = widthPx;
+    gy2 = 0;
+  } else if (dir === "bottom") {
+    gx1 = 0;
+    gy1 = 0;
+    gx2 = 0;
+    gy2 = 450;
+  } else {
+    gx1 = 0;
+    gy1 = 450;
+    gx2 = 0;
+    gy2 = 0;
+  }
+  grad.setAttribute("x1", gx1);
+  grad.setAttribute("y1", gy1);
+  grad.setAttribute("x2", gx2);
+  grad.setAttribute("y2", gy2);
+
+  const stops = grad.querySelectorAll("stop");
+  if (stops[0]) stops[0].setAttribute("offset", "0%");
+  if (stops[1]) stops[1].setAttribute("offset", "100%");
+}
+applyStripesFade();
+
 stripesCheckbox.addEventListener("change", () => {
   document
     .getElementById("lb-pitch")
     .classList.toggle("show-stripes", stripesCheckbox.checked);
   localStorage.setItem(STRIPES_PREF_KEY, stripesCheckbox.checked ? "1" : "0");
+});
+stripesFadeDir.addEventListener("change", () => {
+  localStorage.setItem(STRIPES_FADE_DIR_KEY, stripesFadeDir.value);
+  applyStripesFade();
+});
+stripesWidth.addEventListener("input", () => {
+  localStorage.setItem(STRIPES_WIDTH_KEY, stripesWidth.value);
+  applyStripesFade();
 });
 
 /* Toggle ligne séparation teal (header / pitch) */
@@ -1912,12 +1979,15 @@ const sdLogo1Clear = document.getElementById("sd-logo-1-clear");
 const sdLogo2Clear = document.getElementById("sd-logo-2-clear");
 const sdRound = document.getElementById("sd-round");
 const sdLeg = document.getElementById("sd-leg");
+const sdVsText = document.getElementById("sd-vs-text");
 const sdPlace = document.getElementById("sd-place");
 const sdDate = document.getElementById("sd-date");
 const sdReferee = document.getElementById("sd-referee");
 const sdBgColor1 = document.getElementById("sd-bg-color-1");
 const sdBgColor2 = document.getElementById("sd-bg-color-2");
 const sdBgDir = document.getElementById("sd-bg-direction");
+const sdBgOpacity = document.getElementById("sd-bg-opacity");
+const sdBgOpacityValue = document.getElementById("sd-bg-opacity-value");
 const sdColorText = document.getElementById("sd-color-text");
 const sdMatchFont = document.getElementById("sd-match-font");
 const sdMatchSize = document.getElementById("sd-match-size");
@@ -1951,15 +2021,19 @@ function updateShowdown() {
   const round = sdRound.value;
   const leg = sdLeg.value;
   document.getElementById("sd-match").textContent = leg ? `${round} - ${leg}` : round;
+  document.getElementById("sd-vs").textContent = sdVsText.value;
   document.getElementById("sd-meta-place").textContent = sdPlace.value;
   document.getElementById("sd-meta-date").textContent = sdDate.value;
-  document.getElementById("sd-meta-referee").textContent = sdReferee.value
-    ? `RÉF: ${sdReferee.value}`
-    : "";
+  document.getElementById("sd-meta-referee").textContent = sdReferee.value;
 
   const board = document.getElementById("showdown-board");
-  board.style.background = `linear-gradient(${sdBgDir.value}deg, ${sdBgColor1.value}, ${sdBgColor2.value})`;
+  const bgAlpha = +sdBgOpacity.value / 100;
+  const bgC1 = hexToRgba(sdBgColor1.value, bgAlpha);
+  const bgC2 = hexToRgba(sdBgColor2.value, bgAlpha);
+  board.style.background = `linear-gradient(${sdBgDir.value}deg, ${bgC1}, ${bgC2})`;
   board.style.color = sdColorText.value;
+  if (sdBgOpacityValue)
+    sdBgOpacityValue.textContent = sdBgOpacity.value + "%";
 
   const matchEl = document.getElementById("sd-match");
   matchEl.style.fontFamily = SD_FONTS[sdMatchFont.value] || SD_FONTS.system;
@@ -1983,11 +2057,13 @@ function updateShowdown() {
   if (sdVsSizeValue) sdVsSizeValue.textContent = sdVsSize.value + "px";
 
   const metaFont = SD_FONTS[sdMetaFont.value] || SD_FONTS.system;
-  document.querySelectorAll(".sd-meta-item").forEach((el) => {
-    el.style.fontFamily = metaFont;
-    el.style.fontSize = sdMetaSize.value + "px";
-    el.style.fontWeight = sdMetaWeight.value;
-  });
+  document
+    .querySelectorAll(".sd-meta-item, .sd-referee-name")
+    .forEach((el) => {
+      el.style.fontFamily = metaFont;
+      el.style.fontSize = sdMetaSize.value + "px";
+      el.style.fontWeight = sdMetaWeight.value;
+    });
   document.querySelectorAll(".sd-meta-sep").forEach((el) => {
     el.style.fontFamily = metaFont;
     el.style.fontSize = sdMetaSize.value + "px";
@@ -2003,6 +2079,7 @@ function collectShowdownData() {
     logo2URL: sdLogo2URL,
     round: sdRound.value,
     leg: sdLeg.value,
+    vsText: sdVsText.value,
     place: sdPlace.value,
     date: sdDate.value,
     referee: sdReferee.value,
@@ -2017,6 +2094,7 @@ function collectShowdownBgData() {
     color1: sdBgColor1.value,
     color2: sdBgColor2.value,
     dir: sdBgDir.value,
+    opacity: sdBgOpacity.value,
     colorText: sdColorText.value,
   };
 }
@@ -2035,6 +2113,7 @@ function applyShowdownBgData(d) {
   if (d.color1) sdBgColor1.value = d.color1;
   if (d.color2) sdBgColor2.value = d.color2;
   if (d.dir) sdBgDir.value = d.dir;
+  if (d.opacity != null) sdBgOpacity.value = d.opacity;
   if (d.colorText) sdColorText.value = d.colorText;
 }
 
@@ -2062,6 +2141,7 @@ function applyShowdownData(d) {
   sdLogo2URL = d.logo2URL || null;
   if (d.round) sdRound.value = d.round;
   if (d.leg != null) sdLeg.value = d.leg;
+  if (d.vsText != null) sdVsText.value = d.vsText;
   if (d.place != null) sdPlace.value = d.place;
   if (d.date != null) sdDate.value = d.date;
   if (d.referee != null) sdReferee.value = d.referee;
@@ -2230,8 +2310,8 @@ sdLogo2Clear.addEventListener("click", () => {
 
 // All input/change listeners for auto-update + auto-save
 const sdInputEls = [
-  sdName1Input, sdName2Input, sdPlace, sdDate, sdReferee,
-  sdBgColor1, sdBgColor2, sdColorText,
+  sdName1Input, sdName2Input, sdVsText, sdPlace, sdDate, sdReferee,
+  sdBgColor1, sdBgColor2, sdBgOpacity, sdColorText,
   sdMatchSize, sdNameSize, sdVsSize, sdMetaSize,
 ];
 const sdChangeEls = [
@@ -2431,6 +2511,48 @@ function loadExternalScript(src, globalName) {
   });
 }
 
+function imageUrlToDataUrl(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        c.getContext("2d").drawImage(img, 0, 0);
+        resolve(c.toDataURL("image/png"));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = () => reject(new Error("Image load failed: " + url));
+    img.src = url;
+  });
+}
+
+async function preInlineBgImages(target) {
+  const restore = [];
+  const candidates = target.querySelectorAll(
+    "#lb-bg-image, #sd-bg-image, [style*='background-image']",
+  );
+  for (const el of candidates) {
+    const bgImage = el.style.backgroundImage;
+    const m = bgImage && bgImage.match(/url\(['"]?([^'")]+)['"]?\)/);
+    if (!m) continue;
+    const url = m[1];
+    if (url.startsWith("data:")) continue;
+    try {
+      const dataUrl = await imageUrlToDataUrl(url);
+      restore.push({ el, original: bgImage });
+      el.style.backgroundImage = `url('${dataUrl}')`;
+    } catch (e) {
+      console.warn("Cannot inline bg image for export:", url, e);
+    }
+  }
+  return restore;
+}
+
 document.getElementById("export-btn").addEventListener("click", async () => {
   const active = document.querySelector(".preview-container.active");
   if (!active) return;
@@ -2442,24 +2564,28 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   const scale = targetHeight / rect.height;
   const baseName = `ucl-graphic-${resolution}-${Date.now()}`;
 
+  const restored = await preInlineBgImages(target);
+
   try {
+    await loadExternalScript(
+      "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js",
+      "htmlToImage",
+    );
+    const renderOptions = {
+      width: rect.width * scale,
+      height: rect.height * scale,
+      pixelRatio: scale,
+      backgroundColor: null,
+      style: {
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        width: rect.width + "px",
+        height: rect.height + "px",
+      },
+    };
+
     if (format === "svg") {
-      await loadExternalScript(
-        "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js",
-        "htmlToImage",
-      );
-      const dataUrl = await window.htmlToImage.toSvg(target, {
-        width: rect.width * scale,
-        height: rect.height * scale,
-        pixelRatio: scale,
-        backgroundColor: null,
-        style: {
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
-          width: rect.width + "px",
-          height: rect.height + "px",
-        },
-      });
+      const dataUrl = await window.htmlToImage.toSvg(target, renderOptions);
       const link = document.createElement("a");
       link.download = `${baseName}.svg`;
       link.href = dataUrl;
@@ -2467,11 +2593,7 @@ document.getElementById("export-btn").addEventListener("click", async () => {
       return;
     }
 
-    await loadExternalScript(
-      "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",
-      "html2canvas",
-    );
-    const canvas = await html2canvas(target, { backgroundColor: null, scale });
+    const canvas = await window.htmlToImage.toCanvas(target, renderOptions);
 
     if (format === "pdf") {
       await loadExternalScript(
@@ -2506,6 +2628,10 @@ document.getElementById("export-btn").addEventListener("click", async () => {
     link.click();
   } catch (err) {
     alert("Export échoué : " + err.message);
+  } finally {
+    restored.forEach(({ el, original }) => {
+      el.style.backgroundImage = original;
+    });
   }
 });
 

@@ -1182,6 +1182,25 @@ body {
   position: relative;
   z-index: 1;
 }
+.score-banner-wrap {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 8px;
+  background: transparent;
+}
+.sb-aggregate {
+  display: none;
+  align-items: center;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #000000;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  border-radius: 4px;
+}
+.score-banner-wrap.show-aggregate .sb-aggregate {
+  display: flex;
+}
 .sb-ball-box {
   width: 50px;
   height: 50px;

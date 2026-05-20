@@ -1233,6 +1233,36 @@
           </details>
 
           <details class="collapsible">
+            <summary>Score agrégé</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="s-aggregate-toggle" />
+                <span>Afficher le score agrégé à droite</span>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Domicile</span>
+                  <input
+                    type="number"
+                    id="s-aggregate-home"
+                    value="0"
+                    min="0"
+                  />
+                </label>
+                <label class="field">
+                  <span>Extérieur</span>
+                  <input
+                    type="number"
+                    id="s-aggregate-away"
+                    value="0"
+                    min="0"
+                  />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
             <summary>Logo central (ballon)</summary>
             <div class="collapsible-body">
               <div class="row">
@@ -2526,18 +2556,21 @@ BELLINGHAM | 67'</textarea>
 
         <!-- Score preview -->
         <div class="preview-container" data-preview="score">
-          <div class="score-banner" id="score-banner">
-            <div class="sb-bg-image" id="sb-bg-image"></div>
-            <div class="sb-ball-box" id="sb-ball-box">
-              <div class="sb-ball" id="sb-ball"></div>
+          <div class="score-banner-wrap" id="score-banner-wrap">
+            <div class="score-banner" id="score-banner">
+              <div class="sb-bg-image" id="sb-bg-image"></div>
+              <div class="sb-ball-box" id="sb-ball-box">
+                <div class="sb-ball" id="sb-ball"></div>
+              </div>
+              <div class="sb-home-color" id="sb-home-color"></div>
+              <div class="sb-team sb-home" id="sb-home">LIV</div>
+              <div class="sb-score" id="sb-home-score">0</div>
+              <div class="sb-sep"><div class="sb-trophy"></div></div>
+              <div class="sb-score" id="sb-away-score">0</div>
+              <div class="sb-team sb-away" id="sb-away">RMA</div>
+              <div class="sb-away-color" id="sb-away-color"></div>
             </div>
-            <div class="sb-home-color" id="sb-home-color"></div>
-            <div class="sb-team sb-home" id="sb-home">LIV</div>
-            <div class="sb-score" id="sb-home-score">0</div>
-            <div class="sb-sep"><div class="sb-trophy"></div></div>
-            <div class="sb-score" id="sb-away-score">0</div>
-            <div class="sb-team sb-away" id="sb-away">RMA</div>
-            <div class="sb-away-color" id="sb-away-color"></div>
+            <div class="sb-aggregate" id="sb-aggregate">( 0 | 0 )</div>
           </div>
         </div>
 

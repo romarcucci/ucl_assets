@@ -1917,6 +1917,9 @@ const sScoreFont = document.getElementById("s-score-font");
 const sScoreSize = document.getElementById("s-score-size");
 const sScoreSizeValue = document.getElementById("s-score-size-value");
 const sScoreWeight = document.getElementById("s-score-weight");
+const sAggregateToggle = document.getElementById("s-aggregate-toggle");
+const sAggregateHome = document.getElementById("s-aggregate-home");
+const sAggregateAway = document.getElementById("s-aggregate-away");
 
 const S_FONTS = {
   condensed:
@@ -1965,7 +1968,7 @@ function updateScoreBanner() {
   if (sTeamSizeValue) sTeamSizeValue.textContent = sTeamSize.value + "px";
 
   const scoreFont = S_FONTS[sScoreFont.value] || S_FONTS.condensed;
-  ["sb-home-score", "sb-away-score"].forEach((id) => {
+  ["sb-home-score", "sb-away-score", "sb-aggregate"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
       el.style.fontFamily = scoreFont;
@@ -1982,6 +1985,13 @@ function updateScoreBanner() {
       "#score-banner .sb-team, #score-banner .sb-score, #score-banner .sb-sep",
     )
     .forEach((el) => (el.style.background = bgRgba));
+
+  const wrap = document.getElementById("score-banner-wrap");
+  const aggregateEl = document.getElementById("sb-aggregate");
+  if (wrap && aggregateEl) {
+    wrap.classList.toggle("show-aggregate", !!sAggregateToggle.checked);
+    aggregateEl.textContent = `( ${sAggregateHome.value} - ${sAggregateAway.value} )`;
+  }
 }
 
 [
@@ -2000,8 +2010,10 @@ function updateScoreBanner() {
   sTrophySize,
   sTeamSize,
   sScoreSize,
+  sAggregateHome,
+  sAggregateAway,
 ].forEach((el) => el.addEventListener("input", updateScoreBanner));
-[sTeamFont, sTeamWeight, sScoreFont, sScoreWeight].forEach((el) =>
+[sTeamFont, sTeamWeight, sScoreFont, sScoreWeight, sAggregateToggle].forEach((el) =>
   el.addEventListener("change", updateScoreBanner),
 );
 updateScoreBanner();

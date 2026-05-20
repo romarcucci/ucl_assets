@@ -204,6 +204,15 @@ function collectBannerData() {
     clubnameFont: pClubnameFont.value,
     clubnameSize: pClubnameSize.value,
     clubnameWeight: pClubnameWeight.value,
+    topBgImage: {
+      enabled: pTopBgImgToggle.checked,
+      file: pTopBgImgSelect.value,
+      customUrl: pTopBgImageCustomUrl,
+      opacity: pTopBgImgOpacity.value,
+      fadeEnabled: pTopBgImgFadeToggle.checked,
+      fadeDir: pTopBgImgFadeDir.value,
+      fadeEnd: pTopBgImgFadeEnd.value,
+    },
   };
 }
 
@@ -233,6 +242,47 @@ function applyBannerData(d) {
   if (d.clubnameFont) pClubnameFont.value = d.clubnameFont;
   if (d.clubnameSize) pClubnameSize.value = d.clubnameSize;
   if (d.clubnameWeight) pClubnameWeight.value = d.clubnameWeight;
+  if (d.topBgImage && typeof pTopBgImgToggle !== "undefined") {
+    const b = d.topBgImage;
+    if (typeof b.enabled === "boolean") {
+      pTopBgImgToggle.checked = b.enabled;
+      localStorage.setItem(P_TOP_BG_IMAGE_PREF_KEY, b.enabled ? "1" : "0");
+    }
+    if (b.file != null) {
+      pTopBgImgSelect.value = b.file;
+      localStorage.setItem(P_TOP_BG_IMAGE_FILE_KEY, b.file);
+    }
+    if (b.customUrl !== undefined) {
+      pTopBgImageCustomUrl = b.customUrl || null;
+      if (pTopBgImageCustomUrl) {
+        try {
+          localStorage.setItem(
+            P_TOP_BG_IMAGE_CUSTOM_KEY,
+            pTopBgImageCustomUrl,
+          );
+        } catch {}
+      } else {
+        localStorage.removeItem(P_TOP_BG_IMAGE_CUSTOM_KEY);
+      }
+    }
+    if (b.opacity != null) {
+      pTopBgImgOpacity.value = b.opacity;
+      localStorage.setItem(P_TOP_BG_IMAGE_OPACITY_KEY, b.opacity);
+    }
+    if (typeof b.fadeEnabled === "boolean") {
+      pTopBgImgFadeToggle.checked = b.fadeEnabled;
+      localStorage.setItem(P_TOP_BG_IMAGE_FADE_KEY, b.fadeEnabled ? "1" : "0");
+    }
+    if (b.fadeDir) {
+      pTopBgImgFadeDir.value = b.fadeDir;
+      localStorage.setItem(P_TOP_BG_IMAGE_FADE_DIR_KEY, b.fadeDir);
+    }
+    if (b.fadeEnd != null) {
+      pTopBgImgFadeEnd.value = b.fadeEnd;
+      localStorage.setItem(P_TOP_BG_IMAGE_FADE_END_KEY, b.fadeEnd);
+    }
+    if (typeof applyPlayerTopBgImage === "function") applyPlayerTopBgImage();
+  }
 }
 
 function saveBanner() {
@@ -326,6 +376,153 @@ bannerAutoSaveEls.forEach((el) => {
   if (!el) return;
   el.addEventListener("input", saveBanner);
   el.addEventListener("change", saveBanner);
+});
+
+/* ----- Player banner top bg image (zone nom + minute) ----- */
+const P_TOP_BG_IMAGE_PREF_KEY = "ucl-player-top-bg-image-v1";
+const P_TOP_BG_IMAGE_FILE_KEY = "ucl-player-top-bg-image-file-v1";
+const P_TOP_BG_IMAGE_CUSTOM_KEY = "ucl-player-top-bg-image-custom-v1";
+const P_TOP_BG_IMAGE_OPACITY_KEY = "ucl-player-top-bg-image-opacity-v1";
+const P_TOP_BG_IMAGE_FADE_KEY = "ucl-player-top-bg-image-fade-v1";
+const P_TOP_BG_IMAGE_FADE_DIR_KEY = "ucl-player-top-bg-image-fade-dir-v1";
+const P_TOP_BG_IMAGE_FADE_END_KEY = "ucl-player-top-bg-image-fade-end-v1";
+
+const pTopBgImgToggle = document.getElementById("p-top-bg-image-toggle");
+const pTopBgImgSelect = document.getElementById("p-top-bg-image-select");
+const pTopBgImgFile = document.getElementById("p-top-bg-image-file");
+const pTopBgImgClear = document.getElementById("p-top-bg-image-clear");
+const pTopBgImgOpacity = document.getElementById("p-top-bg-image-opacity");
+const pTopBgImgOpacityValue = document.getElementById(
+  "p-top-bg-image-opacity-value",
+);
+const pTopBgImgFadeToggle = document.getElementById(
+  "p-top-bg-image-fade-toggle",
+);
+const pTopBgImgFadeDir = document.getElementById("p-top-bg-image-fade-dir");
+const pTopBgImgFadeEnd = document.getElementById("p-top-bg-image-fade-end");
+const pTopBgImgFadeEndValue = document.getElementById(
+  "p-top-bg-image-fade-end-value",
+);
+
+let pTopBgImageCustomUrl =
+  localStorage.getItem(P_TOP_BG_IMAGE_CUSTOM_KEY) || null;
+
+function applyPlayerTopBgImage() {
+  const pbTop = document.getElementById("pb-top");
+  const pbBottom = document.getElementById("pb-bottom");
+  const topImg = document.getElementById("pb-top-bg-image");
+  const bottomImg = document.getElementById("pb-bottom-bg-image");
+  if (!pbTop || !topImg) return;
+  const imgOpacity = +pTopBgImgOpacity.value / 100;
+  if (pTopBgImgOpacityValue)
+    pTopBgImgOpacityValue.textContent = pTopBgImgOpacity.value + "%";
+  const fadeEndRatio = +pTopBgImgFadeEnd.value / 100;
+  if (pTopBgImgFadeEndValue)
+    pTopBgImgFadeEndValue.textContent = pTopBgImgFadeEnd.value + "%";
+  const url = pTopBgImageCustomUrl
+    ? pTopBgImageCustomUrl
+    : pTopBgImgSelect.value
+      ? `./${pTopBgImgSelect.value}`
+      : "";
+  const hasFile = !!url;
+  const active = pTopBgImgToggle.checked && hasFile;
+  const bgValue = hasFile ? `url('${url}')` : "none";
+  let mask = "";
+  if (pTopBgImgFadeToggle.checked) {
+    const dirMap = {
+      right: "to right",
+      left: "to left",
+      bottom: "to bottom",
+      top: "to top",
+    };
+    const dir = dirMap[pTopBgImgFadeDir.value] || "to right";
+    mask = `linear-gradient(${dir}, rgba(0,0,0,1), rgba(0,0,0,${fadeEndRatio}))`;
+  }
+  [
+    [pbTop, topImg],
+    [pbBottom, bottomImg],
+  ].forEach(([wrapper, img]) => {
+    if (!wrapper || !img) return;
+    wrapper.classList.toggle("has-bg-image", active);
+    img.style.backgroundImage = bgValue;
+    img.style.opacity = imgOpacity;
+    img.style.maskImage = mask;
+    img.style.webkitMaskImage = mask;
+  });
+}
+
+// Load saved state
+pTopBgImgToggle.checked = localStorage.getItem(P_TOP_BG_IMAGE_PREF_KEY) === "1";
+const savedPBgFile = localStorage.getItem(P_TOP_BG_IMAGE_FILE_KEY);
+if (
+  savedPBgFile &&
+  [...pTopBgImgSelect.options].some((o) => o.value === savedPBgFile)
+) {
+  pTopBgImgSelect.value = savedPBgFile;
+}
+const savedPImgOp = localStorage.getItem(P_TOP_BG_IMAGE_OPACITY_KEY);
+if (savedPImgOp != null) pTopBgImgOpacity.value = savedPImgOp;
+pTopBgImgFadeToggle.checked =
+  localStorage.getItem(P_TOP_BG_IMAGE_FADE_KEY) === "1";
+const savedPFadeDir = localStorage.getItem(P_TOP_BG_IMAGE_FADE_DIR_KEY);
+if (savedPFadeDir) pTopBgImgFadeDir.value = savedPFadeDir;
+const savedPFadeEnd = localStorage.getItem(P_TOP_BG_IMAGE_FADE_END_KEY);
+if (savedPFadeEnd != null) pTopBgImgFadeEnd.value = savedPFadeEnd;
+
+applyPlayerTopBgImage();
+
+pTopBgImgToggle.addEventListener("change", () => {
+  localStorage.setItem(
+    P_TOP_BG_IMAGE_PREF_KEY,
+    pTopBgImgToggle.checked ? "1" : "0",
+  );
+  applyPlayerTopBgImage();
+});
+pTopBgImgSelect.addEventListener("change", () => {
+  localStorage.setItem(P_TOP_BG_IMAGE_FILE_KEY, pTopBgImgSelect.value);
+  applyPlayerTopBgImage();
+});
+pTopBgImgOpacity.addEventListener("input", () => {
+  localStorage.setItem(P_TOP_BG_IMAGE_OPACITY_KEY, pTopBgImgOpacity.value);
+  applyPlayerTopBgImage();
+});
+pTopBgImgFadeToggle.addEventListener("change", () => {
+  localStorage.setItem(
+    P_TOP_BG_IMAGE_FADE_KEY,
+    pTopBgImgFadeToggle.checked ? "1" : "0",
+  );
+  applyPlayerTopBgImage();
+});
+pTopBgImgFadeDir.addEventListener("change", () => {
+  localStorage.setItem(P_TOP_BG_IMAGE_FADE_DIR_KEY, pTopBgImgFadeDir.value);
+  applyPlayerTopBgImage();
+});
+pTopBgImgFadeEnd.addEventListener("input", () => {
+  localStorage.setItem(P_TOP_BG_IMAGE_FADE_END_KEY, pTopBgImgFadeEnd.value);
+  applyPlayerTopBgImage();
+});
+pTopBgImgFile.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    pTopBgImageCustomUrl = reader.result;
+    try {
+      localStorage.setItem(P_TOP_BG_IMAGE_CUSTOM_KEY, pTopBgImageCustomUrl);
+    } catch (err) {
+      alert(
+        "Image trop volumineuse pour être sauvegardée localement. Elle reste active pour la session.",
+      );
+    }
+    applyPlayerTopBgImage();
+  };
+  reader.readAsDataURL(file);
+});
+pTopBgImgClear.addEventListener("click", () => {
+  pTopBgImageCustomUrl = null;
+  localStorage.removeItem(P_TOP_BG_IMAGE_CUSTOM_KEY);
+  pTopBgImgFile.value = "";
+  applyPlayerTopBgImage();
 });
 
 loadBanner();
@@ -1827,12 +2024,17 @@ const S_SCORE_TYPO_KEY = "ucl-score-score-typo-v1";
 
 const sBgImgToggle = document.getElementById("s-bg-image-toggle");
 const sBgImgSelect = document.getElementById("s-bg-image-select");
+const sBgImgFile = document.getElementById("s-bg-image-file");
+const sBgImgClear = document.getElementById("s-bg-image-clear");
 const sBgImgOpacity = document.getElementById("s-bg-image-opacity");
 const sBgImgOpacityValue = document.getElementById("s-bg-image-opacity-value");
 const sBgImgFadeToggle = document.getElementById("s-bg-image-fade-toggle");
 const sBgImgFadeDir = document.getElementById("s-bg-image-fade-dir");
 const sBgImgFadeEnd = document.getElementById("s-bg-image-fade-end");
 const sBgImgFadeEndValue = document.getElementById("s-bg-image-fade-end-value");
+
+const S_BG_IMAGE_CUSTOM_KEY = "ucl-score-bg-image-custom-v1";
+let sBgImageCustomUrl = localStorage.getItem(S_BG_IMAGE_CUSTOM_KEY) || null;
 
 function applyScoreBgImage() {
   const board = document.getElementById("score-banner");
@@ -1844,11 +2046,14 @@ function applyScoreBgImage() {
   const fadeEndRatio = +sBgImgFadeEnd.value / 100;
   if (sBgImgFadeEndValue)
     sBgImgFadeEndValue.textContent = sBgImgFadeEnd.value + "%";
-  const hasFile = !!sBgImgSelect.value;
+  const url = sBgImageCustomUrl
+    ? sBgImageCustomUrl
+    : sBgImgSelect.value
+      ? `./${sBgImgSelect.value}`
+      : "";
+  const hasFile = !!url;
   board.classList.toggle("has-bg-image", sBgImgToggle.checked && hasFile);
-  imgDiv.style.backgroundImage = hasFile
-    ? `url('./${sBgImgSelect.value}')`
-    : "none";
+  imgDiv.style.backgroundImage = hasFile ? `url('${url}')` : "none";
   imgDiv.style.opacity = imgOpacity;
   if (sBgImgFadeToggle.checked) {
     const dirMap = {
@@ -1942,6 +2147,29 @@ sBgImgFadeEnd.addEventListener("input", () => {
   localStorage.setItem(S_BG_IMAGE_FADE_END_KEY, sBgImgFadeEnd.value);
   applyScoreBgImage();
 });
+sBgImgFile.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    sBgImageCustomUrl = reader.result;
+    try {
+      localStorage.setItem(S_BG_IMAGE_CUSTOM_KEY, sBgImageCustomUrl);
+    } catch (err) {
+      alert(
+        "Image trop volumineuse pour être sauvegardée localement. Elle reste active pour la session.",
+      );
+    }
+    applyScoreBgImage();
+  };
+  reader.readAsDataURL(file);
+});
+sBgImgClear.addEventListener("click", () => {
+  sBgImageCustomUrl = null;
+  localStorage.removeItem(S_BG_IMAGE_CUSTOM_KEY);
+  sBgImgFile.value = "";
+  applyScoreBgImage();
+});
 sBallBoxColor.addEventListener("input", () => {
   localStorage.setItem(S_BALL_BOX_COLOR_KEY, sBallBoxColor.value);
 });
@@ -2024,6 +2252,7 @@ function collectScoreData() {
     bgImage: {
       enabled: sBgImgToggle.checked,
       file: sBgImgSelect.value,
+      customUrl: sBgImageCustomUrl,
       opacity: sBgImgOpacity.value,
       fadeEnabled: sBgImgFadeToggle.checked,
       fadeDir: sBgImgFadeDir.value,
@@ -2061,6 +2290,16 @@ function applyScoreData(d) {
     const b = d.bgImage;
     if (typeof b.enabled === "boolean") sBgImgToggle.checked = b.enabled;
     if (b.file != null) sBgImgSelect.value = b.file;
+    if (b.customUrl !== undefined) {
+      sBgImageCustomUrl = b.customUrl || null;
+      if (sBgImageCustomUrl) {
+        try {
+          localStorage.setItem(S_BG_IMAGE_CUSTOM_KEY, sBgImageCustomUrl);
+        } catch {}
+      } else {
+        localStorage.removeItem(S_BG_IMAGE_CUSTOM_KEY);
+      }
+    }
     if (b.opacity != null) sBgImgOpacity.value = b.opacity;
     if (typeof b.fadeEnabled === "boolean")
       sBgImgFadeToggle.checked = b.fadeEnabled;
@@ -2418,8 +2657,59 @@ const sdMetaSize = document.getElementById("sd-meta-size");
 const sdMetaSizeValue = document.getElementById("sd-meta-size-value");
 const sdMetaWeight = document.getElementById("sd-meta-weight");
 
+// Result + scorers
+const sdResultToggle = document.getElementById("sd-result-toggle");
+const sdScore1 = document.getElementById("sd-score-1");
+const sdScore2 = document.getElementById("sd-score-2");
+const sdScoreSize = document.getElementById("sd-score-size");
+const sdScoreSizeValue = document.getElementById("sd-score-size-value");
+const sdScoreFont = document.getElementById("sd-score-font");
+const sdScoreWeight = document.getElementById("sd-score-weight");
+const sdScoreColor = document.getElementById("sd-score-color");
+const sdScorers1 = document.getElementById("sd-scorers-1");
+const sdScorers2 = document.getElementById("sd-scorers-2");
+const sdScorersFont = document.getElementById("sd-scorers-font");
+const sdScorersSize = document.getElementById("sd-scorers-size");
+const sdScorersSizeValue = document.getElementById("sd-scorers-size-value");
+const sdScorersWeight = document.getElementById("sd-scorers-weight");
+const sdScorersColor = document.getElementById("sd-scorers-color");
+
 let sdLogo1URL = null;
 let sdLogo2URL = null;
+
+function parseScorers(text) {
+  return (text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, minute] = line.split("|").map((s) => (s || "").trim());
+      return { name: name || "", minute: minute || "" };
+    });
+}
+
+function renderScorersList(ul, scorers) {
+  if (!ul) return;
+  ul.innerHTML = scorers
+    .map(
+      (s) =>
+        `<li><span class="sd-scorer-name">${escapeHtml(s.name)}</span>${
+          s.minute
+            ? ` <span class="sd-scorer-minute">${escapeHtml(s.minute)}</span>`
+            : ""
+        }</li>`,
+    )
+    .join("");
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function renderSdLogo(box, url) {
   box.innerHTML = url ? `<img src="${url}" alt="logo" />` : "";
@@ -2507,6 +2797,55 @@ function updateShowdown() {
     el.style.fontSize = sdMetaSize.value + "px";
   });
   if (sdMetaSizeValue) sdMetaSizeValue.textContent = sdMetaSize.value + "px";
+
+  // ---- Result mode (score at center + scorers under teams) ----
+  const resultOn = !!(sdResultToggle && sdResultToggle.checked);
+  board.classList.toggle("show-result", resultOn);
+
+  const scoreWrap = document.getElementById("sd-score-wrap");
+  if (scoreWrap) {
+    scoreWrap.style.display = resultOn ? "" : "none";
+    const scoreFont = SD_FONTS[sdScoreFont.value] || SD_FONTS.condensed;
+    scoreWrap.style.fontFamily = scoreFont;
+    scoreWrap.style.fontSize = sdScoreSize.value + "px";
+    scoreWrap.style.fontWeight = sdScoreWeight.value;
+    scoreWrap.style.color = sdScoreColor.value;
+  }
+  const scoreNum1 = document.getElementById("sd-score-num-1");
+  const scoreNum2 = document.getElementById("sd-score-num-2");
+  if (scoreNum1) scoreNum1.textContent = sdScore1.value;
+  if (scoreNum2) scoreNum2.textContent = sdScore2.value;
+  if (sdScoreSizeValue)
+    sdScoreSizeValue.textContent = sdScoreSize.value + "px";
+
+  // When result mode is on, hide the central UCL logo to leave room for score
+  if (centerLogo) {
+    if (resultOn) {
+      centerLogo.style.display = "none";
+    } else {
+      centerLogo.style.display = sdCenterLogoToggle.checked ? "" : "none";
+    }
+  }
+
+  // Scorers lists
+  const ul1 = document.getElementById("sd-scorers-list-1");
+  const ul2 = document.getElementById("sd-scorers-list-2");
+  if (resultOn) {
+    renderScorersList(ul1, parseScorers(sdScorers1.value));
+    renderScorersList(ul2, parseScorers(sdScorers2.value));
+  } else {
+    if (ul1) ul1.innerHTML = "";
+    if (ul2) ul2.innerHTML = "";
+  }
+  const scorersFont = SD_FONTS[sdScorersFont.value] || SD_FONTS.system;
+  document.querySelectorAll("#showdown-board .sd-scorers").forEach((el) => {
+    el.style.fontFamily = scorersFont;
+    el.style.fontSize = sdScorersSize.value + "px";
+    el.style.fontWeight = sdScorersWeight.value;
+    el.style.color = sdScorersColor.value;
+  });
+  if (sdScorersSizeValue)
+    sdScorersSizeValue.textContent = sdScorersSize.value + "px";
 }
 
 function collectShowdownData() {
@@ -2523,7 +2862,43 @@ function collectShowdownData() {
     bg: collectShowdownBgData(),
     typo: collectShowdownTypoData(),
     colorText: sdColorText.value,
+    result: collectShowdownResultData(),
   };
+}
+
+function collectShowdownResultData() {
+  return {
+    enabled: sdResultToggle.checked,
+    score1: sdScore1.value,
+    score2: sdScore2.value,
+    scoreFont: sdScoreFont.value,
+    scoreSize: sdScoreSize.value,
+    scoreWeight: sdScoreWeight.value,
+    scoreColor: sdScoreColor.value,
+    scorers1: sdScorers1.value,
+    scorers2: sdScorers2.value,
+    scorersFont: sdScorersFont.value,
+    scorersSize: sdScorersSize.value,
+    scorersWeight: sdScorersWeight.value,
+    scorersColor: sdScorersColor.value,
+  };
+}
+
+function applyShowdownResultData(d) {
+  if (!d) return;
+  if (typeof d.enabled === "boolean") sdResultToggle.checked = d.enabled;
+  if (d.score1 != null) sdScore1.value = d.score1;
+  if (d.score2 != null) sdScore2.value = d.score2;
+  if (d.scoreFont) sdScoreFont.value = d.scoreFont;
+  if (d.scoreSize != null) sdScoreSize.value = d.scoreSize;
+  if (d.scoreWeight) sdScoreWeight.value = d.scoreWeight;
+  if (d.scoreColor) sdScoreColor.value = d.scoreColor;
+  if (d.scorers1 != null) sdScorers1.value = d.scorers1;
+  if (d.scorers2 != null) sdScorers2.value = d.scorers2;
+  if (d.scorersFont) sdScorersFont.value = d.scorersFont;
+  if (d.scorersSize != null) sdScorersSize.value = d.scorersSize;
+  if (d.scorersWeight) sdScorersWeight.value = d.scorersWeight;
+  if (d.scorersColor) sdScorersColor.value = d.scorersColor;
 }
 
 function collectShowdownBgData() {
@@ -2533,6 +2908,12 @@ function collectShowdownBgData() {
     dir: sdBgDir.value,
     opacity: sdBgOpacity.value,
     colorText: sdColorText.value,
+    imageEnabled: sdBgImgToggle.checked,
+    imageFile: sdBgImgSelect.value,
+    imageOpacity: sdBgImgOpacity.value,
+    imageFadeEnabled: sdBgImgFadeToggle.checked,
+    imageFadeDir: sdBgImgFadeDir.value,
+    imageFadeEnd: sdBgImgFadeEnd.value,
   };
 }
 
@@ -2555,6 +2936,33 @@ function applyShowdownBgData(d) {
   if (d.dir) sdBgDir.value = d.dir;
   if (d.opacity != null) sdBgOpacity.value = d.opacity;
   if (d.colorText) sdColorText.value = d.colorText;
+  if (typeof d.imageEnabled === "boolean") {
+    sdBgImgToggle.checked = d.imageEnabled;
+    localStorage.setItem(SD_BG_IMAGE_PREF_KEY, d.imageEnabled ? "1" : "0");
+  }
+  if (d.imageFile != null) {
+    if ([...sdBgImgSelect.options].some((o) => o.value === d.imageFile)) {
+      sdBgImgSelect.value = d.imageFile;
+      localStorage.setItem(SD_BG_IMAGE_FILE_KEY, d.imageFile);
+    }
+  }
+  if (d.imageOpacity != null) {
+    sdBgImgOpacity.value = d.imageOpacity;
+    localStorage.setItem(SD_BG_IMAGE_OPACITY_KEY, d.imageOpacity);
+  }
+  if (typeof d.imageFadeEnabled === "boolean") {
+    sdBgImgFadeToggle.checked = d.imageFadeEnabled;
+    localStorage.setItem(SD_BG_IMAGE_FADE_KEY, d.imageFadeEnabled ? "1" : "0");
+  }
+  if (d.imageFadeDir) {
+    sdBgImgFadeDir.value = d.imageFadeDir;
+    localStorage.setItem(SD_BG_IMAGE_FADE_DIR_KEY, d.imageFadeDir);
+  }
+  if (d.imageFadeEnd != null) {
+    sdBgImgFadeEnd.value = d.imageFadeEnd;
+    localStorage.setItem(SD_BG_IMAGE_FADE_END_KEY, d.imageFadeEnd);
+  }
+  applySdBgImage();
 }
 
 function applyShowdownTypoData(d) {
@@ -2588,6 +2996,7 @@ function applyShowdownData(d) {
   if (d.referee != null) sdReferee.value = d.referee;
   applyShowdownBgData(d.bg);
   applyShowdownTypoData(d.typo);
+  applyShowdownResultData(d.result);
   if (d.colorText) sdColorText.value = d.colorText;
 }
 
@@ -2624,16 +3033,56 @@ const sdShowdownCRUD = makeListCRUD(SD_SAVED_KEY, "sd-saved-select", "sd-save-na
 const sdTypoCRUD = makeListCRUD(SD_SAVED_TYPOS_KEY, "sd-saved-typo-select", "sd-save-typo-name", "typo");
 const sdBgCRUD = makeListCRUD(SD_SAVED_BGS_KEY, "sd-saved-bg-select", "sd-save-bg-name", "fond");
 
+function stripDataUrlLogosFromSdSaves() {
+  const list = sdShowdownCRUD.get();
+  let stripped = 0;
+  for (const entry of list) {
+    const d = entry && entry.data;
+    if (!d) continue;
+    if (typeof d.logo1URL === "string" && d.logo1URL.startsWith("data:")) {
+      d.logo1URL = null;
+      stripped++;
+    }
+    if (typeof d.logo2URL === "string" && d.logo2URL.startsWith("data:")) {
+      d.logo2URL = null;
+      stripped++;
+    }
+  }
+  if (stripped > 0) sdShowdownCRUD.set(list);
+  return stripped;
+}
+
 function saveCurrentShowdown() {
   const nameInput = document.getElementById("sd-save-name");
   const name = nameInput.value.trim();
   if (!name) { alert("Donne un nom au showdown."); return; }
-  const list = sdShowdownCRUD.get();
-  const i = list.findIndex((s) => s.name === name);
+  let list = sdShowdownCRUD.get();
+  let i = list.findIndex((s) => s.name === name);
   const entry = { name, data: collectShowdownData() };
   if (i >= 0) { if (!confirm(`Showdown "${name}" existe. Écraser ?`)) return; list[i] = entry; }
   else list.push(entry);
-  sdShowdownCRUD.set(list);
+  try {
+    sdShowdownCRUD.set(list);
+  } catch (err) {
+    if (err && err.name === "QuotaExceededError") {
+      const stripped = stripDataUrlLogosFromSdSaves();
+      list = sdShowdownCRUD.get();
+      i = list.findIndex((s) => s.name === name);
+      if (i >= 0) list[i] = entry;
+      else list.push(entry);
+      try {
+        sdShowdownCRUD.set(list);
+        if (stripped > 0) {
+          alert(`Quota localStorage atteint : ${stripped} logo(s) intégré(s) dans d'anciennes sauvegardes ont été retirés pour libérer de l'espace. Re-sélectionne-les depuis ./Logos/ si nécessaire.`);
+        }
+      } catch (err2) {
+        alert("Impossible de sauvegarder : quota localStorage toujours dépassé. Supprime quelques showdowns sauvegardés et réessaie.");
+        return;
+      }
+    } else {
+      throw err;
+    }
+  }
   nameInput.value = "";
   sdShowdownCRUD.render();
   document.getElementById("sd-saved-select").value = String(list.findIndex((s) => s.name === name));
@@ -2721,19 +3170,18 @@ function deleteCurrentSdBg() {
   sdBgCRUD.render();
 }
 
-// Logo file upload handlers
+// Logo file upload handlers — store a path reference to ./Logos/<filename>
+// instead of an inline data URL (avoids hitting the localStorage quota).
+// The file must exist in the project's ./Logos/ folder.
 [sdLogo1File, sdLogo2File].forEach((input, idx) => {
   input.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      if (idx === 0) sdLogo1URL = ev.target.result;
-      else sdLogo2URL = ev.target.result;
-      updateShowdown();
-      saveShowdown();
-    };
-    reader.readAsDataURL(file);
+    const path = `./Logos/${file.name}`;
+    if (idx === 0) sdLogo1URL = path;
+    else sdLogo2URL = path;
+    updateShowdown();
+    saveShowdown();
   });
 });
 sdLogo1Clear.addEventListener("click", () => {
@@ -2754,6 +3202,8 @@ const sdInputEls = [
   sdName1Input, sdName2Input, sdPlace, sdDate, sdReferee,
   sdBgColor1, sdBgColor2, sdBgOpacity, sdColorText,
   sdMatchSize, sdNameSize, sdCenterLogoSize, sdTeamLogoSize, sdTeamGap, sdMetaSize,
+  sdScore1, sdScore2, sdScoreSize, sdScoreColor,
+  sdScorers1, sdScorers2, sdScorersSize, sdScorersColor,
 ];
 const sdChangeEls = [
   sdRound, sdLeg, sdBgDir,
@@ -2761,6 +3211,7 @@ const sdChangeEls = [
   sdMatchFont, sdMatchWeight,
   sdNameFont, sdNameWeight,
   sdMetaFont, sdMetaWeight,
+  sdResultToggle, sdScoreFont, sdScoreWeight, sdScorersFont, sdScorersWeight,
 ];
 sdInputEls.forEach((el) => el.addEventListener("input", () => { updateShowdown(); saveShowdown(); }));
 sdChangeEls.forEach((el) => el.addEventListener("change", () => { updateShowdown(); saveShowdown(); }));
@@ -2774,12 +3225,6 @@ document.getElementById("sd-delete-typo").addEventListener("click", deleteCurren
 document.getElementById("sd-save-bg").addEventListener("click", saveCurrentSdBg);
 document.getElementById("sd-load-bg").addEventListener("click", loadCurrentSdBg);
 document.getElementById("sd-delete-bg").addEventListener("click", deleteCurrentSdBg);
-
-loadShowdown();
-sdShowdownCRUD.render();
-sdTypoCRUD.render();
-sdBgCRUD.render();
-updateShowdown();
 
 /* ----- Showdown background image ----- */
 const SD_BG_IMAGE_PREF_KEY = "ucl-showdown-bg-image-v1";
@@ -2877,6 +3322,12 @@ sdBgImgFadeEnd.addEventListener("input", () => {
   applySdBgImage();
 });
 
+loadShowdown();
+sdShowdownCRUD.render();
+sdTypoCRUD.render();
+sdBgCRUD.render();
+updateShowdown();
+
 /* ----- Showdown top border line ----- */
 const SD_TOPLINE_PREF_KEY = "ucl-showdown-topline-v1";
 const SD_TOPLINE_THICKNESS_KEY = "ucl-showdown-topline-thickness-v1";
@@ -2938,6 +3389,12 @@ const EXPORT_RESOLUTION_HEIGHT = {
   "1080p": 1080,
   "720p": 720,
   "580p": 580,
+};
+const EXPORT_RESOLUTION_WIDTH = {
+  "4k": 3840,
+  "1080p": 1920,
+  "720p": 1280,
+  "580p": 1024,
 };
 
 function loadExternalScript(src, globalName) {
@@ -3001,8 +3458,11 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   const format = document.getElementById("export-format").value;
   const resolution = document.getElementById("export-resolution").value;
   const targetHeight = EXPORT_RESOLUTION_HEIGHT[resolution] || 1080;
+  const targetWidth = EXPORT_RESOLUTION_WIDTH[resolution] || 1920;
   const rect = target.getBoundingClientRect();
-  const scale = targetHeight / rect.height;
+  const aspect = rect.width / rect.height;
+  const scale =
+    aspect > 3 ? targetWidth / rect.width : targetHeight / rect.height;
   const baseName = `ucl-graphic-${resolution}-${Date.now()}`;
 
   const restored = await preInlineBgImages(target);
@@ -3402,4 +3862,146 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   } else {
     init();
   }
+})();
+
+/* ============================================================
+   6) THUMBNAIL PROMPT GENERATOR
+   ============================================================ */
+(function () {
+  const tnTeam = document.getElementById("tn-team-name");
+  const tnYear = document.getElementById("tn-year");
+  const tnStadium = document.getElementById("tn-stadium");
+  const tnStadiumCity = document.getElementById("tn-stadium-city");
+  const tnStar = document.getElementById("tn-star-player");
+  const tnColors = document.getElementById("tn-team-colors");
+  const tnNotes = document.getElementById("tn-extra-notes");
+  const tnOutput = document.getElementById("tn-prompt-output");
+  const tnCopyBtn = document.getElementById("tn-copy-btn");
+  const tnCopyBtn2 = document.getElementById("tn-copy-btn-2");
+  const tnResetBtn = document.getElementById("tn-reset-btn");
+  const tnStatus = document.getElementById("tn-copy-status");
+
+  if (!tnOutput) return;
+
+  const DEFAULTS = {
+    team: "AJAX",
+    year: "1973",
+    stadium: "Red Star Stadium",
+    stadiumCity: "Belgrade",
+    star: "Johann Cruyff",
+    colors: "rouge et blanc",
+    notes: "",
+  };
+
+  function prettyCase(s) {
+    const v = (s || "").trim();
+    if (!v) return "";
+    return v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+  }
+
+  function buildPrompt() {
+    const teamRaw = (tnTeam.value || "").trim();
+    const team = teamRaw.toUpperCase() || "TEAM";
+    const teamPretty = prettyCase(teamRaw) || "Team";
+    const year = (tnYear.value || "").trim() || "YEAR";
+    const stadium = (tnStadium.value || "").trim() || "Stadium";
+    const city = (tnStadiumCity.value || "").trim() || "City";
+    const star = (tnStar.value || "").trim() || "Star Player";
+    const colors = (tnColors.value || "").trim() || "team colors";
+    const notes = (tnNotes.value || "").trim();
+
+    const lines = [];
+    lines.push(
+      `Génère la même miniature/poster que l'image de référence, mais adaptée à la victoire européenne de l'${teamPretty} en ${year}.`,
+    );
+    lines.push("");
+    lines.push(
+      "Conserve EXACTEMENT le même style artistique, la même composition, le même cadrage, la même typographie, le même éclairage et la même atmosphère cinématique vintage que l'image d'origine. Seuls les éléments listés ci-dessous doivent changer :",
+    );
+    lines.push("");
+    lines.push(
+      `- Stade en arrière-plan : Parc des Princes 1956 → ${stadium}, ${city} ${year}.`,
+    );
+    lines.push(
+      `- Blason du club : blason du Real Madrid → blason officiel de l'${teamPretty} (fidèle à l'époque ${year}).`,
+    );
+    lines.push(
+      `- Titre principal : « REAL MADRID - ROAD TO VICTORY » → « ${team} - ROAD TO VICTORY ».`,
+    );
+    lines.push(`- Mention de l'année : « UCL 1956 » → « UCL ${year} ».`);
+    lines.push(
+      `- Joueurs représentés : effectif du Real Madrid 1956 → effectif de l'${teamPretty} ${year} (maillots, coupes de cheveux et physionomies fidèles à l'époque).`,
+    );
+    lines.push(
+      `- Joueur vedette à droite : Alfredo Di Stéfano (1956) → ${star} (${year}).`,
+    );
+    lines.push(
+      `- Palette de couleurs : tons blanc et or du Real Madrid → couleurs de l'${teamPretty} (${colors}).`,
+    );
+    lines.push("");
+    lines.push(
+      "Important : ne modifie ni la mise en page, ni les proportions, ni les polices, ni la direction artistique générale. Le rendu doit ressembler à une variante directe de l'image de référence, comme si elle appartenait à la même série de posters.",
+    );
+
+    if (notes) {
+      lines.push("");
+      lines.push(`Précisions additionnelles : ${notes}`);
+    }
+
+    return lines.join("\n");
+  }
+
+  function render() {
+    tnOutput.value = buildPrompt();
+  }
+
+  let statusTimer = null;
+  function flashStatus(msg) {
+    if (!tnStatus) return;
+    tnStatus.textContent = msg;
+    if (statusTimer) clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => {
+      tnStatus.textContent = "";
+    }, 2500);
+  }
+
+  async function copyPrompt() {
+    const text = tnOutput.value;
+    try {
+      await navigator.clipboard.writeText(text);
+      flashStatus("✓ Prompt copié dans le presse-papier");
+    } catch {
+      tnOutput.focus();
+      tnOutput.select();
+      try {
+        document.execCommand("copy");
+        flashStatus("✓ Prompt copié");
+      } catch {
+        flashStatus("⚠ Copie impossible — sélectionnez et copiez manuellement");
+      }
+    }
+  }
+
+  function reset() {
+    tnTeam.value = DEFAULTS.team;
+    tnYear.value = DEFAULTS.year;
+    tnStadium.value = DEFAULTS.stadium;
+    tnStadiumCity.value = DEFAULTS.stadiumCity;
+    tnStar.value = DEFAULTS.star;
+    tnColors.value = DEFAULTS.colors;
+    tnNotes.value = DEFAULTS.notes;
+    render();
+  }
+
+  [tnTeam, tnYear, tnStadium, tnStadiumCity, tnStar, tnColors, tnNotes].forEach(
+    (el) => {
+      if (el) el.addEventListener("input", render);
+    },
+  );
+
+  if (tnCopyBtn) tnCopyBtn.addEventListener("click", copyPrompt);
+  if (tnCopyBtn2) tnCopyBtn2.addEventListener("click", copyPrompt);
+  if (tnResetBtn) tnResetBtn.addEventListener("click", reset);
+
+  render();
 })();

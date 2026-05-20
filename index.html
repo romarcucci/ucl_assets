@@ -21,6 +21,7 @@
         <button class="tab" data-tab="score">Live Score</button>
         <button class="tab" data-tab="bracket">Playoff Table</button>
         <button class="tab" data-tab="showdown">Showdown</button>
+        <button class="tab" data-tab="thumbnail">Thumbnail</button>
       </nav>
       <div class="header-actions">
         <button
@@ -165,6 +166,92 @@
                   <option value="45">↗ Diagonal</option>
                 </select>
               </label>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Image de fond (nom joueur + club)</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="p-top-bg-image-toggle" />
+                <span>Activer l'image de fond</span>
+              </label>
+              <label class="field">
+                <span>Choix de l'image (préréglages)</span>
+                <select id="p-top-bg-image-select">
+                  <option value="">Aucune image</option>
+                  <option value="backgrounds/lineup_bg_01.png">
+                    Background 01
+                  </option>
+                  <option value="backgrounds/lineup_bg_02.png">
+                    Background 02
+                  </option>
+                  <option value="backgrounds/lineup_bg_03.png">
+                    Background 03
+                  </option>
+                  <option value="backgrounds/lineup_bg_04.png">
+                    Background 04
+                  </option>
+                  <option value="backgrounds/lineup_bg_05.png">
+                    Background 05
+                  </option>
+                  <option value="backgrounds/lineup_bg_06.png">
+                    Background 06
+                  </option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Importer une image personnalisée</span>
+                <input type="file" id="p-top-bg-image-file" accept="image/*" />
+              </label>
+              <button
+                class="btn-secondary"
+                id="p-top-bg-image-clear"
+                type="button"
+              >
+                Retirer l'image personnalisée
+              </button>
+              <label class="field">
+                <span
+                  >Opacité de l'image
+                  <span id="p-top-bg-image-opacity-value">50%</span></span
+                >
+                <input
+                  type="range"
+                  id="p-top-bg-image-opacity"
+                  min="0"
+                  max="100"
+                  value="50"
+                />
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="p-top-bg-image-fade-toggle" />
+                <span>Dégradé d'opacité sur l'image</span>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Direction du fade</span>
+                  <select id="p-top-bg-image-fade-dir">
+                    <option value="right">→ vers droite</option>
+                    <option value="left">← vers gauche</option>
+                    <option value="bottom">↓ vers bas</option>
+                    <option value="top">↑ vers haut</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span
+                    >Opacité fin
+                    <span id="p-top-bg-image-fade-end-value">0%</span></span
+                  >
+                  <input
+                    type="range"
+                    id="p-top-bg-image-fade-end"
+                    min="0"
+                    max="100"
+                    value="0"
+                  />
+                </label>
+              </div>
             </div>
           </details>
 
@@ -639,6 +726,9 @@
                       </option>
                       <option value="backgrounds/lineup_bg_05.png">
                         Background 05
+                      </option>
+                      <option value="backgrounds/lineup_bg_06.png">
+                        Background 06
                       </option>
                     </select>
                   </label>
@@ -1216,7 +1306,7 @@
                 <span>Activer l'image de fond</span>
               </label>
               <label class="field">
-                <span>Choix de l'image</span>
+                <span>Choix de l'image (préréglages)</span>
                 <select id="s-bg-image-select">
                   <option value="">Aucune image</option>
                   <option value="backgrounds/lineup_bg_01.png">
@@ -1234,8 +1324,26 @@
                   <option value="backgrounds/lineup_bg_05.png">
                     Background 05
                   </option>
+                  <option value="backgrounds/lineup_bg_06.png">
+                    Background 06
+                  </option>
                 </select>
               </label>
+              <label class="field">
+                <span>Importer une image personnalisée</span>
+                <input
+                  type="file"
+                  id="s-bg-image-file"
+                  accept="image/*"
+                />
+              </label>
+              <button
+                class="btn-secondary"
+                id="s-bg-image-clear"
+                type="button"
+              >
+                Retirer l'image personnalisée
+              </button>
               <label class="field">
                 <span
                   >Opacité de l'image
@@ -1540,6 +1648,128 @@
           </details>
 
           <details class="collapsible">
+            <summary>Résultat & buteurs</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="sd-result-toggle" />
+                <span>Afficher le score au centre</span>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Score équipe 1</span>
+                  <input
+                    type="number"
+                    id="sd-score-1"
+                    value="2"
+                    min="0"
+                    max="99"
+                  />
+                </label>
+                <label class="field">
+                  <span>Score équipe 2</span>
+                  <input
+                    type="number"
+                    id="sd-score-2"
+                    value="1"
+                    min="0"
+                    max="99"
+                  />
+                </label>
+              </div>
+              <p class="tn-info">
+                La typographie du score se règle dans la section
+                <strong>Typographie → Score</strong>.
+              </p>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Buteurs équipe 1 (gauche)</summary>
+                <div class="collapsible-body">
+                  <p class="tn-info">
+                    Un buteur par ligne, format : <strong>Nom | minute</strong>.<br />
+                    Ex : <em>VINÍCIUS | 23'</em>
+                  </p>
+                  <label class="field">
+                    <span>Liste des buteurs</span>
+                    <textarea
+                      id="sd-scorers-1"
+                      rows="4"
+                      placeholder="VINÍCIUS | 23'&#10;BELLINGHAM | 67'"
+                    >VINÍCIUS | 23'
+BELLINGHAM | 67'</textarea>
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Buteurs équipe 2 (droite)</summary>
+                <div class="collapsible-body">
+                  <p class="tn-info">
+                    Un buteur par ligne, format : <strong>Nom | minute</strong>.
+                  </p>
+                  <label class="field">
+                    <span>Liste des buteurs</span>
+                    <textarea
+                      id="sd-scorers-2"
+                      rows="4"
+                      placeholder="MBAPPÉ | 45+2'"
+                    >MBAPPÉ | 45+2'</textarea>
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Typographie des buteurs</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-scorers-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="sd-scorers-size-value">18px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-scorers-size"
+                        min="10"
+                        max="40"
+                        value="18"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-scorers-weight">
+                        <option value="300">300 Light</option>
+                        <option value="400" selected>400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Couleur</span>
+                    <input
+                      type="color"
+                      id="sd-scorers-color"
+                      value="#ffffff"
+                    />
+                  </label>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
             <summary>Fond</summary>
             <div class="collapsible-body">
               <div class="row">
@@ -1606,6 +1836,9 @@
                       </option>
                       <option value="backgrounds/lineup_bg_05.png">
                         Background 05
+                      </option>
+                      <option value="backgrounds/lineup_bg_06.png">
+                        Background 06
                       </option>
                     </select>
                   </label>
@@ -1883,6 +2116,54 @@
               </details>
 
               <details class="collapsible collapsible-nested">
+                <summary>Score (mode résultat)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-score-font">
+                      <option value="system">Système</option>
+                      <option value="condensed" selected>Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="sd-score-size-value">120px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-score-size"
+                        min="40"
+                        max="260"
+                        value="120"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-score-weight">
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700" selected>700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Couleur</span>
+                    <input type="color" id="sd-score-color" value="#ffffff" />
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
                 <summary>Typographies sauvegardées</summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
@@ -1975,6 +2256,99 @@
             </div>
           </details>
         </section>
+
+        <!-- ============ THUMBNAIL PROMPT EDITOR ============ -->
+        <section class="editor-section" data-editor="thumbnail">
+          <h2>Thumbnail (générateur de prompt)</h2>
+
+          <details class="collapsible" open>
+            <summary>Nouvelle miniature — équipe & année</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Nom de l'équipe</span>
+                  <input type="text" id="tn-team-name" value="AJAX" />
+                </label>
+                <label class="field">
+                  <span>Année</span>
+                  <input type="text" id="tn-year" value="1973" />
+                </label>
+              </div>
+              <div class="row">
+                <label class="field">
+                  <span>Stade</span>
+                  <input type="text" id="tn-stadium" value="Red Star Stadium" />
+                </label>
+                <label class="field">
+                  <span>Ville du stade</span>
+                  <input type="text" id="tn-stadium-city" value="Belgrade" />
+                </label>
+              </div>
+              <label class="field">
+                <span>Joueur vedette (à droite)</span>
+                <input type="text" id="tn-star-player" value="Johann Cruyff" />
+              </label>
+              <label class="field">
+                <span>Couleurs du club</span>
+                <input
+                  type="text"
+                  id="tn-team-colors"
+                  value="rouge et blanc"
+                  placeholder="ex: rouge et blanc"
+                />
+              </label>
+              <label class="field">
+                <span>Notes supplémentaires (optionnel)</span>
+                <textarea
+                  id="tn-extra-notes"
+                  rows="2"
+                  placeholder="ex: ajouter le trophée européen, ambiance pluvieuse..."
+                ></textarea>
+              </label>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Référence (image de base — non modifiable)</summary>
+            <div class="collapsible-body">
+              <p class="tn-info">
+                Ces éléments correspondent à la miniature d'origine et restent
+                figés dans le prompt :
+              </p>
+              <ul class="tn-info-list">
+                <li><strong>Équipe :</strong> Real Madrid</li>
+                <li><strong>Année :</strong> 1956</li>
+                <li><strong>Stade :</strong> Parc des Princes, Paris</li>
+                <li><strong>Joueur vedette :</strong> Alfredo Di Stéfano</li>
+                <li><strong>Couleurs :</strong> blanc et or</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="collapsible" open>
+            <summary>Actions</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <button
+                  class="btn-primary"
+                  id="tn-copy-btn"
+                  type="button"
+                  style="flex: 1"
+                >
+                  📋 Copier le prompt
+                </button>
+                <button
+                  class="btn-secondary"
+                  id="tn-reset-btn"
+                  type="button"
+                >
+                  ↺ Réinitialiser
+                </button>
+              </div>
+              <p class="tn-info" id="tn-copy-status"></p>
+            </div>
+          </details>
+        </section>
       </aside>
 
       <!-- ============ PREVIEW PANEL (RIGHT) ============ -->
@@ -2031,10 +2405,12 @@
             </div>
             <div class="pb-bars" id="pb-bars">
               <div class="pb-top" id="pb-top">
+                <div class="pb-top-bg-image" id="pb-top-bg-image"></div>
                 <span class="pb-name" id="pb-name">VINÍCIUS JÚNIOR</span>
                 <span class="pb-minute" id="pb-minute">45'</span>
               </div>
               <div class="pb-bottom" id="pb-bottom">
+                <div class="pb-bottom-bg-image" id="pb-bottom-bg-image"></div>
                 <span id="pb-club-name">REAL MADRID</span>
               </div>
             </div>
@@ -2240,12 +2616,24 @@
                 <div class="sd-logo" id="sd-logo-1"></div>
                 <div class="sd-team-name" id="sd-name-1">PSG</div>
               </div>
-              <img
-                class="sd-center-logo"
-                id="sd-center-logo"
-                src="./Logos/ucl_logo.png"
-                alt="UCL"
-              />
+              <div class="sd-center">
+                <div class="sd-score-wrap" id="sd-score-wrap">
+                  <span class="sd-score-num" id="sd-score-num-1">2</span>
+                  <span class="sd-score-sep">-</span>
+                  <span class="sd-score-num" id="sd-score-num-2">1</span>
+                </div>
+                <div class="sd-scorers-row" id="sd-scorers-row">
+                  <ul class="sd-scorers sd-scorers-left" id="sd-scorers-list-1"></ul>
+                  <span class="sd-scorers-sep" aria-hidden="true"></span>
+                  <ul class="sd-scorers sd-scorers-right" id="sd-scorers-list-2"></ul>
+                </div>
+                <img
+                  class="sd-center-logo"
+                  id="sd-center-logo"
+                  src="./Logos/ucl_logo.png"
+                  alt="UCL"
+                />
+              </div>
               <div class="sd-team sd-team-right">
                 <div class="sd-logo" id="sd-logo-2"></div>
                 <div class="sd-team-name" id="sd-name-2">REAL MADRID</div>
@@ -2257,6 +2645,24 @@
                 >D. ORSATO</span
               >
             </div>
+          </div>
+        </div>
+
+        <!-- Thumbnail prompt preview -->
+        <div class="preview-container" data-preview="thumbnail">
+          <div class="thumbnail-prompt-board">
+            <div class="tn-prompt-header">
+              <span class="tn-prompt-title">Prompt généré (Gemini Banana Pro)</span>
+              <button class="btn-secondary" id="tn-copy-btn-2" type="button">
+                📋 Copier
+              </button>
+            </div>
+            <textarea
+              id="tn-prompt-output"
+              class="tn-prompt-output"
+              readonly
+              spellcheck="false"
+            ></textarea>
           </div>
         </div>
       </section>

@@ -21,42 +21,57 @@ tabs.forEach((tab) => {
   });
 });
 
+/* ============ NUMBER STEPPER (custom +/- buttons) ============ */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".stepper-btn");
+  if (!btn) return;
+  const input = document.getElementById(btn.dataset.target);
+  if (!input) return;
+  const step = parseFloat(btn.dataset.step) || 1;
+  const min = input.min !== "" ? parseFloat(input.min) : -Infinity;
+  const max = input.max !== "" ? parseFloat(input.max) : Infinity;
+  const current = parseFloat(input.value) || 0;
+  const next = Math.min(max, Math.max(min, current + step));
+  if (next === current) return;
+  input.value = next;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+});
+
 /* ============================================================
    1) PLAYER BANNER
    ============================================================ */
-const CLUB_PRESETS = {
-  rma: { name: "RM", bg: "#fff", text: "#0a1a4a", stroke: "#c8a951" },
-  lfc: { name: "LFC", bg: "#d40000", text: "#fff", stroke: "#fdb913" },
-  bar: { name: "FCB", bg: "#a50044", text: "#fff", stroke: "#edbb00" },
-  psg: { name: "PSG", bg: "#004170", text: "#fff", stroke: "#da291c" },
-  bay: { name: "FCB", bg: "#dc052d", text: "#fff", stroke: "#0066b2" },
-  custom: null,
-};
-
-function renderClubLogo(clubKey, fileURL) {
-  const logoBox = document.getElementById("pb-logo");
-  if (fileURL) {
-    logoBox.innerHTML = `<img src="${fileURL}" alt="logo" />`;
-    return;
-  }
-  const preset = CLUB_PRESETS[clubKey];
-  if (!preset) {
-    logoBox.innerHTML = `<div style="color:#666;font-size:12px;">No logo</div>`;
-    return;
-  }
-  logoBox.innerHTML = `
-    <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="30" cy="30" r="28" fill="${preset.bg}" stroke="${preset.stroke}" stroke-width="2"/>
-      <text x="30" y="38" text-anchor="middle" font-family="serif" font-size="${preset.name.length > 2 ? 16 : 22}" font-weight="bold" fill="${preset.text}">${preset.name}</text>
-    </svg>
-  `;
+function renderGoalscorerPhoto(url) {
+  const box = document.getElementById("pb-logo");
+  box.innerHTML = url
+    ? `<img src="${url}" alt="goalscorer" />`
+    : `<div style="color:#666;font-size:12px;">Photo du buteur</div>`;
 }
 
-const pName = document.getElementById("p-name");
+function renderClubLogoInline(url) {
+  const img = document.getElementById("pb-club-logo");
+  if (!img) return;
+  if (url) img.setAttribute("src", url);
+  else img.removeAttribute("src");
+}
+
+const pFirstname = document.getElementById("p-firstname");
+const pLastname = document.getElementById("p-lastname");
 const pMinute = document.getElementById("p-minute");
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 const pClubName = document.getElementById("p-club-name");
-const pClub = document.getElementById("p-club");
-const pLogoFile = document.getElementById("p-logo-file");
+const pGoalscorerFile = document.getElementById("p-goalscorer-file");
+const pGoalscorerClear = document.getElementById("p-goalscorer-clear");
+const pClubLogoFile = document.getElementById("p-club-logo-file");
+const pClubLogoClear = document.getElementById("p-club-logo-clear");
 const pZoneWidth = document.getElementById("p-zone-width");
 const pZoneWidthValue = document.getElementById("p-zone-width-value");
 const pLogoColor1 = document.getElementById("p-logo-color-1");
@@ -79,10 +94,16 @@ const PB_FONTS = {
   mono: "'Courier New', Courier, monospace",
 };
 
-const pNameFont = document.getElementById("p-name-font");
-const pNameSize = document.getElementById("p-name-size");
-const pNameSizeValue = document.getElementById("p-name-size-value");
-const pNameWeight = document.getElementById("p-name-weight");
+const pFirstnameFont = document.getElementById("p-firstname-font");
+const pFirstnameSize = document.getElementById("p-firstname-size");
+const pFirstnameSizeValue = document.getElementById("p-firstname-size-value");
+const pFirstnameWeight = document.getElementById("p-firstname-weight");
+const pFirstnameUppercase = document.getElementById("p-firstname-uppercase");
+const pLastnameFont = document.getElementById("p-lastname-font");
+const pLastnameSize = document.getElementById("p-lastname-size");
+const pLastnameSizeValue = document.getElementById("p-lastname-size-value");
+const pLastnameWeight = document.getElementById("p-lastname-weight");
+const pLastnameUppercase = document.getElementById("p-lastname-uppercase");
 const pMinuteFont = document.getElementById("p-minute-font");
 const pMinuteSize = document.getElementById("p-minute-size");
 const pMinuteSizeValue = document.getElementById("p-minute-size-value");
@@ -92,10 +113,20 @@ const pClubnameSize = document.getElementById("p-clubname-size");
 const pClubnameSizeValue = document.getElementById("p-clubname-size-value");
 const pClubnameWeight = document.getElementById("p-clubname-weight");
 
-let customLogoURL = null;
+let goalscorerURL = null;
+let clubLogoURL = null;
 
 function updatePlayerBanner() {
-  document.getElementById("pb-name").textContent = pName.value;
+  const first = pFirstname.value.trim();
+  const last = pLastname.value.trim();
+  const firstHtml = first
+    ? `<span class="pb-name-first">${escapeHtml(first)}</span>`
+    : "";
+  const lastHtml = last
+    ? `<span class="pb-name-last">${escapeHtml(last)}</span>`
+    : "";
+  const sep = first && last ? " " : "";
+  document.getElementById("pb-name").innerHTML = firstHtml + sep + lastHtml;
   document.getElementById("pb-minute").textContent = pMinute.value;
   document.getElementById("pb-club-name").textContent = pClubName.value;
   const logoBg = `linear-gradient(${pLogoDir.value}deg, ${pLogoColor1.value}, ${pLogoColor2.value})`;
@@ -108,10 +139,28 @@ function updatePlayerBanner() {
   if (pZoneWidthValue) pZoneWidthValue.textContent = pZoneWidth.value + "px";
 
   const nameEl = document.getElementById("pb-name");
-  nameEl.style.fontFamily = PB_FONTS[pNameFont.value] || PB_FONTS.cinzel;
-  nameEl.style.fontSize = pNameSize.value + "px";
-  nameEl.style.fontWeight = pNameWeight.value;
-  if (pNameSizeValue) pNameSizeValue.textContent = pNameSize.value + "px";
+  const firstEl = nameEl.querySelector(".pb-name-first");
+  const lastEl = nameEl.querySelector(".pb-name-last");
+  if (firstEl) {
+    firstEl.style.fontFamily = PB_FONTS[pFirstnameFont.value] || PB_FONTS.cinzel;
+    firstEl.style.fontSize = pFirstnameSize.value + "px";
+    firstEl.style.fontWeight = pFirstnameWeight.value;
+    firstEl.style.textTransform = pFirstnameUppercase.checked
+      ? "uppercase"
+      : "none";
+  }
+  if (lastEl) {
+    lastEl.style.fontFamily = PB_FONTS[pLastnameFont.value] || PB_FONTS.cinzel;
+    lastEl.style.fontSize = pLastnameSize.value + "px";
+    lastEl.style.fontWeight = pLastnameWeight.value;
+    lastEl.style.textTransform = pLastnameUppercase.checked
+      ? "uppercase"
+      : "none";
+  }
+  if (pFirstnameSizeValue)
+    pFirstnameSizeValue.textContent = pFirstnameSize.value + "px";
+  if (pLastnameSizeValue)
+    pLastnameSizeValue.textContent = pLastnameSize.value + "px";
 
   const minuteEl = document.getElementById("pb-minute");
   minuteEl.style.fontFamily = PB_FONTS[pMinuteFont.value] || PB_FONTS.condensed;
@@ -127,11 +176,13 @@ function updatePlayerBanner() {
 
   const banner = document.getElementById("player-banner");
   banner.style.color = pColorText.value;
-  renderClubLogo(pClub.value, customLogoURL);
+  renderGoalscorerPhoto(goalscorerURL);
+  renderClubLogoInline(clubLogoURL);
 }
 
 [
-  pName,
+  pFirstname,
+  pLastname,
   pMinute,
   pClubName,
   pZoneWidth,
@@ -142,7 +193,8 @@ function updatePlayerBanner() {
   pBottomColor1,
   pBottomColor2,
   pColorText,
-  pNameSize,
+  pFirstnameSize,
+  pLastnameSize,
   pMinuteSize,
   pClubnameSize,
 ].forEach((el) => el.addEventListener("input", updatePlayerBanner));
@@ -150,27 +202,44 @@ function updatePlayerBanner() {
   pLogoDir,
   pTopDir,
   pBottomDir,
-  pNameFont,
-  pNameWeight,
+  pFirstnameFont,
+  pFirstnameWeight,
+  pFirstnameUppercase,
+  pLastnameFont,
+  pLastnameWeight,
+  pLastnameUppercase,
   pMinuteFont,
   pMinuteWeight,
   pClubnameFont,
   pClubnameWeight,
 ].forEach((el) => el.addEventListener("change", updatePlayerBanner));
-pClub.addEventListener("change", () => {
-  customLogoURL = null;
-  pLogoFile.value = "";
-  updatePlayerBanner();
-});
-pLogoFile.addEventListener("change", (e) => {
+// Store path references to ./Goalscorers/<file> and ./Logos/<file> rather
+// than inline data URLs — keeps saved banners tiny and quota-safe.
+pGoalscorerFile.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    customLogoURL = ev.target.result;
-    updatePlayerBanner();
-  };
-  reader.readAsDataURL(file);
+  goalscorerURL = `./Goalscorers/${file.name}`;
+  updatePlayerBanner();
+  saveBanner();
+});
+pGoalscorerClear.addEventListener("click", () => {
+  goalscorerURL = null;
+  pGoalscorerFile.value = "";
+  updatePlayerBanner();
+  saveBanner();
+});
+pClubLogoFile.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  clubLogoURL = `./Logos/${file.name}`;
+  updatePlayerBanner();
+  saveBanner();
+});
+pClubLogoClear.addEventListener("click", () => {
+  clubLogoURL = null;
+  pClubLogoFile.value = "";
+  updatePlayerBanner();
+  saveBanner();
 });
 
 /* ----- Player Banner save/load ----- */
@@ -179,11 +248,12 @@ const SAVED_BANNERS_KEY = "ucl-banner-saves-v1";
 
 function collectBannerData() {
   return {
-    name: pName.value,
+    firstName: pFirstname.value,
+    lastName: pLastname.value,
     minute: pMinute.value,
     clubName: pClubName.value,
-    club: pClub.value,
-    customLogoURL: customLogoURL,
+    goalscorerURL: goalscorerURL,
+    clubLogoURL: clubLogoURL,
     zoneWidth: pZoneWidth.value,
     logoColor1: pLogoColor1.value,
     logoColor2: pLogoColor2.value,
@@ -195,9 +265,14 @@ function collectBannerData() {
     bottomColor2: pBottomColor2.value,
     bottomDir: pBottomDir.value,
     colorText: pColorText.value,
-    nameFont: pNameFont.value,
-    nameSize: pNameSize.value,
-    nameWeight: pNameWeight.value,
+    firstnameFont: pFirstnameFont.value,
+    firstnameSize: pFirstnameSize.value,
+    firstnameWeight: pFirstnameWeight.value,
+    firstnameUppercase: pFirstnameUppercase.checked,
+    lastnameFont: pLastnameFont.value,
+    lastnameSize: pLastnameSize.value,
+    lastnameWeight: pLastnameWeight.value,
+    lastnameUppercase: pLastnameUppercase.checked,
     minuteFont: pMinuteFont.value,
     minuteSize: pMinuteSize.value,
     minuteWeight: pMinuteWeight.value,
@@ -217,11 +292,24 @@ function collectBannerData() {
 }
 
 function applyBannerData(d) {
-  if (d.name != null) pName.value = d.name;
+  // New schema: separate first/last. Legacy: d.name held the whole string —
+  // dump it into lastName so the user can split it manually.
+  if (d.firstName != null || d.lastName != null) {
+    pFirstname.value = d.firstName || "";
+    pLastname.value = d.lastName || "";
+  } else if (d.name != null) {
+    pFirstname.value = "";
+    pLastname.value = d.name;
+  }
   if (d.minute != null) pMinute.value = d.minute;
   if (d.clubName != null) pClubName.value = d.clubName;
-  if (d.club) pClub.value = d.club;
-  customLogoURL = d.customLogoURL || null;
+  // Only accept path references; ignore legacy base64 data: URLs from older saves
+  goalscorerURL = typeof d.goalscorerURL === "string" && !d.goalscorerURL.startsWith("data:")
+    ? d.goalscorerURL
+    : null;
+  clubLogoURL = typeof d.clubLogoURL === "string" && !d.clubLogoURL.startsWith("data:")
+    ? d.clubLogoURL
+    : null;
   if (d.zoneWidth) pZoneWidth.value = d.zoneWidth;
   if (d.logoColor1) pLogoColor1.value = d.logoColor1;
   if (d.logoColor2) pLogoColor2.value = d.logoColor2;
@@ -233,9 +321,24 @@ function applyBannerData(d) {
   if (d.bottomColor2) pBottomColor2.value = d.bottomColor2;
   if (d.bottomDir) pBottomDir.value = d.bottomDir;
   if (d.colorText) pColorText.value = d.colorText;
-  if (d.nameFont) pNameFont.value = d.nameFont;
-  if (d.nameSize) pNameSize.value = d.nameSize;
-  if (d.nameWeight) pNameWeight.value = d.nameWeight;
+  // New schema: separate first/last typo. Legacy nameFont/Size/Weight applies
+  // to both spans so existing saves keep their previous look.
+  if (d.firstnameFont) pFirstnameFont.value = d.firstnameFont;
+  else if (d.nameFont) pFirstnameFont.value = d.nameFont;
+  if (d.firstnameSize) pFirstnameSize.value = d.firstnameSize;
+  else if (d.nameSize) pFirstnameSize.value = d.nameSize;
+  if (d.firstnameWeight) pFirstnameWeight.value = d.firstnameWeight;
+  else if (d.nameWeight) pFirstnameWeight.value = d.nameWeight;
+  if (typeof d.firstnameUppercase === "boolean")
+    pFirstnameUppercase.checked = d.firstnameUppercase;
+  if (d.lastnameFont) pLastnameFont.value = d.lastnameFont;
+  else if (d.nameFont) pLastnameFont.value = d.nameFont;
+  if (d.lastnameSize) pLastnameSize.value = d.lastnameSize;
+  else if (d.nameSize) pLastnameSize.value = d.nameSize;
+  if (d.lastnameWeight) pLastnameWeight.value = d.lastnameWeight;
+  else if (d.nameWeight) pLastnameWeight.value = d.nameWeight;
+  if (typeof d.lastnameUppercase === "boolean")
+    pLastnameUppercase.checked = d.lastnameUppercase;
   if (d.minuteFont) pMinuteFont.value = d.minuteFont;
   if (d.minuteSize) pMinuteSize.value = d.minuteSize;
   if (d.minuteWeight) pMinuteWeight.value = d.minuteWeight;
@@ -318,7 +421,9 @@ function renderSavedBannersList() {
 }
 function saveCurrentAsBanner() {
   const nameInput = document.getElementById("p-save-name");
-  const sName = nameInput.value.trim() || pName.value.trim();
+  const sName =
+    nameInput.value.trim() ||
+    `${pFirstname.value} ${pLastname.value}`.trim();
   if (!sName) { alert("Donne un nom à la bannière."); return; }
   const list = getSavedBanners();
   const existing = list.findIndex((b) => b.name === sName);
@@ -362,15 +467,15 @@ document.getElementById("p-delete").addEventListener("click", deleteSelectedBann
 
 // Auto-save banner on any input
 const bannerAutoSaveEls = [
-  pName, pMinute, pClubName, pZoneWidth,
+  pFirstname, pLastname, pMinute, pClubName, pZoneWidth,
   pLogoColor1, pLogoColor2, pLogoDir,
   pTopColor1, pTopColor2, pTopDir,
   pBottomColor1, pBottomColor2, pBottomDir,
   pColorText,
-  pNameFont, pNameSize, pNameWeight,
+  pFirstnameFont, pFirstnameSize, pFirstnameWeight, pFirstnameUppercase,
+  pLastnameFont, pLastnameSize, pLastnameWeight, pLastnameUppercase,
   pMinuteFont, pMinuteSize, pMinuteWeight,
   pClubnameFont, pClubnameSize, pClubnameWeight,
-  pClub,
 ];
 bannerAutoSaveEls.forEach((el) => {
   if (!el) return;
@@ -571,6 +676,7 @@ const SAVED_TEAMS_KEY = "ucl-lineup-teams-v1";
 const SAVED_FORMATIONS_KEY = "ucl-lineup-formations-v1";
 const SAVED_STYLES_KEY = "ucl-lineup-styles-v1";
 const SAVED_TYPOS_KEY = "ucl-lineup-typos-v1";
+const SAVED_KITS_KEY = "ucl-lineup-kits-v1";
 
 function collectLineupData() {
   return {
@@ -641,6 +747,9 @@ function applyLineupData(data) {
   if (data.typo && typeof applyTypoData === "function") {
     applyTypoData(data.typo);
   }
+  if (data.style && typeof applyStyleData === "function") {
+    applyStyleData(data.style);
+  }
   if (data.bgOpacity != null)
     document.getElementById("l-bg-opacity").value = data.bgOpacity;
   if (Array.isArray(data.starters) && data.starters.length === 11) {
@@ -653,7 +762,7 @@ function saveLineup() {
   try {
     localStorage.setItem(
       LINEUP_STORAGE_KEY,
-      JSON.stringify(collectLineupData()),
+      JSON.stringify(compressLineupData(collectLineupData())),
     );
   } catch (e) {
     /* storage unavailable */
@@ -664,7 +773,7 @@ function loadLineup() {
   try {
     const raw = localStorage.getItem(LINEUP_STORAGE_KEY);
     if (!raw) return;
-    applyLineupData(JSON.parse(raw));
+    applyLineupData(expandLineupData(JSON.parse(raw)));
   } catch (e) {
     /* invalid data */
   }
@@ -728,11 +837,17 @@ function saveCurrentAsTeam() {
   }
   const teams = getSavedTeams();
   const existing = teams.findIndex((t) => t.name === name);
-  // Exclude background and typo fields from team saves — they have dedicated save systems
+  // Capture current background as a style snapshot so compressLineupData can
+  // replace it with a styleRef when it matches a saved style preset.
   const teamData = collectLineupData();
   delete teamData.colorBg;
   delete teamData.bgOpacity;
-  delete teamData.typo;
+  teamData.style = collectStyleData();
+  compressLineupData(teamData);
+  // If no preset matched, drop the inline objects so team saves stay focused
+  // on team identity (kit/typo/style stay as their own dedicated systems).
+  if (teamData.style && !teamData.styleRef) delete teamData.style;
+  if (teamData.typo && !teamData.typoRef) delete teamData.typo;
   const entry = { name, data: teamData };
   if (existing >= 0) {
     if (!confirm(`Une équipe "${name}" existe déjà. L'écraser ?`)) return;
@@ -752,7 +867,7 @@ function loadSelectedTeam() {
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
-  applyLineupData(teams[idx].data);
+  applyLineupData(expandLineupData(JSON.parse(JSON.stringify(teams[idx].data))));
   document.getElementById("l-team-logo-file").value = "";
   document.getElementById("l-save-team-name").value = teams[idx].name;
   renderStartersEditor();
@@ -1056,6 +1171,223 @@ function deleteSelectedTypo() {
   list.splice(idx, 1);
   setSavedTypos(list);
   renderSavedTyposList();
+}
+
+/* ----- Kits sauvegardés (maillot + couleurs) ----- */
+const KIT_FIELDS = [
+  "colorShirt", "colorGk", "colorNum", "colorNumGk",
+  "shirtStyle", "colorSleeves", "colorStripes",
+  "numberFont",
+];
+function getSavedKits() {
+  try { return JSON.parse(localStorage.getItem(SAVED_KITS_KEY) || "[]"); }
+  catch { return []; }
+}
+function setSavedKits(list) {
+  localStorage.setItem(SAVED_KITS_KEY, JSON.stringify(list));
+}
+function renderSavedKitsList() {
+  const sel = document.getElementById("l-saved-kit-select");
+  if (!sel) return;
+  const list = getSavedKits();
+  if (list.length === 0) {
+    sel.innerHTML = '<option value="">— Aucun kit sauvegardé —</option>';
+  } else {
+    sel.innerHTML = list.map((k, i) => `<option value="${i}">${k.name}</option>`).join("");
+  }
+}
+function collectKitData() {
+  return {
+    colorShirt: document.getElementById("l-color-shirt").value,
+    colorGk: document.getElementById("l-color-gk").value,
+    colorNum: document.getElementById("l-color-num").value,
+    colorNumGk: document.getElementById("l-color-num-gk").value,
+    shirtStyle: document.getElementById("l-shirt-style").value,
+    colorSleeves: document.getElementById("l-color-sleeves").value,
+    colorStripes: document.getElementById("l-color-stripes").value,
+    numberFont: document.getElementById("l-number-font").value,
+  };
+}
+function applyKitData(d) {
+  if (d.colorShirt) document.getElementById("l-color-shirt").value = d.colorShirt;
+  if (d.colorGk) document.getElementById("l-color-gk").value = d.colorGk;
+  if (d.colorNum) document.getElementById("l-color-num").value = d.colorNum;
+  if (d.colorNumGk) document.getElementById("l-color-num-gk").value = d.colorNumGk;
+  if (d.shirtStyle) document.getElementById("l-shirt-style").value = d.shirtStyle;
+  if (d.colorSleeves) document.getElementById("l-color-sleeves").value = d.colorSleeves;
+  if (d.colorStripes) document.getElementById("l-color-stripes").value = d.colorStripes;
+  if (d.numberFont) document.getElementById("l-number-font").value = d.numberFont;
+  updateLineupCommon();
+}
+function saveCurrentAsKit() {
+  const nameInput = document.getElementById("l-save-kit-name");
+  const name = nameInput.value.trim();
+  if (!name) { alert("Donne un nom au kit."); return; }
+  const list = getSavedKits();
+  const existing = list.findIndex((k) => k.name === name);
+  const entry = { name, data: collectKitData() };
+  if (existing >= 0) {
+    if (!confirm(`Un kit "${name}" existe déjà. L'écraser ?`)) return;
+    list[existing] = entry;
+  } else {
+    list.push(entry);
+  }
+  setSavedKits(list);
+  nameInput.value = "";
+  renderSavedKitsList();
+  const idx = list.findIndex((k) => k.name === name);
+  document.getElementById("l-saved-kit-select").value = String(idx);
+}
+function loadSelectedKit() {
+  const sel = document.getElementById("l-saved-kit-select");
+  const idx = parseInt(sel.value, 10);
+  const list = getSavedKits();
+  if (isNaN(idx) || !list[idx]) return;
+  applyKitData(list[idx].data);
+  document.getElementById("l-save-kit-name").value = list[idx].name;
+  saveLineup();
+}
+function deleteSelectedKit() {
+  const sel = document.getElementById("l-saved-kit-select");
+  const idx = parseInt(sel.value, 10);
+  const list = getSavedKits();
+  if (isNaN(idx) || !list[idx]) return;
+  if (!confirm(`Supprimer le kit "${list[idx].name}" ?`)) return;
+  list.splice(idx, 1);
+  setSavedKits(list);
+  renderSavedKitsList();
+}
+
+/* ----- Dedup helpers (reference saved presets by name) ----- */
+function stableStringify(v) {
+  if (v === null || typeof v !== "object") return JSON.stringify(v);
+  if (Array.isArray(v))
+    return "[" + v.map(stableStringify).join(",") + "]";
+  const keys = Object.keys(v).sort();
+  return (
+    "{" +
+    keys
+      .map((k) => JSON.stringify(k) + ":" + stableStringify(v[k]))
+      .join(",") +
+    "}"
+  );
+}
+function findPresetNameByContent(list, currentData) {
+  if (!Array.isArray(list) || !currentData) return null;
+  const target = stableStringify(currentData);
+  for (const item of list) {
+    if (item && item.data && stableStringify(item.data) === target)
+      return item.name;
+  }
+  return null;
+}
+function findFormationNameByPositions(list, positions) {
+  if (!Array.isArray(list) || !Array.isArray(positions)) return null;
+  const target = stableStringify(
+    positions.map((p) => ({ x: p.x, y: p.y, gk: !!p.gk })),
+  );
+  for (const item of list) {
+    if (
+      item &&
+      Array.isArray(item.positions) &&
+      item.positions.length === positions.length &&
+      stableStringify(
+        item.positions.map((p) => ({ x: p.x, y: p.y, gk: !!p.gk })),
+      ) === target
+    ) {
+      return item.name;
+    }
+  }
+  return null;
+}
+
+/* Compress a lineup data blob: replace embedded typo/positions with refs when
+   they match a saved preset. Mutates and returns the same object. */
+function compressLineupData(data) {
+  if (!data) return data;
+  // Typo ref
+  if (data.typo) {
+    const name = findPresetNameByContent(getSavedTypos(), data.typo);
+    if (name) {
+      data.typoRef = name;
+      delete data.typo;
+    }
+  }
+  // Style ref (background + divider preset)
+  if (data.style) {
+    const name = findPresetNameByContent(getSavedStyles(), data.style);
+    if (name) {
+      data.styleRef = name;
+      delete data.style;
+    }
+  }
+  // Kit ref (shirt style + colors), only if all kit fields are present
+  if (KIT_FIELDS.every((f) => data[f] != null)) {
+    const currentKit = {};
+    KIT_FIELDS.forEach((f) => (currentKit[f] = data[f]));
+    const name = findPresetNameByContent(getSavedKits(), currentKit);
+    if (name) {
+      data.kitRef = name;
+      KIT_FIELDS.forEach((f) => delete data[f]);
+    }
+  }
+  // Formation ref (positions only); keep num/name/captain on starters
+  if (Array.isArray(data.starters) && data.starters.length === 11) {
+    const positions = data.starters.map((p) => ({
+      x: p.x,
+      y: p.y,
+      gk: !!p.gk,
+    }));
+    const name = findFormationNameByPositions(getSavedFormations(), positions);
+    if (name) {
+      data.formationRef = name;
+      data.starters = data.starters.map((p) => {
+        const out = { num: p.num, name: p.name };
+        if (p.captain) out.captain = true;
+        return out;
+      });
+    }
+  }
+  return data;
+}
+
+function expandLineupData(data) {
+  if (!data) return data;
+  if (data.typoRef && !data.typo) {
+    const list = getSavedTypos();
+    const found = list.find((t) => t.name === data.typoRef);
+    if (found && found.data) data.typo = found.data;
+  }
+  if (data.styleRef && !data.style) {
+    const list = getSavedStyles();
+    const found = list.find((s) => s.name === data.styleRef);
+    if (found && found.data) data.style = found.data;
+  }
+  if (data.kitRef) {
+    const list = getSavedKits();
+    const found = list.find((k) => k.name === data.kitRef);
+    if (found && found.data) {
+      KIT_FIELDS.forEach((f) => {
+        if (data[f] == null && found.data[f] != null) data[f] = found.data[f];
+      });
+    }
+  }
+  if (data.formationRef && Array.isArray(data.starters)) {
+    const list = getSavedFormations();
+    const found = list.find((f) => f.name === data.formationRef);
+    const positions =
+      found && Array.isArray(found.positions) ? found.positions : null;
+    data.starters = data.starters.map((p, i) => {
+      const pos = (positions && positions[i]) || defaultStarters[i] || {};
+      return {
+        ...p,
+        x: p.x != null ? p.x : pos.x,
+        y: p.y != null ? p.y : pos.y,
+        gk: p.gk != null ? p.gk : !!pos.gk,
+      };
+    });
+  }
+  return data;
 }
 
 function renderStartersEditor() {
@@ -1417,16 +1749,15 @@ document.getElementById("l-reset").addEventListener("click", () => {
     resetLineup();
 });
 
+// Store a path reference to ./Logos/<filename> instead of an inline data URL
+// (avoids hitting the localStorage quota and keeps team saves tiny). The file
+// must exist in the project's ./Logos/ folder.
 document.getElementById("l-team-logo-file").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    teamLogoURL = ev.target.result;
-    renderTeamLogo();
-    saveLineup();
-  };
-  reader.readAsDataURL(file);
+  teamLogoURL = `./Logos/${file.name}`;
+  renderTeamLogo();
+  saveLineup();
 });
 
 document.getElementById("l-team-logo-clear").addEventListener("click", () => {
@@ -1467,6 +1798,11 @@ document.getElementById("l-load-typo").addEventListener("click", loadSelectedTyp
 document.getElementById("l-delete-typo").addEventListener("click", deleteSelectedTypo);
 renderSavedTyposList();
 
+document.getElementById("l-save-kit").addEventListener("click", saveCurrentAsKit);
+document.getElementById("l-load-kit").addEventListener("click", loadSelectedKit);
+document.getElementById("l-delete-kit").addEventListener("click", deleteSelectedKit);
+renderSavedKitsList();
+
 [
   lTeamSize, lFooterSize, lCoachSize, lPlayerSize,
 ].forEach((el) => el.addEventListener("input", () => { updateLineupCommon(); saveLineup(); }));
@@ -1478,12 +1814,21 @@ renderSavedTyposList();
 ].forEach((el) => el.addEventListener("change", () => { updateLineupCommon(); saveLineup(); }));
 
 /* ----- Export / Import JSON (équipes + formations) ----- */
-function exportSavesToJson() {
-  const state = {};
+function collectStorageStateByCategory() {
+  const counts = { lineup: 0, banner: 0, score: 0, showdown: 0, prefs: 0 };
+  const byCat = { lineup: {}, banner: {}, score: {}, showdown: {}, prefs: {} };
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith("ucl-")) state[k] = localStorage.getItem(k);
+    if (!k || !k.startsWith("ucl-")) continue;
+    const cat = categorizeStorageKey(k);
+    if (!cat) continue;
+    byCat[cat][k] = localStorage.getItem(k);
+    counts[cat]++;
   }
+  return { counts, byCat };
+}
+
+function downloadJsonPayload(state, selectedCategories) {
   const payload = {
     version: 2,
     exportedAt: new Date().toISOString(),
@@ -1495,11 +1840,144 @@ function exportSavesToJson() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `ucl-saves-${new Date().toISOString().slice(0, 10)}.json`;
+  const date = new Date().toISOString().slice(0, 10);
+  const cats = Array.isArray(selectedCategories) ? selectedCategories : [];
+  const tag =
+    cats.length === 0
+      ? "empty"
+      : cats.length === IMPORT_CATEGORIES.length
+        ? "all"
+        : cats.join("-");
+  a.download = `ucl-saves-${tag}-${date}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function exportSavesToJson() {
+  const modal = document.getElementById("l-export-modal");
+  const { counts, byCat } = collectStorageStateByCategory();
+  IMPORT_CATEGORIES.forEach((cat) => {
+    const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
+    const cb = modal.querySelector(`input[data-cat="${cat}"]`);
+    const wrap = cb ? cb.closest(".import-category") : null;
+    if (countEl) countEl.textContent = counts[cat];
+    if (cb) {
+      cb.checked = counts[cat] > 0;
+      cb.disabled = counts[cat] === 0;
+    }
+    if (wrap) wrap.classList.toggle("import-category-empty", counts[cat] === 0);
+  });
+  const cancelBtn = document.getElementById("l-export-modal-cancel");
+  const confirmBtn = document.getElementById("l-export-modal-confirm");
+  const toggleBtn = document.getElementById("l-export-modal-toggle-all");
+  const cleanup = () => {
+    cancelBtn.removeEventListener("click", onCancel);
+    confirmBtn.removeEventListener("click", onOk);
+    toggleBtn.removeEventListener("click", onToggle);
+  };
+  const onCancel = () => {
+    cleanup();
+    modal.close();
+  };
+  const onOk = () => {
+    const selected = IMPORT_CATEGORIES.filter((cat) => {
+      const cb = modal.querySelector(`input[data-cat="${cat}"]`);
+      return cb && cb.checked && !cb.disabled;
+    });
+    if (selected.length === 0) {
+      alert("Sélectionne au moins une section à exporter.");
+      return;
+    }
+    cleanup();
+    modal.close();
+    const state = {};
+    selected.forEach((cat) => Object.assign(state, byCat[cat]));
+    downloadJsonPayload(state, selected);
+  };
+  const onToggle = () => {
+    const boxes = IMPORT_CATEGORIES.map((cat) =>
+      modal.querySelector(`input[data-cat="${cat}"]`),
+    ).filter((cb) => cb && !cb.disabled);
+    const allChecked = boxes.every((cb) => cb.checked);
+    boxes.forEach((cb) => (cb.checked = !allChecked));
+  };
+  cancelBtn.addEventListener("click", onCancel);
+  confirmBtn.addEventListener("click", onOk);
+  toggleBtn.addEventListener("click", onToggle);
+  if (typeof modal.showModal === "function") modal.showModal();
+  else modal.setAttribute("open", "");
+}
+
+const IMPORT_CATEGORIES = ["lineup", "banner", "score", "showdown", "prefs"];
+function categorizeStorageKey(key) {
+  if (!key || !key.startsWith("ucl-")) return null;
+  if (key.startsWith("ucl-lineup-")) return "lineup";
+  if (key.startsWith("ucl-banner-") || key.startsWith("ucl-player-"))
+    return "banner";
+  if (key.startsWith("ucl-score-")) return "score";
+  if (key.startsWith("ucl-showdown-")) return "showdown";
+  return "prefs";
+}
+
+function openImportCategoryModal(entries, onConfirm) {
+  const modal = document.getElementById("l-import-modal");
+  const counts = Object.fromEntries(IMPORT_CATEGORIES.map((c) => [c, 0]));
+  entries.forEach(([k]) => {
+    const cat = categorizeStorageKey(k);
+    if (cat) counts[cat]++;
+  });
+  IMPORT_CATEGORIES.forEach((cat) => {
+    const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
+    const cb = modal.querySelector(`input[data-cat="${cat}"]`);
+    const wrap = cb ? cb.closest(".import-category") : null;
+    if (countEl) countEl.textContent = counts[cat];
+    if (cb) {
+      cb.checked = counts[cat] > 0;
+      cb.disabled = counts[cat] === 0;
+    }
+    if (wrap) wrap.classList.toggle("import-category-empty", counts[cat] === 0);
+  });
+  const cancelBtn = document.getElementById("l-import-modal-cancel");
+  const confirmBtn = document.getElementById("l-import-modal-confirm");
+  const toggleBtn = document.getElementById("l-import-modal-toggle-all");
+  const cleanup = () => {
+    cancelBtn.removeEventListener("click", onCancel);
+    confirmBtn.removeEventListener("click", onOk);
+    toggleBtn.removeEventListener("click", onToggle);
+  };
+  const onCancel = () => {
+    cleanup();
+    modal.close();
+  };
+  const onOk = () => {
+    const selected = new Set(
+      IMPORT_CATEGORIES.filter((cat) => {
+        const cb = modal.querySelector(`input[data-cat="${cat}"]`);
+        return cb && cb.checked && !cb.disabled;
+      }),
+    );
+    if (selected.size === 0) {
+      alert("Sélectionne au moins une section à importer.");
+      return;
+    }
+    cleanup();
+    modal.close();
+    onConfirm(selected);
+  };
+  const onToggle = () => {
+    const boxes = IMPORT_CATEGORIES.map((cat) =>
+      modal.querySelector(`input[data-cat="${cat}"]`),
+    ).filter((cb) => cb && !cb.disabled);
+    const allChecked = boxes.every((cb) => cb.checked);
+    boxes.forEach((cb) => (cb.checked = !allChecked));
+  };
+  cancelBtn.addEventListener("click", onCancel);
+  confirmBtn.addEventListener("click", onOk);
+  toggleBtn.addEventListener("click", onToggle);
+  if (typeof modal.showModal === "function") modal.showModal();
+  else modal.setAttribute("open", "");
 }
 
 function importSavesFromJson(file) {
@@ -1521,19 +1999,19 @@ function importSavesFromJson(file) {
         alert("Aucune donnée trouvée dans le fichier.");
         return;
       }
-      const msg =
-        `Importer ${entries.length} entrée(s) du fichier ?\n\n` +
-        `Toutes les sauvegardes locales actuelles seront remplacées par ` +
-        `celles du fichier. La page sera rechargée après l'import.`;
-      if (!confirm(msg)) return;
-      const toRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith("ucl-")) toRemove.push(k);
-      }
-      toRemove.forEach((k) => localStorage.removeItem(k));
-      entries.forEach(([k, v]) => localStorage.setItem(k, v));
-      location.reload();
+      openImportCategoryModal(entries, (selectedCats) => {
+        const selectedEntries = entries.filter(([k]) =>
+          selectedCats.has(categorizeStorageKey(k)),
+        );
+        const toRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && selectedCats.has(categorizeStorageKey(k))) toRemove.push(k);
+        }
+        toRemove.forEach((k) => localStorage.removeItem(k));
+        selectedEntries.forEach(([k, v]) => localStorage.setItem(k, v));
+        location.reload();
+      });
       return;
     }
     const importedTeams = Array.isArray(parsed.teams) ? parsed.teams : [];
@@ -1610,6 +2088,7 @@ function importSavesFromJson(file) {
     renderSavedStylesList();
     renderSavedBannersList();
     renderSavedTyposList();
+    renderSavedKitsList();
     sdShowdownCRUD.render();
     sdTypoCRUD.render();
     sdBgCRUD.render();
@@ -1618,6 +2097,82 @@ function importSavesFromJson(file) {
     );
   };
   reader.readAsText(file);
+}
+
+function clearSavesByCategory() {
+  const modal = document.getElementById("l-clear-modal");
+  const { counts } = collectStorageStateByCategory();
+  IMPORT_CATEGORIES.forEach((cat) => {
+    const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
+    const cb = modal.querySelector(`input[data-cat="${cat}"]`);
+    const wrap = cb ? cb.closest(".import-category") : null;
+    if (countEl) countEl.textContent = counts[cat];
+    if (cb) {
+      cb.checked = false;
+      cb.disabled = counts[cat] === 0;
+    }
+    if (wrap) wrap.classList.toggle("import-category-empty", counts[cat] === 0);
+  });
+  const cancelBtn = document.getElementById("l-clear-modal-cancel");
+  const confirmBtn = document.getElementById("l-clear-modal-confirm");
+  const toggleBtn = document.getElementById("l-clear-modal-toggle-all");
+  const cleanup = () => {
+    cancelBtn.removeEventListener("click", onCancel);
+    confirmBtn.removeEventListener("click", onOk);
+    toggleBtn.removeEventListener("click", onToggle);
+  };
+  const onCancel = () => {
+    cleanup();
+    modal.close();
+  };
+  const onOk = () => {
+    const selected = new Set(
+      IMPORT_CATEGORIES.filter((cat) => {
+        const cb = modal.querySelector(`input[data-cat="${cat}"]`);
+        return cb && cb.checked && !cb.disabled;
+      }),
+    );
+    if (selected.size === 0) {
+      alert("Sélectionne au moins une section à supprimer.");
+      return;
+    }
+    const labels = {
+      lineup: "Lineup",
+      banner: "Goal Scoreboard",
+      score: "Live Score",
+      showdown: "Showdown",
+      prefs: "Préférences",
+    };
+    const names = [...selected].map((c) => labels[c]).join(", ");
+    if (
+      !confirm(
+        `Supprimer toutes les sauvegardes locales de : ${names} ?\n\n` +
+          `Cette action est irréversible. La page sera rechargée.`,
+      )
+    )
+      return;
+    cleanup();
+    modal.close();
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && selected.has(categorizeStorageKey(k))) toRemove.push(k);
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+    location.reload();
+  };
+  const onToggle = () => {
+    const boxes = IMPORT_CATEGORIES.map((cat) =>
+      modal.querySelector(`input[data-cat="${cat}"]`),
+    ).filter((cb) => cb && !cb.disabled);
+    const allChecked = boxes.every((cb) => cb.checked);
+    boxes.forEach((cb) => (cb.checked = !allChecked));
+  };
+  cancelBtn.addEventListener("click", onCancel);
+  confirmBtn.addEventListener("click", onOk);
+  toggleBtn.addEventListener("click", onToggle);
+  if (typeof modal.showModal === "function") modal.showModal();
+  else modal.setAttribute("open", "");
 }
 
 document
@@ -1634,6 +2189,9 @@ document
     importSavesFromJson(file);
     e.target.value = "";
   });
+document
+  .getElementById("l-clear-json-btn")
+  .addEventListener("click", clearSavesByCategory);
 
 /* Toggle grille d'alignement */
 const GRID_PREF_KEY = "ucl-lineup-grid-v1";
@@ -3012,16 +3570,50 @@ function applyShowdownData(d) {
   if (d.colorText) sdColorText.value = d.colorText;
 }
 
+function compressShowdownData(d) {
+  if (!d) return d;
+  if (d.bg) {
+    const name = findPresetNameByContent(sdBgCRUD.get(), d.bg);
+    if (name) {
+      d.bgRef = name;
+      delete d.bg;
+    }
+  }
+  if (d.typo) {
+    const name = findPresetNameByContent(sdTypoCRUD.get(), d.typo);
+    if (name) {
+      d.typoRef = name;
+      delete d.typo;
+    }
+  }
+  return d;
+}
+function expandShowdownData(d) {
+  if (!d) return d;
+  if (d.bgRef && !d.bg) {
+    const found = sdBgCRUD.get().find((b) => b.name === d.bgRef);
+    if (found && found.data) d.bg = found.data;
+  }
+  if (d.typoRef && !d.typo) {
+    const found = sdTypoCRUD.get().find((t) => t.name === d.typoRef);
+    if (found && found.data) d.typo = found.data;
+  }
+  return d;
+}
+
 function saveShowdown() {
   try {
-    localStorage.setItem(SD_STORAGE_KEY, JSON.stringify(collectShowdownData()));
+    localStorage.setItem(
+      SD_STORAGE_KEY,
+      JSON.stringify(compressShowdownData(collectShowdownData())),
+    );
   } catch (e) {}
 }
 function loadShowdown() {
   try {
     const raw = localStorage.getItem(SD_STORAGE_KEY);
     if (!raw) return;
-    applyShowdownData(JSON.parse(raw));
+    applyShowdownData(expandShowdownData(JSON.parse(raw)));
   } catch (e) {}
 }
 
@@ -3070,7 +3662,7 @@ function saveCurrentShowdown() {
   if (!name) { alert("Donne un nom au showdown."); return; }
   let list = sdShowdownCRUD.get();
   let i = list.findIndex((s) => s.name === name);
-  const entry = { name, data: collectShowdownData() };
+  const entry = { name, data: compressShowdownData(collectShowdownData()) };
   if (i >= 0) { if (!confirm(`Showdown "${name}" existe. Écraser ?`)) return; list[i] = entry; }
   else list.push(entry);
   try {
@@ -3103,7 +3695,7 @@ function loadCurrentShowdown() {
   const idx = parseInt(document.getElementById("sd-saved-select").value, 10);
   const list = sdShowdownCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
-  applyShowdownData(list[idx].data);
+  applyShowdownData(expandShowdownData(JSON.parse(JSON.stringify(list[idx].data))));
   document.getElementById("sd-save-name").value = list[idx].name;
   updateShowdown();
   saveShowdown();
@@ -3463,6 +4055,91 @@ async function preInlineBgImages(target) {
   return restore;
 }
 
+function slugForExport(text) {
+  return (text || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function buildGraphicExportBaseName(activeContainer, resolution) {
+  const kind = activeContainer.dataset.preview || "graphic";
+  const val = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return "";
+    return ("value" in el ? el.value : el.textContent) || "";
+  };
+  const parts = [];
+  switch (kind) {
+    case "player": {
+      const player = slugForExport(
+        `${val("p-firstname")} ${val("p-lastname")}`.trim(),
+      );
+      const club = slugForExport(val("p-club-name"));
+      const minute = slugForExport(val("p-minute"));
+      parts.push("banner");
+      if (player) parts.push(player);
+      if (club) parts.push(club);
+      if (minute) parts.push(minute + "min");
+      break;
+    }
+    case "lineup": {
+      const team = slugForExport(val("l-team"));
+      const round = slugForExport(val("l-footer-round"));
+      const leg = slugForExport(val("l-footer-leg"));
+      parts.push("lineup");
+      if (team) parts.push(team);
+      if (round) parts.push(round);
+      if (leg) parts.push(leg);
+      break;
+    }
+    case "score": {
+      const home = slugForExport(val("s-home"));
+      const away = slugForExport(val("s-away"));
+      const hs = slugForExport(val("s-home-score"));
+      const as = slugForExport(val("s-away-score"));
+      parts.push("score");
+      if (home && away) parts.push(`${home}-vs-${away}`);
+      if (hs !== "" && as !== "") parts.push(`${hs}-${as}`);
+      break;
+    }
+    case "bracket": {
+      const title = slugForExport(val("br-tournament-title"));
+      const venue = slugForExport(val("br-venue-title"));
+      parts.push("bracket");
+      if (title) parts.push(title);
+      if (venue) parts.push(venue);
+      break;
+    }
+    case "showdown": {
+      const t1 = slugForExport(val("sd-name-1-input") || val("sd-name-1"));
+      const t2 = slugForExport(val("sd-name-2-input") || val("sd-name-2"));
+      const round = slugForExport(val("sd-round"));
+      const leg = slugForExport(val("sd-leg"));
+      parts.push("showdown");
+      if (t1 && t2) parts.push(`${t1}-vs-${t2}`);
+      if (round) parts.push(round);
+      if (leg) parts.push(leg);
+      break;
+    }
+    case "thumbnail": {
+      const team = slugForExport(val("tn-team-name"));
+      const year = slugForExport(val("tn-year"));
+      parts.push("thumbnail");
+      if (team) parts.push(team);
+      if (year) parts.push(year);
+      break;
+    }
+    default:
+      parts.push("ucl-graphic");
+  }
+  parts.push(resolution);
+  return parts.filter(Boolean).join("-") || "ucl-graphic";
+}
+
 document.getElementById("export-btn").addEventListener("click", async () => {
   const active = document.querySelector(".preview-container.active");
   if (!active) return;
@@ -3475,7 +4152,7 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   const aspect = rect.width / rect.height;
   const scale =
     aspect > 3 ? targetWidth / rect.width : targetHeight / rect.height;
-  const baseName = `ucl-graphic-${resolution}-${Date.now()}`;
+  const baseName = buildGraphicExportBaseName(active, resolution);
 
   const restored = await preInlineBgImages(target);
 

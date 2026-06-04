@@ -46,8 +46,202 @@
           accept="application/json,.json"
           style="display: none"
         />
+        <button
+          class="btn-header btn-header-danger"
+          id="l-clear-json-btn"
+          type="button"
+          title="Supprimer les sauvegardes locales par section"
+        >
+          🗑️ Clear
+        </button>
       </div>
     </header>
+
+    <dialog id="l-clear-modal" class="import-modal">
+      <form method="dialog" class="import-modal-form">
+        <h3>Supprimer les sauvegardes locales</h3>
+        <p class="import-modal-desc">
+          Sélectionne les sections à effacer. Cette action est définitive et
+          rechargera la page.
+        </p>
+        <div class="import-categories">
+          <label class="import-category">
+            <input type="checkbox" data-cat="lineup" />
+            <span class="import-cat-label">Lineup</span>
+            <span class="import-cat-count" data-cat-count="lineup">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="banner" />
+            <span class="import-cat-label">Goal Scoreboard</span>
+            <span class="import-cat-count" data-cat-count="banner">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="score" />
+            <span class="import-cat-label">Live Score</span>
+            <span class="import-cat-count" data-cat-count="score">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="showdown" />
+            <span class="import-cat-label">Showdown</span>
+            <span class="import-cat-count" data-cat-count="showdown">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="prefs" />
+            <span class="import-cat-label">Préférences (ordre, couleurs)</span>
+            <span class="import-cat-count" data-cat-count="prefs">0</span>
+          </label>
+        </div>
+        <div class="import-modal-actions">
+          <button
+            type="button"
+            class="import-modal-btn-secondary"
+            id="l-clear-modal-toggle-all"
+          >
+            Tout cocher / décocher
+          </button>
+          <div class="import-modal-actions-right">
+            <button
+              type="button"
+              class="import-modal-btn-secondary"
+              id="l-clear-modal-cancel"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="import-modal-btn-danger"
+              id="l-clear-modal-confirm"
+            >
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="l-export-modal" class="import-modal">
+      <form method="dialog" class="import-modal-form">
+        <h3>Exporter en JSON</h3>
+        <p class="import-modal-desc">
+          Sélectionne les sections à exporter. Seules les données des sections
+          cochées seront incluses dans le fichier.
+        </p>
+        <div class="import-categories">
+          <label class="import-category">
+            <input type="checkbox" data-cat="lineup" checked />
+            <span class="import-cat-label">Lineup</span>
+            <span class="import-cat-count" data-cat-count="lineup">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="banner" checked />
+            <span class="import-cat-label">Goal Scoreboard</span>
+            <span class="import-cat-count" data-cat-count="banner">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="score" checked />
+            <span class="import-cat-label">Live Score</span>
+            <span class="import-cat-count" data-cat-count="score">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="showdown" checked />
+            <span class="import-cat-label">Showdown</span>
+            <span class="import-cat-count" data-cat-count="showdown">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="prefs" checked />
+            <span class="import-cat-label">Préférences (ordre, couleurs)</span>
+            <span class="import-cat-count" data-cat-count="prefs">0</span>
+          </label>
+        </div>
+        <div class="import-modal-actions">
+          <button
+            type="button"
+            class="import-modal-btn-secondary"
+            id="l-export-modal-toggle-all"
+          >
+            Tout cocher / décocher
+          </button>
+          <div class="import-modal-actions-right">
+            <button
+              type="button"
+              class="import-modal-btn-secondary"
+              id="l-export-modal-cancel"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="import-modal-btn-primary"
+              id="l-export-modal-confirm"
+            >
+              Exporter
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="l-import-modal" class="import-modal">
+      <form method="dialog" class="import-modal-form">
+        <h3>Importer depuis le fichier</h3>
+        <p class="import-modal-desc">
+          Sélectionne les sections à importer. Les données existantes des
+          sections cochées seront remplacées.
+        </p>
+        <div class="import-categories">
+          <label class="import-category">
+            <input type="checkbox" data-cat="lineup" checked />
+            <span class="import-cat-label">Lineup</span>
+            <span class="import-cat-count" data-cat-count="lineup">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="banner" checked />
+            <span class="import-cat-label">Goal Scoreboard</span>
+            <span class="import-cat-count" data-cat-count="banner">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="score" checked />
+            <span class="import-cat-label">Live Score</span>
+            <span class="import-cat-count" data-cat-count="score">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="showdown" checked />
+            <span class="import-cat-label">Showdown</span>
+            <span class="import-cat-count" data-cat-count="showdown">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="prefs" checked />
+            <span class="import-cat-label">Préférences (ordre, couleurs)</span>
+            <span class="import-cat-count" data-cat-count="prefs">0</span>
+          </label>
+        </div>
+        <div class="import-modal-actions">
+          <button
+            type="button"
+            class="import-modal-btn-secondary"
+            id="l-import-modal-toggle-all"
+          >
+            Tout cocher / décocher
+          </button>
+          <div class="import-modal-actions-right">
+            <button
+              type="button"
+              class="import-modal-btn-secondary"
+              id="l-import-modal-cancel"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              class="import-modal-btn-primary"
+              id="l-import-modal-confirm"
+            >
+              Importer
+            </button>
+          </div>
+        </div>
+      </form>
+    </dialog>
 
     <main class="workspace">
       <!-- ============ EDITOR PANEL (LEFT) ============ -->
@@ -61,38 +255,62 @@
             <div class="collapsible-body">
               <div class="row">
                 <label class="field">
-                  <span>Nom du joueur</span>
-                  <input type="text" id="p-name" value="VINÍCIUS JÚNIOR" />
-                </label>
-                <label class="field">
-                  <span>Minute</span>
+                  <span>Prénom (optionnel)</span>
                   <input
                     type="text"
-                    id="p-minute"
-                    value="45'"
-                    placeholder="ex: 45'"
+                    id="p-firstname"
+                    value="VINÍCIUS"
+                    placeholder="ex: Lionel"
                   />
                 </label>
+                <label class="field">
+                  <span>Nom</span>
+                  <input type="text" id="p-lastname" value="JÚNIOR" />
+                </label>
               </div>
+              <label class="field">
+                <span>Minute</span>
+                <input
+                  type="text"
+                  id="p-minute"
+                  value="45'"
+                  placeholder="ex: 45'"
+                />
+              </label>
               <label class="field">
                 <span>Nom du club</span>
                 <input type="text" id="p-club-name" value="REAL MADRID" />
               </label>
               <label class="field">
-                <span>Logo (préréglage)</span>
-                <select id="p-club">
-                  <option value="rma">Real Madrid</option>
-                  <option value="lfc">Liverpool</option>
-                  <option value="bar">FC Barcelona</option>
-                  <option value="psg">PSG</option>
-                  <option value="bay">Bayern Munich</option>
-                  <option value="custom">Personnalisé</option>
-                </select>
+                <span>Photo du buteur (fichier dans ./Goalscorers/)</span>
+                <input
+                  type="file"
+                  id="p-goalscorer-file"
+                  accept="image/*"
+                />
               </label>
+              <button
+                class="btn-secondary"
+                id="p-goalscorer-clear"
+                type="button"
+              >
+                Retirer la photo
+              </button>
               <label class="field">
-                <span>Logo personnalisé (PNG)</span>
-                <input type="file" id="p-logo-file" accept="image/*" />
+                <span>Logo du club (fichier dans ./Logos/)</span>
+                <input
+                  type="file"
+                  id="p-club-logo-file"
+                  accept="image/*"
+                />
               </label>
+              <button
+                class="btn-secondary"
+                id="p-club-logo-clear"
+                type="button"
+              >
+                Retirer le logo
+              </button>
             </div>
           </details>
 
@@ -325,11 +543,19 @@
             <summary>Typographie</summary>
             <div class="collapsible-body">
               <details class="collapsible collapsible-nested">
-                <summary>Nom du joueur (haut)</summary>
+                <summary>Prénom (haut)</summary>
                 <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input
+                      type="checkbox"
+                      id="p-firstname-uppercase"
+                      checked
+                    />
+                    <span>Capitaliser (MAJUSCULES)</span>
+                  </label>
                   <label class="field">
                     <span>Police</span>
-                    <select id="p-name-font">
+                    <select id="p-firstname-font">
                       <option value="cinzel">Cinzel (serif)</option>
                       <option value="condensed">Barlow Condensed</option>
                       <option value="system">Système</option>
@@ -341,11 +567,12 @@
                   <div class="row">
                     <label class="field">
                       <span
-                        >Taille <span id="p-name-size-value">30px</span></span
+                        >Taille
+                        <span id="p-firstname-size-value">30px</span></span
                       >
                       <input
                         type="range"
-                        id="p-name-size"
+                        id="p-firstname-size"
                         min="12"
                         max="60"
                         value="30"
@@ -353,7 +580,60 @@
                     </label>
                     <label class="field">
                       <span>Poids</span>
-                      <select id="p-name-weight">
+                      <select id="p-firstname-weight">
+                        <option value="100">100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400" selected>400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                        <option value="800">800 Extra-Bold</option>
+                        <option value="900">900 Black</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Nom (haut)</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input
+                      type="checkbox"
+                      id="p-lastname-uppercase"
+                      checked
+                    />
+                    <span>Capitaliser (MAJUSCULES)</span>
+                  </label>
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="p-lastname-font">
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="system">Système</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="p-lastname-size-value">30px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="p-lastname-size"
+                        min="12"
+                        max="60"
+                        value="30"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="p-lastname-weight">
                         <option value="100">100 Thin</option>
                         <option value="300">300 Light</option>
                         <option value="400">400 Regular</option>
@@ -525,6 +805,7 @@
                     <label class="field">
                       <span>Tour</span>
                       <select id="l-footer-round">
+                        <option value="Round of 16">Round of 16</option>
                         <option value="Quarter Finals">Quarter Finals</option>
                         <option value="Semi Finals">Semi Finals</option>
                         <option value="FINAL">Final</option>
@@ -670,6 +951,39 @@
                       <option value="mono">Monospace</option>
                     </select>
                   </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Kits sauvegardés (maillot + couleurs)</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="l-saved-kit-select"></select>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-kit"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-kit"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="l-save-kit-name"
+                      placeholder="Nom du kit…"
+                    />
+                    <button class="btn-primary" id="l-save-kit" type="button">
+                      💾 Enregistrer kit
+                    </button>
+                  </div>
                 </div>
               </details>
             </div>
@@ -1171,12 +1485,16 @@
                     </label>
                     <label class="field">
                       <span>Score</span>
-                      <input
-                        type="number"
-                        id="s-home-score"
-                        value="0"
-                        min="0"
-                      />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-1" data-target="s-home-score" aria-label="Diminuer">−</button>
+                        <input
+                          type="number"
+                          id="s-home-score"
+                          value="0"
+                          min="0"
+                        />
+                        <button type="button" class="stepper-btn" data-step="1" data-target="s-home-score" aria-label="Augmenter">+</button>
+                      </div>
                     </label>
                     <label class="field">
                       <span>Couleur</span>
@@ -1201,12 +1519,16 @@
                     </label>
                     <label class="field">
                       <span>Score</span>
-                      <input
-                        type="number"
-                        id="s-away-score"
-                        value="0"
-                        min="0"
-                      />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-1" data-target="s-away-score" aria-label="Diminuer">−</button>
+                        <input
+                          type="number"
+                          id="s-away-score"
+                          value="0"
+                          min="0"
+                        />
+                        <button type="button" class="stepper-btn" data-step="1" data-target="s-away-score" aria-label="Augmenter">+</button>
+                      </div>
                     </label>
                     <label class="field">
                       <span>Couleur</span>
@@ -1242,21 +1564,29 @@
               <div class="row">
                 <label class="field">
                   <span>Domicile</span>
-                  <input
-                    type="number"
-                    id="s-aggregate-home"
-                    value="0"
-                    min="0"
-                  />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="s-aggregate-home" aria-label="Diminuer">−</button>
+                    <input
+                      type="number"
+                      id="s-aggregate-home"
+                      value="0"
+                      min="0"
+                    />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="s-aggregate-home" aria-label="Augmenter">+</button>
+                  </div>
                 </label>
                 <label class="field">
                   <span>Extérieur</span>
-                  <input
-                    type="number"
-                    id="s-aggregate-away"
-                    value="0"
-                    min="0"
-                  />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="s-aggregate-away" aria-label="Diminuer">−</button>
+                    <input
+                      type="number"
+                      id="s-aggregate-away"
+                      value="0"
+                      min="0"
+                    />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="s-aggregate-away" aria-label="Augmenter">+</button>
+                  </div>
                 </label>
               </div>
             </div>
@@ -2410,29 +2740,7 @@ BELLINGHAM | 67'</textarea>
         <!-- Player banner preview -->
         <div class="preview-container" data-preview="player">
           <div class="player-banner" id="player-banner">
-            <div class="pb-logo" id="pb-logo">
-              <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-                <circle
-                  cx="30"
-                  cy="30"
-                  r="28"
-                  fill="#fff"
-                  stroke="#c8a951"
-                  stroke-width="2"
-                />
-                <text
-                  x="30"
-                  y="38"
-                  text-anchor="middle"
-                  font-family="serif"
-                  font-size="22"
-                  font-weight="bold"
-                  fill="#0a1a4a"
-                >
-                  RM
-                </text>
-              </svg>
-            </div>
+            <div class="pb-logo" id="pb-logo"></div>
             <div class="pb-bars" id="pb-bars">
               <div class="pb-top" id="pb-top">
                 <div class="pb-top-bg-image" id="pb-top-bg-image"></div>
@@ -2441,6 +2749,7 @@ BELLINGHAM | 67'</textarea>
               </div>
               <div class="pb-bottom" id="pb-bottom">
                 <div class="pb-bottom-bg-image" id="pb-bottom-bg-image"></div>
+                <img id="pb-club-logo" alt="" />
                 <span id="pb-club-name">REAL MADRID</span>
               </div>
             </div>

@@ -2576,6 +2576,27 @@ function updateScoreBanner() {
 );
 updateScoreBanner();
 
+const sSwapTeams = document.getElementById("s-swap-teams");
+if (sSwapTeams) {
+  sSwapTeams.addEventListener("click", () => {
+    const pairs = [
+      [sHome, sAway],
+      [sHomeScore, sAwayScore],
+      [sHomeColor, sAwayColor],
+      [sAggregateHome, sAggregateAway],
+    ];
+    pairs.forEach(([a, b]) => {
+      const tmp = a.value;
+      a.value = b.value;
+      b.value = tmp;
+      a.dispatchEvent(new Event("input", { bubbles: true }));
+      b.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    sAggregateToggle.checked = !sAggregateToggle.checked;
+    sAggregateToggle.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+}
+
 /* ----- Score banner background image ----- */
 const S_BG_IMAGE_PREF_KEY = "ucl-score-bg-image-v1";
 const S_BG_IMAGE_FILE_KEY = "ucl-score-bg-image-file-v1";

@@ -55,6 +55,7 @@ function renderClubLogoInline(url) {
   else img.removeAttribute("src");
 }
 
+const pNumber = document.getElementById("p-number");
 const pFirstname = document.getElementById("p-firstname");
 const pLastname = document.getElementById("p-lastname");
 const pMinute = document.getElementById("p-minute");
@@ -117,16 +118,20 @@ let goalscorerURL = null;
 let clubLogoURL = null;
 
 function updatePlayerBanner() {
+  const number = pNumber.value.trim();
   const first = pFirstname.value.trim();
   const last = pLastname.value.trim();
+  const numberHtml = number
+    ? `<span class="pb-name-number">${escapeHtml(number)}</span>`
+    : "";
   const firstHtml = first
     ? `<span class="pb-name-first">${escapeHtml(first)}</span>`
     : "";
   const lastHtml = last
     ? `<span class="pb-name-last">${escapeHtml(last)}</span>`
     : "";
-  const sep = first && last ? " " : "";
-  document.getElementById("pb-name").innerHTML = firstHtml + sep + lastHtml;
+  const parts = [numberHtml, firstHtml, lastHtml].filter(Boolean);
+  document.getElementById("pb-name").innerHTML = parts.join(" ");
   document.getElementById("pb-minute").textContent = pMinute.value;
   document.getElementById("pb-club-name").textContent = pClubName.value;
   const logoBg = `linear-gradient(${pLogoDir.value}deg, ${pLogoColor1.value}, ${pLogoColor2.value})`;
@@ -139,8 +144,14 @@ function updatePlayerBanner() {
   if (pZoneWidthValue) pZoneWidthValue.textContent = pZoneWidth.value + "px";
 
   const nameEl = document.getElementById("pb-name");
+  const numberEl = nameEl.querySelector(".pb-name-number");
   const firstEl = nameEl.querySelector(".pb-name-first");
   const lastEl = nameEl.querySelector(".pb-name-last");
+  if (numberEl) {
+    numberEl.style.fontFamily = PB_FONTS[pLastnameFont.value] || PB_FONTS.cinzel;
+    numberEl.style.fontSize = pLastnameSize.value + "px";
+    numberEl.style.fontWeight = pLastnameWeight.value;
+  }
   if (firstEl) {
     firstEl.style.fontFamily = PB_FONTS[pFirstnameFont.value] || PB_FONTS.cinzel;
     firstEl.style.fontSize = pFirstnameSize.value + "px";
@@ -181,6 +192,7 @@ function updatePlayerBanner() {
 }
 
 [
+  pNumber,
   pFirstname,
   pLastname,
   pMinute,
@@ -248,6 +260,7 @@ const SAVED_BANNERS_KEY = "ucl-banner-saves-v1";
 
 function collectBannerData() {
   return {
+    number: pNumber.value,
     firstName: pFirstname.value,
     lastName: pLastname.value,
     minute: pMinute.value,
@@ -301,6 +314,7 @@ function applyBannerData(d) {
     pFirstname.value = "";
     pLastname.value = d.name;
   }
+  if (d.number != null) pNumber.value = d.number;
   if (d.minute != null) pMinute.value = d.minute;
   if (d.clubName != null) pClubName.value = d.clubName;
   // Only accept path references; ignore legacy base64 data: URLs from older saves
@@ -467,7 +481,7 @@ document.getElementById("p-delete").addEventListener("click", deleteSelectedBann
 
 // Auto-save banner on any input
 const bannerAutoSaveEls = [
-  pFirstname, pLastname, pMinute, pClubName, pZoneWidth,
+  pNumber, pFirstname, pLastname, pMinute, pClubName, pZoneWidth,
   pLogoColor1, pLogoColor2, pLogoDir,
   pTopColor1, pTopColor2, pTopDir,
   pBottomColor1, pBottomColor2, pBottomDir,
@@ -1749,6 +1763,81 @@ document.getElementById("l-reset").addEventListener("click", () => {
     resetLineup();
 });
 
+/* ----- Coller une composition entière ----- */
+// Lignes alternées : un numéro puis un nom. Marqueurs reconnus :
+//   (GA)/(GK)/(G)/gardien -> gardien de but
+//   (C) ou un "C" collé au numéro (ex: "1C") -> capitaine
+// Les positions (x/y) des emplacements existants sont conservées ; seuls le
+// numéro, le nom, le flag gardien et le capitaine sont mis à jour, dans l'ordre.
+function parseLineupComposition(text) {
+  const lines = String(text)
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const entries = [];
+  let pendingNum = null;
+  let pendingCaptain = false;
+  const numRe = /^(\d{1,2})\s*(c?)$/i; // "9", "10", "1C"
+  for (const line of lines) {
+    const m = line.match(numRe);
+    if (m) {
+      // Ligne « numéro » : le dernier numéro avant un nom l'emporte.
+      pendingNum = parseInt(m[1], 10);
+      if (m[2]) pendingCaptain = true;
+      continue;
+    }
+    // Ligne « nom » : détecter puis retirer les marqueurs entre parenthèses.
+    let gk = /\((?:ga|gk|g|gardien)\)/i.test(line);
+    let captain = pendingCaptain || /\(c\)/i.test(line);
+    const name = line
+      .replace(/\([^)]*\)/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    entries.push({ num: pendingNum, name, gk, captain });
+    pendingNum = null;
+    pendingCaptain = false;
+  }
+  return entries;
+}
+
+function applyParsedComposition(entries) {
+  const status = document.getElementById("l-paste-comp-status");
+  const setStatus = (msg, ok) => {
+    if (!status) return;
+    status.textContent = msg;
+    status.classList.toggle("is-error", !ok);
+  };
+  const named = entries.filter((e) => e.name);
+  if (!named.length) {
+    setStatus("Aucun joueur détecté.", false);
+    return;
+  }
+  const n = Math.min(named.length, starters.length);
+  const anyGk = named.some((e) => e.gk);
+  const anyCaptain = named.some((e) => e.captain);
+  for (let i = 0; i < n; i++) {
+    const e = named[i];
+    if (e.num != null && !isNaN(e.num)) starters[i].num = e.num;
+    if (e.name) starters[i].name = e.name;
+    if (anyGk) starters[i].gk = !!e.gk;
+    if (anyCaptain) starters[i].captain = !!e.captain;
+  }
+  renderStartersEditor();
+  renderPitch();
+  saveLineup();
+  let msg = `${n} joueur(s) appliqué(s).`;
+  if (named.length > starters.length)
+    msg += ` ${named.length - starters.length} ignoré(s) (max ${starters.length}).`;
+  else if (n < starters.length)
+    msg += ` ${starters.length - n} emplacement(s) inchangé(s).`;
+  setStatus(msg, true);
+}
+
+document.getElementById("l-paste-comp-apply").addEventListener("click", () => {
+  const text = document.getElementById("l-paste-comp").value;
+  applyParsedComposition(parseLineupComposition(text));
+});
+
 // Store a path reference to ./Logos/<filename> instead of an inline data URL
 // (avoids hitting the localStorage quota and keeps team saves tiny). The file
 // must exist in the project's ./Logos/ folder.
@@ -1776,6 +1865,25 @@ document
 document
   .getElementById("l-delete-team")
   .addEventListener("click", deleteSelectedTeam);
+
+// Sélectionner une sauvegarde (sans la charger) recopie son nom dans le champ
+// « nom de sauvegarde » correspondant, pour pouvoir l'écraser facilement.
+[
+  ["l-saved-team-select", "l-save-team-name"],
+  ["l-saved-formation-select", "l-save-formation-name"],
+  ["l-saved-style-select", "l-save-style-name"],
+  ["l-saved-typo-select", "l-save-typo-name"],
+  ["l-saved-kit-select", "l-save-kit-name"],
+  ["p-saved-select", "p-save-name"],
+].forEach(([selectId, inputId]) => {
+  const sel = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  if (!sel || !input) return;
+  sel.addEventListener("change", () => {
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && sel.value !== "") input.value = opt.textContent.trim();
+  });
+});
 
 document
   .getElementById("l-save-formation")
@@ -3840,6 +3948,19 @@ const sdChangeEls = [
 ];
 sdInputEls.forEach((el) => el.addEventListener("input", () => { updateShowdown(); saveShowdown(); }));
 sdChangeEls.forEach((el) => el.addEventListener("change", () => { updateShowdown(); saveShowdown(); }));
+
+// Swap teams (names, logos, scores, scorers)
+const sdSwapTeams = document.getElementById("sd-swap-teams");
+if (sdSwapTeams) {
+  sdSwapTeams.addEventListener("click", () => {
+    [sdName1Input.value, sdName2Input.value] = [sdName2Input.value, sdName1Input.value];
+    [sdLogo1URL, sdLogo2URL] = [sdLogo2URL, sdLogo1URL];
+    [sdScore1.value, sdScore2.value] = [sdScore2.value, sdScore1.value];
+    [sdScorers1.value, sdScorers2.value] = [sdScorers2.value, sdScorers1.value];
+    updateShowdown();
+    saveShowdown();
+  });
+}
 
 document.getElementById("sd-save").addEventListener("click", saveCurrentShowdown);
 document.getElementById("sd-load").addEventListener("click", loadCurrentShowdown);

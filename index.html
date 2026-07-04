@@ -253,6 +253,15 @@
           <details class="collapsible">
             <summary>Contenu</summary>
             <div class="collapsible-body">
+              <label class="field">
+                <span>Numéro (optionnel)</span>
+                <input
+                  type="text"
+                  id="p-number"
+                  value=""
+                  placeholder="ex: 7"
+                />
+              </label>
               <div class="row">
                 <label class="field">
                   <span>Prénom (optionnel)</span>
@@ -1414,6 +1423,36 @@
           <details class="collapsible">
             <summary>Formation</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Coller une composition</summary>
+                <div class="collapsible-body">
+                  <p class="paste-comp-help">
+                    Colle la liste (numéro puis nom, une info par ligne). Les
+                    marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
+                    <code>(C)</code> ou un <code>C</code> collé au numéro =
+                    capitaine sont reconnus puis retirés du nom.
+                  </p>
+                  <label class="field">
+                    <span>Composition</span>
+                    <textarea
+                      id="l-paste-comp"
+                      rows="12"
+                      placeholder="1C&#10;Alonso (GA) (C)&#10;2&#10;Marquitos&#10;3&#10;Santamaría&#10;…"
+                    ></textarea>
+                  </label>
+                  <div class="paste-comp-actions">
+                    <button
+                      class="btn-primary"
+                      id="l-paste-comp-apply"
+                      type="button"
+                    >
+                      Remplir les joueurs
+                    </button>
+                    <span id="l-paste-comp-status" class="paste-comp-status"></span>
+                  </div>
+                </div>
+              </details>
+
               <div id="l-starters" class="player-list"></div>
               <div class="storage-info">
                 <span>💾 Sauvegarde automatique activée</span>
@@ -1916,6 +1955,10 @@
         <section class="editor-section" data-editor="showdown">
           <h2>Showdown (panel match)</h2>
 
+          <button class="btn-secondary" id="sd-swap-teams" type="button">
+            ⇄ Intervertir les équipes
+          </button>
+
           <details class="collapsible">
             <summary>Contenu</summary>
             <div class="collapsible-body">
@@ -2022,23 +2065,31 @@
               <div class="row">
                 <label class="field">
                   <span>Score équipe 1</span>
-                  <input
-                    type="number"
-                    id="sd-score-1"
-                    value="2"
-                    min="0"
-                    max="99"
-                  />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="sd-score-1" aria-label="Diminuer">−</button>
+                    <input
+                      type="number"
+                      id="sd-score-1"
+                      value="2"
+                      min="0"
+                      max="99"
+                    />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="sd-score-1" aria-label="Augmenter">+</button>
+                  </div>
                 </label>
                 <label class="field">
                   <span>Score équipe 2</span>
-                  <input
-                    type="number"
-                    id="sd-score-2"
-                    value="1"
-                    min="0"
-                    max="99"
-                  />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="sd-score-2" aria-label="Diminuer">−</button>
+                    <input
+                      type="number"
+                      id="sd-score-2"
+                      value="1"
+                      min="0"
+                      max="99"
+                    />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="sd-score-2" aria-label="Augmenter">+</button>
+                  </div>
                 </label>
               </div>
               <p class="tn-info">
@@ -2188,22 +2239,10 @@ BELLINGHAM | 67'</textarea>
                     <select id="sd-bg-image-select">
                       <option value="">Aucune image</option>
                       <option value="backgrounds/lineup_bg_01.png">
-                        Background 01
-                      </option>
-                      <option value="backgrounds/lineup_bg_02.png">
-                        Background 02
-                      </option>
-                      <option value="backgrounds/lineup_bg_03.png">
-                        Background 03
-                      </option>
-                      <option value="backgrounds/lineup_bg_04.png">
-                        Background 04
+                        Opening
                       </option>
                       <option value="backgrounds/lineup_bg_05.png">
-                        Background 05
-                      </option>
-                      <option value="backgrounds/lineup_bg_06.png">
-                        Background 06
+                        Result
                       </option>
                     </select>
                   </label>

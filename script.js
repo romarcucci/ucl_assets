@@ -88,7 +88,8 @@ const pColorText = document.getElementById("p-color-text");
 
 const PB_FONTS = {
   condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
-  system: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
+  system:
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
   arial: "Arial, Helvetica, sans-serif",
   impact: "Impact, 'Arial Black', 'Helvetica Inserat', sans-serif",
   cinzel: "'Cinzel', 'Trajan Pro', serif",
@@ -148,12 +149,14 @@ function updatePlayerBanner() {
   const firstEl = nameEl.querySelector(".pb-name-first");
   const lastEl = nameEl.querySelector(".pb-name-last");
   if (numberEl) {
-    numberEl.style.fontFamily = PB_FONTS[pLastnameFont.value] || PB_FONTS.cinzel;
+    numberEl.style.fontFamily =
+      PB_FONTS[pLastnameFont.value] || PB_FONTS.cinzel;
     numberEl.style.fontSize = pLastnameSize.value + "px";
     numberEl.style.fontWeight = pLastnameWeight.value;
   }
   if (firstEl) {
-    firstEl.style.fontFamily = PB_FONTS[pFirstnameFont.value] || PB_FONTS.cinzel;
+    firstEl.style.fontFamily =
+      PB_FONTS[pFirstnameFont.value] || PB_FONTS.cinzel;
     firstEl.style.fontSize = pFirstnameSize.value + "px";
     firstEl.style.fontWeight = pFirstnameWeight.value;
     firstEl.style.textTransform = pFirstnameUppercase.checked
@@ -183,7 +186,8 @@ function updatePlayerBanner() {
   clubEl.style.fontFamily = PB_FONTS[pClubnameFont.value] || PB_FONTS.condensed;
   clubEl.style.fontSize = pClubnameSize.value + "px";
   clubEl.style.fontWeight = pClubnameWeight.value;
-  if (pClubnameSizeValue) pClubnameSizeValue.textContent = pClubnameSize.value + "px";
+  if (pClubnameSizeValue)
+    pClubnameSizeValue.textContent = pClubnameSize.value + "px";
 
   const banner = document.getElementById("player-banner");
   banner.style.color = pColorText.value;
@@ -318,12 +322,14 @@ function applyBannerData(d) {
   if (d.minute != null) pMinute.value = d.minute;
   if (d.clubName != null) pClubName.value = d.clubName;
   // Only accept path references; ignore legacy base64 data: URLs from older saves
-  goalscorerURL = typeof d.goalscorerURL === "string" && !d.goalscorerURL.startsWith("data:")
-    ? d.goalscorerURL
-    : null;
-  clubLogoURL = typeof d.clubLogoURL === "string" && !d.clubLogoURL.startsWith("data:")
-    ? d.clubLogoURL
-    : null;
+  goalscorerURL =
+    typeof d.goalscorerURL === "string" && !d.goalscorerURL.startsWith("data:")
+      ? d.goalscorerURL
+      : null;
+  clubLogoURL =
+    typeof d.clubLogoURL === "string" && !d.clubLogoURL.startsWith("data:")
+      ? d.clubLogoURL
+      : null;
   if (d.zoneWidth) pZoneWidth.value = d.zoneWidth;
   if (d.logoColor1) pLogoColor1.value = d.logoColor1;
   if (d.logoColor2) pLogoColor2.value = d.logoColor2;
@@ -373,10 +379,7 @@ function applyBannerData(d) {
       pTopBgImageCustomUrl = b.customUrl || null;
       if (pTopBgImageCustomUrl) {
         try {
-          localStorage.setItem(
-            P_TOP_BG_IMAGE_CUSTOM_KEY,
-            pTopBgImageCustomUrl,
-          );
+          localStorage.setItem(P_TOP_BG_IMAGE_CUSTOM_KEY, pTopBgImageCustomUrl);
         } catch {}
       } else {
         localStorage.removeItem(P_TOP_BG_IMAGE_CUSTOM_KEY);
@@ -404,7 +407,10 @@ function applyBannerData(d) {
 
 function saveBanner() {
   try {
-    localStorage.setItem(BANNER_STORAGE_KEY, JSON.stringify(collectBannerData()));
+    localStorage.setItem(
+      BANNER_STORAGE_KEY,
+      JSON.stringify(collectBannerData()),
+    );
   } catch (e) {}
 }
 
@@ -417,8 +423,11 @@ function loadBanner() {
 }
 
 function getSavedBanners() {
-  try { return JSON.parse(localStorage.getItem(SAVED_BANNERS_KEY) || "[]"); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_BANNERS_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 function setSavedBanners(list) {
   localStorage.setItem(SAVED_BANNERS_KEY, JSON.stringify(list));
@@ -430,15 +439,19 @@ function renderSavedBannersList() {
   if (list.length === 0) {
     sel.innerHTML = '<option value="">— Aucune bannière sauvegardée —</option>';
   } else {
-    sel.innerHTML = list.map((b, i) => `<option value="${i}">${b.name}</option>`).join("");
+    sel.innerHTML = list
+      .map((b, i) => `<option value="${i}">${b.name}</option>`)
+      .join("");
   }
 }
 function saveCurrentAsBanner() {
   const nameInput = document.getElementById("p-save-name");
   const sName =
-    nameInput.value.trim() ||
-    `${pFirstname.value} ${pLastname.value}`.trim();
-  if (!sName) { alert("Donne un nom à la bannière."); return; }
+    nameInput.value.trim() || `${pFirstname.value} ${pLastname.value}`.trim();
+  if (!sName) {
+    alert("Donne un nom à la bannière.");
+    return;
+  }
   const list = getSavedBanners();
   const existing = list.findIndex((b) => b.name === sName);
   const entry = { name: sName, data: collectBannerData() };
@@ -475,21 +488,46 @@ function deleteSelectedBanner() {
   renderSavedBannersList();
 }
 
-document.getElementById("p-save").addEventListener("click", saveCurrentAsBanner);
+document
+  .getElementById("p-save")
+  .addEventListener("click", saveCurrentAsBanner);
 document.getElementById("p-load").addEventListener("click", loadSelectedBanner);
-document.getElementById("p-delete").addEventListener("click", deleteSelectedBanner);
+document
+  .getElementById("p-delete")
+  .addEventListener("click", deleteSelectedBanner);
 
 // Auto-save banner on any input
 const bannerAutoSaveEls = [
-  pNumber, pFirstname, pLastname, pMinute, pClubName, pZoneWidth,
-  pLogoColor1, pLogoColor2, pLogoDir,
-  pTopColor1, pTopColor2, pTopDir,
-  pBottomColor1, pBottomColor2, pBottomDir,
+  pNumber,
+  pFirstname,
+  pLastname,
+  pMinute,
+  pClubName,
+  pZoneWidth,
+  pLogoColor1,
+  pLogoColor2,
+  pLogoDir,
+  pTopColor1,
+  pTopColor2,
+  pTopDir,
+  pBottomColor1,
+  pBottomColor2,
+  pBottomDir,
   pColorText,
-  pFirstnameFont, pFirstnameSize, pFirstnameWeight, pFirstnameUppercase,
-  pLastnameFont, pLastnameSize, pLastnameWeight, pLastnameUppercase,
-  pMinuteFont, pMinuteSize, pMinuteWeight,
-  pClubnameFont, pClubnameSize, pClubnameWeight,
+  pFirstnameFont,
+  pFirstnameSize,
+  pFirstnameWeight,
+  pFirstnameUppercase,
+  pLastnameFont,
+  pLastnameSize,
+  pLastnameWeight,
+  pLastnameUppercase,
+  pMinuteFont,
+  pMinuteSize,
+  pMinuteWeight,
+  pClubnameFont,
+  pClubnameSize,
+  pClubnameWeight,
 ];
 bannerAutoSaveEls.forEach((el) => {
   if (!el) return;
@@ -881,7 +919,9 @@ function loadSelectedTeam() {
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
-  applyLineupData(expandLineupData(JSON.parse(JSON.stringify(teams[idx].data))));
+  applyLineupData(
+    expandLineupData(JSON.parse(JSON.stringify(teams[idx].data))),
+  );
   document.getElementById("l-team-logo-file").value = "";
   document.getElementById("l-save-team-name").value = teams[idx].name;
   renderStartersEditor();
@@ -1005,7 +1045,8 @@ function collectStyleData() {
     bgImageEnabled: document.getElementById("l-bg-image-toggle").checked,
     bgImageFile: document.getElementById("l-bg-image-select").value,
     bgImageOpacity: document.getElementById("l-bg-image-opacity").value,
-    bgImageFadeEnabled: document.getElementById("l-bg-image-fade-toggle").checked,
+    bgImageFadeEnabled: document.getElementById("l-bg-image-fade-toggle")
+      .checked,
     bgImageFadeDir: document.getElementById("l-bg-image-fade-dir").value,
     bgImageFadeEnd: document.getElementById("l-bg-image-fade-end").value,
     showStripes: document.getElementById("l-pitch-stripes").checked,
@@ -1017,7 +1058,8 @@ function collectStyleData() {
 }
 function applyStyleData(data) {
   if (data.colorBg) document.getElementById("l-color-bg").value = data.colorBg;
-  if (data.bgOpacity != null) document.getElementById("l-bg-opacity").value = data.bgOpacity;
+  if (data.bgOpacity != null)
+    document.getElementById("l-bg-opacity").value = data.bgOpacity;
   if (typeof data.bgImageEnabled === "boolean") {
     document.getElementById("l-bg-image-toggle").checked = data.bgImageEnabled;
     localStorage.setItem(BG_IMAGE_PREF_KEY, data.bgImageEnabled ? "1" : "0");
@@ -1031,8 +1073,12 @@ function applyStyleData(data) {
     localStorage.setItem(BG_IMAGE_OPACITY_KEY, data.bgImageOpacity);
   }
   if (typeof data.bgImageFadeEnabled === "boolean") {
-    document.getElementById("l-bg-image-fade-toggle").checked = data.bgImageFadeEnabled;
-    localStorage.setItem(BG_IMAGE_FADE_KEY, data.bgImageFadeEnabled ? "1" : "0");
+    document.getElementById("l-bg-image-fade-toggle").checked =
+      data.bgImageFadeEnabled;
+    localStorage.setItem(
+      BG_IMAGE_FADE_KEY,
+      data.bgImageFadeEnabled ? "1" : "0",
+    );
   }
   if (data.bgImageFadeDir) {
     document.getElementById("l-bg-image-fade-dir").value = data.bgImageFadeDir;
@@ -1045,14 +1091,17 @@ function applyStyleData(data) {
   if (typeof data.showStripes === "boolean") {
     document.getElementById("l-pitch-stripes").checked = data.showStripes;
     localStorage.setItem(STRIPES_PREF_KEY, data.showStripes ? "1" : "0");
-    document.getElementById("lb-pitch").classList.toggle("show-stripes", data.showStripes);
+    document
+      .getElementById("lb-pitch")
+      .classList.toggle("show-stripes", data.showStripes);
   }
   if (typeof data.showDivider === "boolean") {
     document.getElementById("l-divider-toggle").checked = data.showDivider;
     localStorage.setItem(DIVIDER_PREF_KEY, data.showDivider ? "1" : "0");
   }
   if (data.dividerThickness) {
-    document.getElementById("l-divider-thickness").value = data.dividerThickness;
+    document.getElementById("l-divider-thickness").value =
+      data.dividerThickness;
     localStorage.setItem(DIVIDER_THICKNESS_KEY, data.dividerThickness);
   }
   if (data.dividerColor1) {
@@ -1110,8 +1159,11 @@ function deleteSelectedStyle() {
 
 /* ----- Typographies sauvegardées (lineup) ----- */
 function getSavedTypos() {
-  try { return JSON.parse(localStorage.getItem(SAVED_TYPOS_KEY) || "[]"); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_TYPOS_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 function setSavedTypos(list) {
   localStorage.setItem(SAVED_TYPOS_KEY, JSON.stringify(list));
@@ -1121,17 +1173,28 @@ function renderSavedTyposList() {
   if (!sel) return;
   const list = getSavedTypos();
   if (list.length === 0) {
-    sel.innerHTML = '<option value="">— Aucune typographie sauvegardée —</option>';
+    sel.innerHTML =
+      '<option value="">— Aucune typographie sauvegardée —</option>';
   } else {
-    sel.innerHTML = list.map((t, i) => `<option value="${i}">${t.name}</option>`).join("");
+    sel.innerHTML = list
+      .map((t, i) => `<option value="${i}">${t.name}</option>`)
+      .join("");
   }
 }
 function collectTypoData() {
   return {
-    teamFont: lTeamFont.value, teamSize: lTeamSize.value, teamWeight: lTeamWeight.value,
-    footerFont: lFooterFont.value, footerSize: lFooterSize.value, footerWeight: lFooterWeight.value,
-    coachFont: lCoachFont.value, coachSize: lCoachSize.value, coachWeight: lCoachWeight.value,
-    playerFont: lPlayerFont.value, playerSize: lPlayerSize.value, playerWeight: lPlayerWeight.value,
+    teamFont: lTeamFont.value,
+    teamSize: lTeamSize.value,
+    teamWeight: lTeamWeight.value,
+    footerFont: lFooterFont.value,
+    footerSize: lFooterSize.value,
+    footerWeight: lFooterWeight.value,
+    coachFont: lCoachFont.value,
+    coachSize: lCoachSize.value,
+    coachWeight: lCoachWeight.value,
+    playerFont: lPlayerFont.value,
+    playerSize: lPlayerSize.value,
+    playerWeight: lPlayerWeight.value,
   };
 }
 function applyTypoData(d) {
@@ -1152,7 +1215,10 @@ function applyTypoData(d) {
 function saveCurrentAsTypo() {
   const nameInput = document.getElementById("l-save-typo-name");
   const name = nameInput.value.trim();
-  if (!name) { alert("Donne un nom à la typographie."); return; }
+  if (!name) {
+    alert("Donne un nom à la typographie.");
+    return;
+  }
   const list = getSavedTypos();
   const existing = list.findIndex((t) => t.name === name);
   const entry = { name, data: collectTypoData() };
@@ -1189,13 +1255,21 @@ function deleteSelectedTypo() {
 
 /* ----- Kits sauvegardés (maillot + couleurs) ----- */
 const KIT_FIELDS = [
-  "colorShirt", "colorGk", "colorNum", "colorNumGk",
-  "shirtStyle", "colorSleeves", "colorStripes",
+  "colorShirt",
+  "colorGk",
+  "colorNum",
+  "colorNumGk",
+  "shirtStyle",
+  "colorSleeves",
+  "colorStripes",
   "numberFont",
 ];
 function getSavedKits() {
-  try { return JSON.parse(localStorage.getItem(SAVED_KITS_KEY) || "[]"); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_KITS_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
 function setSavedKits(list) {
   localStorage.setItem(SAVED_KITS_KEY, JSON.stringify(list));
@@ -1207,7 +1281,9 @@ function renderSavedKitsList() {
   if (list.length === 0) {
     sel.innerHTML = '<option value="">— Aucun kit sauvegardé —</option>';
   } else {
-    sel.innerHTML = list.map((k, i) => `<option value="${i}">${k.name}</option>`).join("");
+    sel.innerHTML = list
+      .map((k, i) => `<option value="${i}">${k.name}</option>`)
+      .join("");
   }
 }
 function collectKitData() {
@@ -1223,20 +1299,29 @@ function collectKitData() {
   };
 }
 function applyKitData(d) {
-  if (d.colorShirt) document.getElementById("l-color-shirt").value = d.colorShirt;
+  if (d.colorShirt)
+    document.getElementById("l-color-shirt").value = d.colorShirt;
   if (d.colorGk) document.getElementById("l-color-gk").value = d.colorGk;
   if (d.colorNum) document.getElementById("l-color-num").value = d.colorNum;
-  if (d.colorNumGk) document.getElementById("l-color-num-gk").value = d.colorNumGk;
-  if (d.shirtStyle) document.getElementById("l-shirt-style").value = d.shirtStyle;
-  if (d.colorSleeves) document.getElementById("l-color-sleeves").value = d.colorSleeves;
-  if (d.colorStripes) document.getElementById("l-color-stripes").value = d.colorStripes;
-  if (d.numberFont) document.getElementById("l-number-font").value = d.numberFont;
+  if (d.colorNumGk)
+    document.getElementById("l-color-num-gk").value = d.colorNumGk;
+  if (d.shirtStyle)
+    document.getElementById("l-shirt-style").value = d.shirtStyle;
+  if (d.colorSleeves)
+    document.getElementById("l-color-sleeves").value = d.colorSleeves;
+  if (d.colorStripes)
+    document.getElementById("l-color-stripes").value = d.colorStripes;
+  if (d.numberFont)
+    document.getElementById("l-number-font").value = d.numberFont;
   updateLineupCommon();
 }
 function saveCurrentAsKit() {
   const nameInput = document.getElementById("l-save-kit-name");
   const name = nameInput.value.trim();
-  if (!name) { alert("Donne un nom au kit."); return; }
+  if (!name) {
+    alert("Donne un nom au kit.");
+    return;
+  }
   const list = getSavedKits();
   const existing = list.findIndex((k) => k.name === name);
   const entry = { name, data: collectKitData() };
@@ -1275,14 +1360,11 @@ function deleteSelectedKit() {
 /* ----- Dedup helpers (reference saved presets by name) ----- */
 function stableStringify(v) {
   if (v === null || typeof v !== "object") return JSON.stringify(v);
-  if (Array.isArray(v))
-    return "[" + v.map(stableStringify).join(",") + "]";
+  if (Array.isArray(v)) return "[" + v.map(stableStringify).join(",") + "]";
   const keys = Object.keys(v).sort();
   return (
     "{" +
-    keys
-      .map((k) => JSON.stringify(k) + ":" + stableStringify(v[k]))
-      .join(",") +
+    keys.map((k) => JSON.stringify(k) + ":" + stableStringify(v[k])).join(",") +
     "}"
   );
 }
@@ -1465,7 +1547,8 @@ const lColorBg = document.getElementById("l-color-bg");
 
 const LB_FONTS = {
   condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
-  system: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
+  system:
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
   arial: "Arial, Helvetica, sans-serif",
   impact: "Impact, 'Arial Black', 'Helvetica Inserat', sans-serif",
   cinzel: "'Cinzel', 'Trajan Pro', serif",
@@ -1686,7 +1769,10 @@ function updateLineupCommon() {
   coachEl.style.fontSize = lCoachSize.value + "px";
   coachEl.style.fontWeight = lCoachWeight.value;
   if (lCoachSizeValue) lCoachSizeValue.textContent = lCoachSize.value + "px";
-  board.style.setProperty("--lb-player-font", LB_FONTS[lPlayerFont.value] || LB_FONTS.system);
+  board.style.setProperty(
+    "--lb-player-font",
+    LB_FONTS[lPlayerFont.value] || LB_FONTS.system,
+  );
   board.style.setProperty("--lb-player-size", lPlayerSize.value + "px");
   board.style.setProperty("--lb-player-weight", lPlayerWeight.value);
   if (lPlayerSizeValue) lPlayerSizeValue.textContent = lPlayerSize.value + "px";
@@ -1896,30 +1982,60 @@ document
   .addEventListener("click", deleteSelectedFormation);
 renderSavedFormationsList();
 
-document.getElementById("l-save-style").addEventListener("click", saveCurrentAsStyle);
-document.getElementById("l-load-style").addEventListener("click", loadSelectedStyle);
-document.getElementById("l-delete-style").addEventListener("click", deleteSelectedStyle);
+document
+  .getElementById("l-save-style")
+  .addEventListener("click", saveCurrentAsStyle);
+document
+  .getElementById("l-load-style")
+  .addEventListener("click", loadSelectedStyle);
+document
+  .getElementById("l-delete-style")
+  .addEventListener("click", deleteSelectedStyle);
 renderSavedStylesList();
 
-document.getElementById("l-save-typo").addEventListener("click", saveCurrentAsTypo);
-document.getElementById("l-load-typo").addEventListener("click", loadSelectedTypo);
-document.getElementById("l-delete-typo").addEventListener("click", deleteSelectedTypo);
+document
+  .getElementById("l-save-typo")
+  .addEventListener("click", saveCurrentAsTypo);
+document
+  .getElementById("l-load-typo")
+  .addEventListener("click", loadSelectedTypo);
+document
+  .getElementById("l-delete-typo")
+  .addEventListener("click", deleteSelectedTypo);
 renderSavedTyposList();
 
-document.getElementById("l-save-kit").addEventListener("click", saveCurrentAsKit);
-document.getElementById("l-load-kit").addEventListener("click", loadSelectedKit);
-document.getElementById("l-delete-kit").addEventListener("click", deleteSelectedKit);
+document
+  .getElementById("l-save-kit")
+  .addEventListener("click", saveCurrentAsKit);
+document
+  .getElementById("l-load-kit")
+  .addEventListener("click", loadSelectedKit);
+document
+  .getElementById("l-delete-kit")
+  .addEventListener("click", deleteSelectedKit);
 renderSavedKitsList();
 
+[lTeamSize, lFooterSize, lCoachSize, lPlayerSize].forEach((el) =>
+  el.addEventListener("input", () => {
+    updateLineupCommon();
+    saveLineup();
+  }),
+);
 [
-  lTeamSize, lFooterSize, lCoachSize, lPlayerSize,
-].forEach((el) => el.addEventListener("input", () => { updateLineupCommon(); saveLineup(); }));
-[
-  lTeamFont, lTeamWeight,
-  lFooterFont, lFooterWeight,
-  lCoachFont, lCoachWeight,
-  lPlayerFont, lPlayerWeight,
-].forEach((el) => el.addEventListener("change", () => { updateLineupCommon(); saveLineup(); }));
+  lTeamFont,
+  lTeamWeight,
+  lFooterFont,
+  lFooterWeight,
+  lCoachFont,
+  lCoachWeight,
+  lPlayerFont,
+  lPlayerWeight,
+].forEach((el) =>
+  el.addEventListener("change", () => {
+    updateLineupCommon();
+    saveLineup();
+  }),
+);
 
 /* ----- Export / Import JSON (équipes + formations) ----- */
 function collectStorageStateByCategory() {
@@ -2101,7 +2217,9 @@ function importSavesFromJson(file) {
     if (parsed && typeof parsed.state === "object" && parsed.state) {
       const entries = Object.entries(parsed.state).filter(
         ([k, v]) =>
-          typeof k === "string" && k.startsWith("ucl-") && typeof v === "string",
+          typeof k === "string" &&
+          k.startsWith("ucl-") &&
+          typeof v === "string",
       );
       if (entries.length === 0) {
         alert("Aucune donnée trouvée dans le fichier.");
@@ -2129,10 +2247,24 @@ function importSavesFromJson(file) {
     const importedStyles = Array.isArray(parsed.styles) ? parsed.styles : [];
     const importedBanners = Array.isArray(parsed.banners) ? parsed.banners : [];
     const importedTypos = Array.isArray(parsed.typos) ? parsed.typos : [];
-    const importedShowdowns = Array.isArray(parsed.showdowns) ? parsed.showdowns : [];
-    const importedShowdownTypos = Array.isArray(parsed.showdownTypos) ? parsed.showdownTypos : [];
-    const importedShowdownBgs = Array.isArray(parsed.showdownBgs) ? parsed.showdownBgs : [];
-    const totalCount = importedTeams.length + importedFormations.length + importedStyles.length + importedBanners.length + importedTypos.length + importedShowdowns.length + importedShowdownTypos.length + importedShowdownBgs.length;
+    const importedShowdowns = Array.isArray(parsed.showdowns)
+      ? parsed.showdowns
+      : [];
+    const importedShowdownTypos = Array.isArray(parsed.showdownTypos)
+      ? parsed.showdownTypos
+      : [];
+    const importedShowdownBgs = Array.isArray(parsed.showdownBgs)
+      ? parsed.showdownBgs
+      : [];
+    const totalCount =
+      importedTeams.length +
+      importedFormations.length +
+      importedStyles.length +
+      importedBanners.length +
+      importedTypos.length +
+      importedShowdowns.length +
+      importedShowdownTypos.length +
+      importedShowdownBgs.length;
     if (totalCount === 0) {
       alert("Aucune donnée trouvée dans le fichier.");
       return;
@@ -2476,9 +2608,9 @@ function applyBgImage() {
   const fadeEnd = document.getElementById("l-bg-image-fade-end");
   const fadeEndSpan = document.getElementById("l-bg-image-fade-end-value");
 
-  const imgOpacity = (+opSlider.value) / 100;
+  const imgOpacity = +opSlider.value / 100;
   if (opValueSpan) opValueSpan.textContent = opSlider.value + "%";
-  const fadeEndRatio = (+fadeEnd.value) / 100;
+  const fadeEndRatio = +fadeEnd.value / 100;
   if (fadeEndSpan) fadeEndSpan.textContent = fadeEnd.value + "%";
 
   const hasFile = !!select.value;
@@ -2543,7 +2675,10 @@ bgImageOpacity.addEventListener("input", () => {
   applyBgImage();
 });
 bgImageFadeToggle.addEventListener("change", () => {
-  localStorage.setItem(BG_IMAGE_FADE_KEY, bgImageFadeToggle.checked ? "1" : "0");
+  localStorage.setItem(
+    BG_IMAGE_FADE_KEY,
+    bgImageFadeToggle.checked ? "1" : "0",
+  );
   applyBgImage();
 });
 bgImageFadeDir.addEventListener("change", () => {
@@ -2573,6 +2708,7 @@ const sBallColor = document.getElementById("s-ball-color");
 const sBandWidth = document.getElementById("s-band-width");
 const sBandWidthValue = document.getElementById("s-band-width-value");
 const sTrophyColor = document.getElementById("s-trophy-color");
+const sTrophyWhiteToggle = document.getElementById("s-trophy-white-toggle");
 const sTrophySize = document.getElementById("s-trophy-size");
 const sTrophySizeValue = document.getElementById("s-trophy-size-value");
 const sTeamFont = document.getElementById("s-team-font");
@@ -2588,8 +2724,7 @@ const sAggregateHome = document.getElementById("s-aggregate-home");
 const sAggregateAway = document.getElementById("s-aggregate-away");
 
 const S_FONTS = {
-  condensed:
-    "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
+  condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
   system:
     "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
   cinzel: "'Cinzel', 'Trajan Pro', serif",
@@ -2617,10 +2752,19 @@ function updateScoreBanner() {
     const tPx = sTrophySize.value + "px";
     trophyEl.style.width = tPx;
     trophyEl.style.height = tPx;
-    trophyEl.style.backgroundColor = sTrophyColor.value;
+    const trophyWhite = sTrophyWhiteToggle.checked;
+    const trophyImage = 'url("./Logos/trophy_logo.png")';
+    trophyEl.style.maskImage = trophyWhite ? trophyImage : "none";
+    trophyEl.style.webkitMaskImage = trophyWhite ? trophyImage : "none";
+    trophyEl.style.backgroundImage = trophyWhite ? "none" : trophyImage;
+    trophyEl.style.backgroundSize = "contain";
+    trophyEl.style.backgroundPosition = "center";
+    trophyEl.style.backgroundRepeat = "no-repeat";
+    trophyEl.style.backgroundColor = trophyWhite
+      ? sTrophyColor.value
+      : "transparent";
   }
-  if (sTrophySizeValue)
-    sTrophySizeValue.textContent = sTrophySize.value + "px";
+  if (sTrophySizeValue) sTrophySizeValue.textContent = sTrophySize.value + "px";
 
   const teamFont = S_FONTS[sTeamFont.value] || S_FONTS.condensed;
   ["sb-home", "sb-away"].forEach((id) => {
@@ -2679,8 +2823,8 @@ function updateScoreBanner() {
   sAggregateHome,
   sAggregateAway,
 ].forEach((el) => el.addEventListener("input", updateScoreBanner));
-[sTeamFont, sTeamWeight, sScoreFont, sScoreWeight, sAggregateToggle].forEach((el) =>
-  el.addEventListener("change", updateScoreBanner),
+[sTeamFont, sTeamWeight, sScoreFont, sScoreWeight, sAggregateToggle].forEach(
+  (el) => el.addEventListener("change", updateScoreBanner),
 );
 updateScoreBanner();
 
@@ -2717,6 +2861,7 @@ const S_BALL_COLOR_KEY = "ucl-score-ball-color-v1";
 const S_BG_OPACITY_KEY = "ucl-score-bg-opacity-v1";
 const S_BAND_WIDTH_KEY = "ucl-score-band-width-v1";
 const S_TROPHY_COLOR_KEY = "ucl-score-trophy-color-v1";
+const S_TROPHY_WHITE_KEY = "ucl-score-trophy-white-v1";
 const S_TROPHY_SIZE_KEY = "ucl-score-trophy-size-v1";
 const S_TEAM_TYPO_KEY = "ucl-score-team-typo-v1";
 const S_SCORE_TYPO_KEY = "ucl-score-score-typo-v1";
@@ -2797,6 +2942,7 @@ const savedSBandWidth = localStorage.getItem(S_BAND_WIDTH_KEY);
 if (savedSBandWidth != null) sBandWidth.value = savedSBandWidth;
 const savedTrophyColor = localStorage.getItem(S_TROPHY_COLOR_KEY);
 if (savedTrophyColor) sTrophyColor.value = savedTrophyColor;
+sTrophyWhiteToggle.checked = localStorage.getItem(S_TROPHY_WHITE_KEY) !== "0";
 const savedTrophySize = localStorage.getItem(S_TROPHY_SIZE_KEY);
 if (savedTrophySize != null) sTrophySize.value = savedTrophySize;
 try {
@@ -2884,6 +3030,13 @@ sBandWidth.addEventListener("input", () => {
 sTrophyColor.addEventListener("input", () => {
   localStorage.setItem(S_TROPHY_COLOR_KEY, sTrophyColor.value);
 });
+sTrophyWhiteToggle.addEventListener("change", () => {
+  localStorage.setItem(
+    S_TROPHY_WHITE_KEY,
+    sTrophyWhiteToggle.checked ? "1" : "0",
+  );
+  updateScoreBanner();
+});
 sTrophySize.addEventListener("input", () => {
   localStorage.setItem(S_TROPHY_SIZE_KEY, sTrophySize.value);
 });
@@ -2937,6 +3090,7 @@ function collectScoreData() {
     ballColor: sBallColor.value,
     bandWidth: sBandWidth.value,
     trophyColor: sTrophyColor.value,
+    trophyWhite: sTrophyWhiteToggle.checked,
     trophySize: sTrophySize.value,
     teamTypo: {
       font: sTeamFont.value,
@@ -2974,6 +3128,8 @@ function applyScoreData(d) {
   if (d.ballColor) sBallColor.value = d.ballColor;
   if (d.bandWidth != null) sBandWidth.value = d.bandWidth;
   if (d.trophyColor) sTrophyColor.value = d.trophyColor;
+  if (typeof d.trophyWhite === "boolean")
+    sTrophyWhiteToggle.checked = d.trophyWhite;
   if (d.trophySize != null) sTrophySize.value = d.trophySize;
   if (d.teamTypo) {
     if (d.teamTypo.font) sTeamFont.value = d.teamTypo.font;
@@ -3305,7 +3461,8 @@ renderBracket();
    ============================================================ */
 const SD_FONTS = {
   condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
-  system: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
+  system:
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif",
   arial: "Arial, Helvetica, sans-serif",
   impact: "Impact, 'Arial Black', 'Helvetica Inserat', sans-serif",
   cinzel: "'Cinzel', 'Trajan Pro', serif",
@@ -3421,7 +3578,9 @@ function updateShowdown() {
   renderSdLogo(document.getElementById("sd-logo-2"), sdLogo2URL);
   const round = sdRound.value;
   const leg = sdLeg.value;
-  document.getElementById("sd-match").textContent = leg ? `${round} - ${leg}` : round;
+  document.getElementById("sd-match").textContent = leg
+    ? `${round} - ${leg}`
+    : round;
   document.getElementById("sd-meta-place").textContent = sdPlace.value;
   document.getElementById("sd-meta-date").textContent = sdDate.value;
   document.getElementById("sd-meta-referee").textContent = sdReferee.value;
@@ -3432,8 +3591,7 @@ function updateShowdown() {
   const bgC2 = hexToRgba(sdBgColor2.value, bgAlpha);
   board.style.background = `linear-gradient(${sdBgDir.value}deg, ${bgC1}, ${bgC2})`;
   board.style.color = sdColorText.value;
-  if (sdBgOpacityValue)
-    sdBgOpacityValue.textContent = sdBgOpacity.value + "%";
+  if (sdBgOpacityValue) sdBgOpacityValue.textContent = sdBgOpacity.value + "%";
 
   const matchEl = document.getElementById("sd-match");
   matchEl.style.fontFamily = SD_FONTS[sdMatchFont.value] || SD_FONTS.system;
@@ -3484,13 +3642,11 @@ function updateShowdown() {
   if (sdTeamGapValue) sdTeamGapValue.textContent = teamGap + "px";
 
   const metaFont = SD_FONTS[sdMetaFont.value] || SD_FONTS.system;
-  document
-    .querySelectorAll(".sd-meta-item, .sd-referee-name")
-    .forEach((el) => {
-      el.style.fontFamily = metaFont;
-      el.style.fontSize = sdMetaSize.value + "px";
-      el.style.fontWeight = sdMetaWeight.value;
-    });
+  document.querySelectorAll(".sd-meta-item, .sd-referee-name").forEach((el) => {
+    el.style.fontFamily = metaFont;
+    el.style.fontSize = sdMetaSize.value + "px";
+    el.style.fontWeight = sdMetaWeight.value;
+  });
   document.querySelectorAll(".sd-meta-sep").forEach((el) => {
     el.style.fontFamily = metaFont;
     el.style.fontSize = sdMetaSize.value + "px";
@@ -3514,8 +3670,7 @@ function updateShowdown() {
   const scoreNum2 = document.getElementById("sd-score-num-2");
   if (scoreNum1) scoreNum1.textContent = sdScore1.value;
   if (scoreNum2) scoreNum2.textContent = sdScore2.value;
-  if (sdScoreSizeValue)
-    sdScoreSizeValue.textContent = sdScoreSize.value + "px";
+  if (sdScoreSizeValue) sdScoreSizeValue.textContent = sdScoreSize.value + "px";
 
   // When result mode is on, hide the central UCL logo to leave room for score
   if (centerLogo) {
@@ -3618,13 +3773,19 @@ function collectShowdownBgData() {
 
 function collectShowdownTypoData() {
   return {
-    matchFont: sdMatchFont.value, matchSize: sdMatchSize.value, matchWeight: sdMatchWeight.value,
-    nameFont: sdNameFont.value, nameSize: sdNameSize.value, nameWeight: sdNameWeight.value,
+    matchFont: sdMatchFont.value,
+    matchSize: sdMatchSize.value,
+    matchWeight: sdMatchWeight.value,
+    nameFont: sdNameFont.value,
+    nameSize: sdNameSize.value,
+    nameWeight: sdNameWeight.value,
     centerLogoEnabled: sdCenterLogoToggle.checked,
     centerLogoSize: sdCenterLogoSize.value,
     teamLogoSize: sdTeamLogoSize.value,
     teamGap: sdTeamGap.value,
-    metaFont: sdMetaFont.value, metaSize: sdMetaSize.value, metaWeight: sdMetaWeight.value,
+    metaFont: sdMetaFont.value,
+    metaSize: sdMetaSize.value,
+    metaWeight: sdMetaWeight.value,
   };
 }
 
@@ -3749,22 +3910,46 @@ function loadShowdown() {
 // CRUD helpers
 function makeListCRUD(storageKey, selectId, nameInputId, label) {
   return {
-    get: () => { try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; } },
+    get: () => {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey) || "[]");
+      } catch {
+        return [];
+      }
+    },
     set: (list) => localStorage.setItem(storageKey, JSON.stringify(list)),
     render: () => {
       const sel = document.getElementById(selectId);
       if (!sel) return;
       const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      sel.innerHTML = list.length === 0
-        ? `<option value="">— Aucun ${label} sauvegardé —</option>`
-        : list.map((s, i) => `<option value="${i}">${s.name}</option>`).join("");
+      sel.innerHTML =
+        list.length === 0
+          ? `<option value="">— Aucun ${label} sauvegardé —</option>`
+          : list
+              .map((s, i) => `<option value="${i}">${s.name}</option>`)
+              .join("");
     },
   };
 }
 
-const sdShowdownCRUD = makeListCRUD(SD_SAVED_KEY, "sd-saved-select", "sd-save-name", "showdown");
-const sdTypoCRUD = makeListCRUD(SD_SAVED_TYPOS_KEY, "sd-saved-typo-select", "sd-save-typo-name", "typo");
-const sdBgCRUD = makeListCRUD(SD_SAVED_BGS_KEY, "sd-saved-bg-select", "sd-save-bg-name", "fond");
+const sdShowdownCRUD = makeListCRUD(
+  SD_SAVED_KEY,
+  "sd-saved-select",
+  "sd-save-name",
+  "showdown",
+);
+const sdTypoCRUD = makeListCRUD(
+  SD_SAVED_TYPOS_KEY,
+  "sd-saved-typo-select",
+  "sd-save-typo-name",
+  "typo",
+);
+const sdBgCRUD = makeListCRUD(
+  SD_SAVED_BGS_KEY,
+  "sd-saved-bg-select",
+  "sd-save-bg-name",
+  "fond",
+);
 
 function stripDataUrlLogosFromSdSaves() {
   const list = sdShowdownCRUD.get();
@@ -3788,12 +3973,17 @@ function stripDataUrlLogosFromSdSaves() {
 function saveCurrentShowdown() {
   const nameInput = document.getElementById("sd-save-name");
   const name = nameInput.value.trim();
-  if (!name) { alert("Donne un nom au showdown."); return; }
+  if (!name) {
+    alert("Donne un nom au showdown.");
+    return;
+  }
   let list = sdShowdownCRUD.get();
   let i = list.findIndex((s) => s.name === name);
   const entry = { name, data: compressShowdownData(collectShowdownData()) };
-  if (i >= 0) { if (!confirm(`Showdown "${name}" existe. Écraser ?`)) return; list[i] = entry; }
-  else list.push(entry);
+  if (i >= 0) {
+    if (!confirm(`Showdown "${name}" existe. Écraser ?`)) return;
+    list[i] = entry;
+  } else list.push(entry);
   try {
     sdShowdownCRUD.set(list);
   } catch (err) {
@@ -3806,10 +3996,14 @@ function saveCurrentShowdown() {
       try {
         sdShowdownCRUD.set(list);
         if (stripped > 0) {
-          alert(`Quota localStorage atteint : ${stripped} logo(s) intégré(s) dans d'anciennes sauvegardes ont été retirés pour libérer de l'espace. Re-sélectionne-les depuis ./Logos/ si nécessaire.`);
+          alert(
+            `Quota localStorage atteint : ${stripped} logo(s) intégré(s) dans d'anciennes sauvegardes ont été retirés pour libérer de l'espace. Re-sélectionne-les depuis ./Logos/ si nécessaire.`,
+          );
         }
       } catch (err2) {
-        alert("Impossible de sauvegarder : quota localStorage toujours dépassé. Supprime quelques showdowns sauvegardés et réessaie.");
+        alert(
+          "Impossible de sauvegarder : quota localStorage toujours dépassé. Supprime quelques showdowns sauvegardés et réessaie.",
+        );
         return;
       }
     } else {
@@ -3818,13 +4012,17 @@ function saveCurrentShowdown() {
   }
   nameInput.value = "";
   sdShowdownCRUD.render();
-  document.getElementById("sd-saved-select").value = String(list.findIndex((s) => s.name === name));
+  document.getElementById("sd-saved-select").value = String(
+    list.findIndex((s) => s.name === name),
+  );
 }
 function loadCurrentShowdown() {
   const idx = parseInt(document.getElementById("sd-saved-select").value, 10);
   const list = sdShowdownCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
-  applyShowdownData(expandShowdownData(JSON.parse(JSON.stringify(list[idx].data))));
+  applyShowdownData(
+    expandShowdownData(JSON.parse(JSON.stringify(list[idx].data))),
+  );
   document.getElementById("sd-save-name").value = list[idx].name;
   updateShowdown();
   saveShowdown();
@@ -3842,18 +4040,26 @@ function deleteCurrentShowdown() {
 function saveCurrentSdTypo() {
   const nameInput = document.getElementById("sd-save-typo-name");
   const name = nameInput.value.trim();
-  if (!name) { alert("Donne un nom à la typographie."); return; }
+  if (!name) {
+    alert("Donne un nom à la typographie.");
+    return;
+  }
   const list = sdTypoCRUD.get();
   const i = list.findIndex((s) => s.name === name);
   const entry = { name, data: collectShowdownTypoData() };
-  if (i >= 0) { if (!confirm(`Typographie "${name}" existe. Écraser ?`)) return; list[i] = entry; }
-  else list.push(entry);
+  if (i >= 0) {
+    if (!confirm(`Typographie "${name}" existe. Écraser ?`)) return;
+    list[i] = entry;
+  } else list.push(entry);
   sdTypoCRUD.set(list);
   nameInput.value = "";
   sdTypoCRUD.render();
 }
 function loadCurrentSdTypo() {
-  const idx = parseInt(document.getElementById("sd-saved-typo-select").value, 10);
+  const idx = parseInt(
+    document.getElementById("sd-saved-typo-select").value,
+    10,
+  );
   const list = sdTypoCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
   applyShowdownTypoData(list[idx].data);
@@ -3862,7 +4068,10 @@ function loadCurrentSdTypo() {
   saveShowdown();
 }
 function deleteCurrentSdTypo() {
-  const idx = parseInt(document.getElementById("sd-saved-typo-select").value, 10);
+  const idx = parseInt(
+    document.getElementById("sd-saved-typo-select").value,
+    10,
+  );
   const list = sdTypoCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
   if (!confirm(`Supprimer "${list[idx].name}" ?`)) return;
@@ -3874,12 +4083,17 @@ function deleteCurrentSdTypo() {
 function saveCurrentSdBg() {
   const nameInput = document.getElementById("sd-save-bg-name");
   const name = nameInput.value.trim();
-  if (!name) { alert("Donne un nom au fond."); return; }
+  if (!name) {
+    alert("Donne un nom au fond.");
+    return;
+  }
   const list = sdBgCRUD.get();
   const i = list.findIndex((s) => s.name === name);
   const entry = { name, data: collectShowdownBgData() };
-  if (i >= 0) { if (!confirm(`Fond "${name}" existe. Écraser ?`)) return; list[i] = entry; }
-  else list.push(entry);
+  if (i >= 0) {
+    if (!confirm(`Fond "${name}" existe. Écraser ?`)) return;
+    list[i] = entry;
+  } else list.push(entry);
   sdBgCRUD.set(list);
   nameInput.value = "";
   sdBgCRUD.render();
@@ -3932,28 +4146,68 @@ sdLogo2Clear.addEventListener("click", () => {
 
 // All input/change listeners for auto-update + auto-save
 const sdInputEls = [
-  sdName1Input, sdName2Input, sdPlace, sdDate, sdReferee,
-  sdBgColor1, sdBgColor2, sdBgOpacity, sdColorText,
-  sdMatchSize, sdNameSize, sdCenterLogoSize, sdTeamLogoSize, sdTeamGap, sdMetaSize,
-  sdScore1, sdScore2, sdScoreSize, sdScoreColor,
-  sdScorers1, sdScorers2, sdScorersSize, sdScorersColor,
+  sdName1Input,
+  sdName2Input,
+  sdPlace,
+  sdDate,
+  sdReferee,
+  sdBgColor1,
+  sdBgColor2,
+  sdBgOpacity,
+  sdColorText,
+  sdMatchSize,
+  sdNameSize,
+  sdCenterLogoSize,
+  sdTeamLogoSize,
+  sdTeamGap,
+  sdMetaSize,
+  sdScore1,
+  sdScore2,
+  sdScoreSize,
+  sdScoreColor,
+  sdScorers1,
+  sdScorers2,
+  sdScorersSize,
+  sdScorersColor,
 ];
 const sdChangeEls = [
-  sdRound, sdLeg, sdBgDir,
+  sdRound,
+  sdLeg,
+  sdBgDir,
   sdCenterLogoToggle,
-  sdMatchFont, sdMatchWeight,
-  sdNameFont, sdNameWeight,
-  sdMetaFont, sdMetaWeight,
-  sdResultToggle, sdScoreFont, sdScoreWeight, sdScorersFont, sdScorersWeight,
+  sdMatchFont,
+  sdMatchWeight,
+  sdNameFont,
+  sdNameWeight,
+  sdMetaFont,
+  sdMetaWeight,
+  sdResultToggle,
+  sdScoreFont,
+  sdScoreWeight,
+  sdScorersFont,
+  sdScorersWeight,
 ];
-sdInputEls.forEach((el) => el.addEventListener("input", () => { updateShowdown(); saveShowdown(); }));
-sdChangeEls.forEach((el) => el.addEventListener("change", () => { updateShowdown(); saveShowdown(); }));
+sdInputEls.forEach((el) =>
+  el.addEventListener("input", () => {
+    updateShowdown();
+    saveShowdown();
+  }),
+);
+sdChangeEls.forEach((el) =>
+  el.addEventListener("change", () => {
+    updateShowdown();
+    saveShowdown();
+  }),
+);
 
 // Swap teams (names, logos, scores, scorers)
 const sdSwapTeams = document.getElementById("sd-swap-teams");
 if (sdSwapTeams) {
   sdSwapTeams.addEventListener("click", () => {
-    [sdName1Input.value, sdName2Input.value] = [sdName2Input.value, sdName1Input.value];
+    [sdName1Input.value, sdName2Input.value] = [
+      sdName2Input.value,
+      sdName1Input.value,
+    ];
     [sdLogo1URL, sdLogo2URL] = [sdLogo2URL, sdLogo1URL];
     [sdScore1.value, sdScore2.value] = [sdScore2.value, sdScore1.value];
     [sdScorers1.value, sdScorers2.value] = [sdScorers2.value, sdScorers1.value];
@@ -3962,15 +4216,33 @@ if (sdSwapTeams) {
   });
 }
 
-document.getElementById("sd-save").addEventListener("click", saveCurrentShowdown);
-document.getElementById("sd-load").addEventListener("click", loadCurrentShowdown);
-document.getElementById("sd-delete").addEventListener("click", deleteCurrentShowdown);
-document.getElementById("sd-save-typo").addEventListener("click", saveCurrentSdTypo);
-document.getElementById("sd-load-typo").addEventListener("click", loadCurrentSdTypo);
-document.getElementById("sd-delete-typo").addEventListener("click", deleteCurrentSdTypo);
-document.getElementById("sd-save-bg").addEventListener("click", saveCurrentSdBg);
-document.getElementById("sd-load-bg").addEventListener("click", loadCurrentSdBg);
-document.getElementById("sd-delete-bg").addEventListener("click", deleteCurrentSdBg);
+document
+  .getElementById("sd-save")
+  .addEventListener("click", saveCurrentShowdown);
+document
+  .getElementById("sd-load")
+  .addEventListener("click", loadCurrentShowdown);
+document
+  .getElementById("sd-delete")
+  .addEventListener("click", deleteCurrentShowdown);
+document
+  .getElementById("sd-save-typo")
+  .addEventListener("click", saveCurrentSdTypo);
+document
+  .getElementById("sd-load-typo")
+  .addEventListener("click", loadCurrentSdTypo);
+document
+  .getElementById("sd-delete-typo")
+  .addEventListener("click", deleteCurrentSdTypo);
+document
+  .getElementById("sd-save-bg")
+  .addEventListener("click", saveCurrentSdBg);
+document
+  .getElementById("sd-load-bg")
+  .addEventListener("click", loadCurrentSdBg);
+document
+  .getElementById("sd-delete-bg")
+  .addEventListener("click", deleteCurrentSdBg);
 
 /* ----- Showdown background image ----- */
 const SD_BG_IMAGE_PREF_KEY = "ucl-showdown-bg-image-v1";
@@ -3983,11 +4255,15 @@ const SD_BG_IMAGE_FADE_END_KEY = "ucl-showdown-bg-image-fade-end-v1";
 const sdBgImgToggle = document.getElementById("sd-bg-image-toggle");
 const sdBgImgSelect = document.getElementById("sd-bg-image-select");
 const sdBgImgOpacity = document.getElementById("sd-bg-image-opacity");
-const sdBgImgOpacityValue = document.getElementById("sd-bg-image-opacity-value");
+const sdBgImgOpacityValue = document.getElementById(
+  "sd-bg-image-opacity-value",
+);
 const sdBgImgFadeToggle = document.getElementById("sd-bg-image-fade-toggle");
 const sdBgImgFadeDir = document.getElementById("sd-bg-image-fade-dir");
 const sdBgImgFadeEnd = document.getElementById("sd-bg-image-fade-end");
-const sdBgImgFadeEndValue = document.getElementById("sd-bg-image-fade-end-value");
+const sdBgImgFadeEndValue = document.getElementById(
+  "sd-bg-image-fade-end-value",
+);
 
 function applySdBgImage() {
   const board = document.getElementById("showdown-board");
@@ -4111,7 +4387,10 @@ if (savedSdToplineColor2) sdToplineColor2.value = savedSdToplineColor2;
 applySdTopLine();
 
 sdToplineToggle.addEventListener("change", () => {
-  localStorage.setItem(SD_TOPLINE_PREF_KEY, sdToplineToggle.checked ? "1" : "0");
+  localStorage.setItem(
+    SD_TOPLINE_PREF_KEY,
+    sdToplineToggle.checked ? "1" : "0",
+  );
   applySdTopLine();
 });
 sdToplineThickness.addEventListener("input", () => {
@@ -4428,9 +4707,7 @@ document.getElementById("export-btn").addEventListener("click", async () => {
     const details = document.querySelector(
       `.collapsible[data-section-id="${CSS.escape(ident)}"]`,
     );
-    return details
-      ? details.querySelector(":scope > .collapsible-body")
-      : null;
+    return details ? details.querySelector(":scope > .collapsible-body") : null;
   }
 
   function findById(id) {
@@ -4682,9 +4959,7 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   }
 
   function init() {
-    document
-      .querySelectorAll('.field input[type="color"]')
-      .forEach(wrapInput);
+    document.querySelectorAll('.field input[type="color"]').forEach(wrapInput);
     renderAll();
   }
 

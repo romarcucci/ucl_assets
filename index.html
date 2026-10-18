@@ -255,12 +255,7 @@
             <div class="collapsible-body">
               <label class="field">
                 <span>Numéro (optionnel)</span>
-                <input
-                  type="text"
-                  id="p-number"
-                  value=""
-                  placeholder="ex: 7"
-                />
+                <input type="text" id="p-number" value="" placeholder="ex: 7" />
               </label>
               <div class="row">
                 <label class="field">
@@ -292,11 +287,7 @@
               </label>
               <label class="field">
                 <span>Photo du buteur (fichier dans ./Goalscorers/)</span>
-                <input
-                  type="file"
-                  id="p-goalscorer-file"
-                  accept="image/*"
-                />
+                <input type="file" id="p-goalscorer-file" accept="image/*" />
               </label>
               <button
                 class="btn-secondary"
@@ -307,11 +298,7 @@
               </button>
               <label class="field">
                 <span>Logo du club (fichier dans ./Logos/)</span>
-                <input
-                  type="file"
-                  id="p-club-logo-file"
-                  accept="image/*"
-                />
+                <input type="file" id="p-club-logo-file" accept="image/*" />
               </label>
               <button
                 class="btn-secondary"
@@ -555,11 +542,7 @@
                 <summary>Prénom (haut)</summary>
                 <div class="collapsible-body">
                   <label class="checkbox-field">
-                    <input
-                      type="checkbox"
-                      id="p-firstname-uppercase"
-                      checked
-                    />
+                    <input type="checkbox" id="p-firstname-uppercase" checked />
                     <span>Capitaliser (MAJUSCULES)</span>
                   </label>
                   <label class="field">
@@ -608,11 +591,7 @@
                 <summary>Nom (haut)</summary>
                 <div class="collapsible-body">
                   <label class="checkbox-field">
-                    <input
-                      type="checkbox"
-                      id="p-lastname-uppercase"
-                      checked
-                    />
+                    <input type="checkbox" id="p-lastname-uppercase" checked />
                     <span>Capitaliser (MAJUSCULES)</span>
                   </label>
                   <label class="field">
@@ -969,11 +948,7 @@
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
                     <select id="l-saved-kit-select"></select>
-                    <button
-                      class="btn-secondary"
-                      id="l-load-kit"
-                      type="button"
-                    >
+                    <button class="btn-secondary" id="l-load-kit" type="button">
                       Appliquer
                     </button>
                     <button
@@ -1448,7 +1423,10 @@
                     >
                       Remplir les joueurs
                     </button>
-                    <span id="l-paste-comp-status" class="paste-comp-status"></span>
+                    <span
+                      id="l-paste-comp-status"
+                      class="paste-comp-status"
+                    ></span>
                   </div>
                 </div>
               </details>
@@ -1526,14 +1504,30 @@
                     <label class="field">
                       <span>Score</span>
                       <div class="number-stepper">
-                        <button type="button" class="stepper-btn" data-step="-1" data-target="s-home-score" aria-label="Diminuer">−</button>
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="s-home-score"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
                         <input
                           type="number"
                           id="s-home-score"
                           value="0"
                           min="0"
                         />
-                        <button type="button" class="stepper-btn" data-step="1" data-target="s-home-score" aria-label="Augmenter">+</button>
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="s-home-score"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
                       </div>
                     </label>
                     <label class="field">
@@ -1560,14 +1554,30 @@
                     <label class="field">
                       <span>Score</span>
                       <div class="number-stepper">
-                        <button type="button" class="stepper-btn" data-step="-1" data-target="s-away-score" aria-label="Diminuer">−</button>
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="s-away-score"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
                         <input
                           type="number"
                           id="s-away-score"
                           value="0"
                           min="0"
                         />
-                        <button type="button" class="stepper-btn" data-step="1" data-target="s-away-score" aria-label="Augmenter">+</button>
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="s-away-score"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
                       </div>
                     </label>
                     <label class="field">
@@ -1591,7 +1601,12 @@
                   value="6"
                 />
               </label>
-              <button class="btn-secondary" id="s-swap-teams" type="button" title="Inverser les équipes domicile et extérieur (code, score, couleur, agrégé)">
+              <button
+                class="btn-secondary"
+                id="s-swap-teams"
+                type="button"
+                title="Inverser les équipes domicile et extérieur (code, score, couleur, agrégé)"
+              >
                 ⇄ Inverser domicile / extérieur
               </button>
             </div>
@@ -1608,27 +1623,59 @@
                 <label class="field">
                   <span>Domicile</span>
                   <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="s-aggregate-home" aria-label="Diminuer">−</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="s-aggregate-home"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
                     <input
                       type="number"
                       id="s-aggregate-home"
                       value="0"
                       min="0"
                     />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="s-aggregate-home" aria-label="Augmenter">+</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="s-aggregate-home"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
                 </label>
                 <label class="field">
                   <span>Extérieur</span>
                   <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="s-aggregate-away" aria-label="Diminuer">−</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="s-aggregate-away"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
                     <input
                       type="number"
                       id="s-aggregate-away"
                       value="0"
                       min="0"
                     />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="s-aggregate-away" aria-label="Augmenter">+</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="s-aggregate-away"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
                 </label>
               </div>
@@ -1641,11 +1688,7 @@
               <div class="row">
                 <label class="field">
                   <span>Couleur du fond</span>
-                  <input
-                    type="color"
-                    id="s-ball-box-color"
-                    value="#1a1a1a"
-                  />
+                  <input type="color" id="s-ball-box-color" value="#1a1a1a" />
                 </label>
                 <label class="field">
                   <span>Couleur du ballon</span>
@@ -1658,6 +1701,10 @@
           <details class="collapsible">
             <summary>Trophée (séparateur)</summary>
             <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="s-trophy-white-toggle" checked />
+                <span>Trophée en blanc</span>
+              </label>
               <label class="field">
                 <span>Couleur du trophée</span>
                 <input type="color" id="s-trophy-color" value="#ffffff" />
@@ -1686,10 +1733,7 @@
                 <input type="color" id="s-bg" value="#0a1a4a" />
               </label>
               <label class="field">
-                <span
-                  >Opacité
-                  <span id="s-bg-opacity-value">100%</span></span
-                >
+                <span>Opacité <span id="s-bg-opacity-value">100%</span></span>
                 <input
                   type="range"
                   id="s-bg-opacity"
@@ -1734,17 +1778,9 @@
               </label>
               <label class="field">
                 <span>Importer une image personnalisée</span>
-                <input
-                  type="file"
-                  id="s-bg-image-file"
-                  accept="image/*"
-                />
+                <input type="file" id="s-bg-image-file" accept="image/*" />
               </label>
-              <button
-                class="btn-secondary"
-                id="s-bg-image-clear"
-                type="button"
-              >
+              <button class="btn-secondary" id="s-bg-image-clear" type="button">
                 Retirer l'image personnalisée
               </button>
               <label class="field">
@@ -1813,8 +1849,7 @@
                   <div class="row">
                     <label class="field">
                       <span
-                        >Taille
-                        <span id="s-team-size-value">20px</span></span
+                        >Taille <span id="s-team-size-value">20px</span></span
                       >
                       <input
                         type="range"
@@ -1860,8 +1895,7 @@
                   <div class="row">
                     <label class="field">
                       <span
-                        >Taille
-                        <span id="s-score-size-value">24px</span></span
+                        >Taille <span id="s-score-size-value">24px</span></span
                       >
                       <input
                         type="range"
@@ -2066,7 +2100,15 @@
                 <label class="field">
                   <span>Score équipe 1</span>
                   <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="sd-score-1" aria-label="Diminuer">−</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="sd-score-1"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
                     <input
                       type="number"
                       id="sd-score-1"
@@ -2074,13 +2116,29 @@
                       min="0"
                       max="99"
                     />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="sd-score-1" aria-label="Augmenter">+</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="sd-score-1"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
                 </label>
                 <label class="field">
                   <span>Score équipe 2</span>
                   <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="sd-score-2" aria-label="Diminuer">−</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="sd-score-2"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
                     <input
                       type="number"
                       id="sd-score-2"
@@ -2088,7 +2146,15 @@
                       min="0"
                       max="99"
                     />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="sd-score-2" aria-label="Augmenter">+</button>
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="sd-score-2"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
                 </label>
               </div>
@@ -2101,7 +2167,8 @@
                 <summary>Buteurs équipe 1 (gauche)</summary>
                 <div class="collapsible-body">
                   <p class="tn-info">
-                    Un buteur par ligne, format : <strong>Nom | minute</strong>.<br />
+                    Un buteur par ligne, format :
+                    <strong>Nom | minute</strong>.<br />
                     Ex : <em>VINÍCIUS | 23'</em>
                   </p>
                   <label class="field">
@@ -2110,8 +2177,10 @@
                       id="sd-scorers-1"
                       rows="4"
                       placeholder="VINÍCIUS | 23'&#10;BELLINGHAM | 67'"
-                    >VINÍCIUS | 23'
-BELLINGHAM | 67'</textarea>
+                    >
+VINÍCIUS | 23'
+BELLINGHAM | 67'</textarea
+                    >
                   </label>
                 </div>
               </details>
@@ -2128,7 +2197,9 @@ BELLINGHAM | 67'</textarea>
                       id="sd-scorers-2"
                       rows="4"
                       placeholder="MBAPPÉ | 45+2'"
-                    >MBAPPÉ | 45+2'</textarea>
+                    >
+MBAPPÉ | 45+2'</textarea
+                    >
                   </label>
                 </div>
               </details>
@@ -2174,11 +2245,7 @@ BELLINGHAM | 67'</textarea>
                   </div>
                   <label class="field">
                     <span>Couleur</span>
-                    <input
-                      type="color"
-                      id="sd-scorers-color"
-                      value="#ffffff"
-                    />
+                    <input type="color" id="sd-scorers-color" value="#ffffff" />
                   </label>
                 </div>
               </details>
@@ -2428,11 +2495,7 @@ BELLINGHAM | 67'</textarea>
                 <summary>Logos (tailles)</summary>
                 <div class="collapsible-body">
                   <label class="checkbox-field">
-                    <input
-                      type="checkbox"
-                      id="sd-center-logo-toggle"
-                      checked
-                    />
+                    <input type="checkbox" id="sd-center-logo-toggle" checked />
                     <span>Afficher le logo central</span>
                   </label>
                   <label class="field">
@@ -2526,7 +2589,9 @@ BELLINGHAM | 67'</textarea>
                     <span>Police</span>
                     <select id="sd-score-font">
                       <option value="system">Système</option>
-                      <option value="condensed" selected>Barlow Condensed</option>
+                      <option value="condensed" selected>
+                        Barlow Condensed
+                      </option>
                       <option value="cinzel">Cinzel (serif)</option>
                       <option value="arial">Arial / Helvetica</option>
                       <option value="impact">Impact</option>
@@ -2741,11 +2806,7 @@ BELLINGHAM | 67'</textarea>
                 >
                   📋 Copier le prompt
                 </button>
-                <button
-                  class="btn-secondary"
-                  id="tn-reset-btn"
-                  type="button"
-                >
+                <button class="btn-secondary" id="tn-reset-btn" type="button">
                   ↺ Réinitialiser
                 </button>
               </div>
@@ -3009,9 +3070,15 @@ BELLINGHAM | 67'</textarea>
                   <span class="sd-score-num" id="sd-score-num-2">1</span>
                 </div>
                 <div class="sd-scorers-row" id="sd-scorers-row">
-                  <ul class="sd-scorers sd-scorers-left" id="sd-scorers-list-1"></ul>
+                  <ul
+                    class="sd-scorers sd-scorers-left"
+                    id="sd-scorers-list-1"
+                  ></ul>
                   <span class="sd-scorers-sep" aria-hidden="true"></span>
-                  <ul class="sd-scorers sd-scorers-right" id="sd-scorers-list-2"></ul>
+                  <ul
+                    class="sd-scorers sd-scorers-right"
+                    id="sd-scorers-list-2"
+                  ></ul>
                 </div>
                 <img
                   class="sd-center-logo"
@@ -3038,7 +3105,9 @@ BELLINGHAM | 67'</textarea>
         <div class="preview-container" data-preview="thumbnail">
           <div class="thumbnail-prompt-board">
             <div class="tn-prompt-header">
-              <span class="tn-prompt-title">Prompt généré (Gemini Banana Pro)</span>
+              <span class="tn-prompt-title"
+                >Prompt généré (Gemini Banana Pro)</span
+              >
               <button class="btn-secondary" id="tn-copy-btn-2" type="button">
                 📋 Copier
               </button>

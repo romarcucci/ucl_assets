@@ -889,6 +889,9 @@
                         Manches d'une autre couleur
                       </option>
                       <option value="stripes">Rayures verticales</option>
+                      <option value="central-band">
+                        Bande verticale
+                      </option>
                     </select>
                   </label>
                   <div class="row">
@@ -901,7 +904,7 @@
                       />
                     </label>
                     <label class="field">
-                      <span>Couleur rayures (si applicable)</span>
+                      <span>Couleur rayures / bande centrale (si applicable)</span>
                       <input
                         type="color"
                         id="l-color-stripes"
@@ -923,6 +926,44 @@
                     <label class="field">
                       <span>Couleur numéro GK</span>
                       <input type="color" id="l-color-num-gk" value="#ffffff" />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Fond du numéro (maillot rayé)</span>
+                    <input
+                      type="color"
+                      id="l-color-number-plate"
+                      value="#111111"
+                    />
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>
+                        Largeur du fond
+                        <output id="l-number-plate-width-value">38</output>
+                      </span>
+                      <input
+                        type="range"
+                        id="l-number-plate-width"
+                        min="20"
+                        max="60"
+                        step="1"
+                        value="38"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>
+                        Hauteur du fond
+                        <output id="l-number-plate-height-value">34</output>
+                      </span>
+                      <input
+                        type="range"
+                        id="l-number-plate-height"
+                        min="20"
+                        max="50"
+                        step="1"
+                        value="34"
+                      />
                     </label>
                   </div>
                   <label class="field">

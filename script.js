@@ -742,6 +742,9 @@ function collectLineupData() {
     colorGk: document.getElementById("l-color-gk").value,
     colorNum: document.getElementById("l-color-num").value,
     colorNumGk: document.getElementById("l-color-num-gk").value,
+    colorNumberPlate: document.getElementById("l-color-number-plate").value,
+    numberPlateWidth: document.getElementById("l-number-plate-width").value,
+    numberPlateHeight: document.getElementById("l-number-plate-height").value,
     colorBg: document.getElementById("l-color-bg").value,
     shirtStyle: document.getElementById("l-shirt-style").value,
     colorSleeves: document.getElementById("l-color-sleeves").value,
@@ -786,6 +789,15 @@ function applyLineupData(data) {
     document.getElementById("l-color-num").value = data.colorNum;
   if (data.colorNumGk)
     document.getElementById("l-color-num-gk").value = data.colorNumGk;
+  if (data.colorNumberPlate)
+    document.getElementById("l-color-number-plate").value =
+      data.colorNumberPlate;
+  if (data.numberPlateWidth != null)
+    document.getElementById("l-number-plate-width").value =
+      data.numberPlateWidth;
+  if (data.numberPlateHeight != null)
+    document.getElementById("l-number-plate-height").value =
+      data.numberPlateHeight;
   if (data.colorBg) document.getElementById("l-color-bg").value = data.colorBg;
   document.getElementById("l-shirt-style").value = data.shirtStyle || "solid";
   if (data.colorSleeves)
@@ -845,6 +857,9 @@ function resetLineup() {
   document.getElementById("l-color-gk").value = "#222222";
   document.getElementById("l-color-num").value = "#ffffff";
   document.getElementById("l-color-num-gk").value = "#ffffff";
+  document.getElementById("l-color-number-plate").value = "#111111";
+  document.getElementById("l-number-plate-width").value = "38";
+  document.getElementById("l-number-plate-height").value = "34";
   document.getElementById("l-color-bg").value = "#0a2540";
   document.getElementById("l-shirt-style").value = "solid";
   document.getElementById("l-color-sleeves").value = "#ffffff";
@@ -1259,6 +1274,9 @@ const KIT_FIELDS = [
   "colorGk",
   "colorNum",
   "colorNumGk",
+  "colorNumberPlate",
+  "numberPlateWidth",
+  "numberPlateHeight",
   "shirtStyle",
   "colorSleeves",
   "colorStripes",
@@ -1292,6 +1310,9 @@ function collectKitData() {
     colorGk: document.getElementById("l-color-gk").value,
     colorNum: document.getElementById("l-color-num").value,
     colorNumGk: document.getElementById("l-color-num-gk").value,
+    colorNumberPlate: document.getElementById("l-color-number-plate").value,
+    numberPlateWidth: document.getElementById("l-number-plate-width").value,
+    numberPlateHeight: document.getElementById("l-number-plate-height").value,
     shirtStyle: document.getElementById("l-shirt-style").value,
     colorSleeves: document.getElementById("l-color-sleeves").value,
     colorStripes: document.getElementById("l-color-stripes").value,
@@ -1305,6 +1326,15 @@ function applyKitData(d) {
   if (d.colorNum) document.getElementById("l-color-num").value = d.colorNum;
   if (d.colorNumGk)
     document.getElementById("l-color-num-gk").value = d.colorNumGk;
+  if (d.colorNumberPlate)
+    document.getElementById("l-color-number-plate").value =
+      d.colorNumberPlate;
+  if (d.numberPlateWidth != null)
+    document.getElementById("l-number-plate-width").value =
+      d.numberPlateWidth;
+  if (d.numberPlateHeight != null)
+    document.getElementById("l-number-plate-height").value =
+      d.numberPlateHeight;
   if (d.shirtStyle)
     document.getElementById("l-shirt-style").value = d.shirtStyle;
   if (d.colorSleeves)
@@ -1541,6 +1571,9 @@ const lColorSleeves = document.getElementById("l-color-sleeves");
 const lColorStripes = document.getElementById("l-color-stripes");
 const lColorNum = document.getElementById("l-color-num");
 const lColorNumGk = document.getElementById("l-color-num-gk");
+const lColorNumberPlate = document.getElementById("l-color-number-plate");
+const lNumberPlateWidth = document.getElementById("l-number-plate-width");
+const lNumberPlateHeight = document.getElementById("l-number-plate-height");
 const lNumberFont = document.getElementById("l-number-font");
 const lColorText = document.getElementById("l-color-text");
 const lColorBg = document.getElementById("l-color-bg");
@@ -1602,6 +1635,9 @@ function renderPitch() {
           style: lShirtStyle.value,
           sleevesColor: lColorSleeves.value,
           stripesColor: lColorStripes.value,
+          numberPlateColor: lColorNumberPlate.value,
+          numberPlateWidth: lNumberPlateWidth.value,
+          numberPlateHeight: lNumberPlateHeight.value,
           flat: true,
           numberFont,
         };
@@ -1656,6 +1692,16 @@ function renderShirtSVG(color, numColor, number, options = {}) {
   const sleeveDark = flat ? sleeveBase : shadeColor(sleeveBase, -0.25);
   const sleeveDarker = shadeColor(sleeveBase, -0.4);
   const uid = "sh" + Math.random().toString(36).slice(2, 8);
+  const numberPlateColor = options.numberPlateColor || "#111111";
+  const numberPlateWidth = Number(options.numberPlateWidth) || 38;
+  const numberPlateHeight = Number(options.numberPlateHeight) || 34;
+  const numberPlate =
+    style === "stripes" && String(number).trim()
+      ? `<rect x="${50 - numberPlateWidth / 2}" y="${32 + (34 - numberPlateHeight) / 2}"
+              width="${numberPlateWidth}" height="${numberPlateHeight}" rx="2"
+              fill="${numberPlateColor}"
+              />`
+      : "";
   const stripesBlock =
     style === "stripes"
       ? `
@@ -1663,6 +1709,11 @@ function renderShirtSVG(color, numColor, number, options = {}) {
         <rect x="30" y="14" width="8" height="92" fill="${stripeFillColor}" />
         <rect x="46" y="14" width="8" height="92" fill="${stripeFillColor}" />
         <rect x="62" y="14" width="8" height="92" fill="${stripeFillColor}" />
+      </g>`
+      : style === "central-band"
+        ? `
+      <g clip-path="url(#${uid}-body-clip)">
+        <rect x="35" y="14" width="30" height="92" fill="${stripesColor}" />
       </g>`
       : "";
   return `
@@ -1704,6 +1755,7 @@ function renderShirtSVG(color, numColor, number, options = {}) {
       <!-- Hem line at bottom -->
       <path d="M 22,93 Q 50,98 78,93" fill="none" stroke="${darker}" stroke-width="0.6" opacity="0.5"/>
       <!-- Number -->
+      ${numberPlate}
       <text x="50" y="65" text-anchor="middle"
             font-family="${numberFont}"
             font-size="40" font-weight="500"
@@ -1803,6 +1855,10 @@ function updateLineupCommon() {
   if (dividerEl) dividerEl.style.opacity = alpha;
   const penaltyEl = document.getElementById("lb-pitch-penalty");
   if (penaltyEl) penaltyEl.style.opacity = alpha;
+  document.getElementById("l-number-plate-width-value").textContent =
+    lNumberPlateWidth.value;
+  document.getElementById("l-number-plate-height-value").textContent =
+    lNumberPlateHeight.value;
   if (typeof applyBgImage === "function") applyBgImage();
   renderTeamLogo();
   renderPitch();
@@ -1819,6 +1875,9 @@ function updateLineupCommon() {
   lColorGk,
   lColorNum,
   lColorNumGk,
+  lColorNumberPlate,
+  lNumberPlateWidth,
+  lNumberPlateHeight,
   lColorBg,
   lShirtStyle,
   lColorSleeves,

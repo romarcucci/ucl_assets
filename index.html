@@ -318,13 +318,23 @@
                   >Largeur des zones de texte
                   <span id="p-zone-width-value">570px</span></span
                 >
-                <input
-                  type="range"
-                  id="p-zone-width"
-                  min="300"
-                  max="900"
-                  value="570"
-                />
+                <div class="range-with-number">
+                  <input
+                    type="range"
+                    id="p-zone-width"
+                    min="300"
+                    max="900"
+                    value="570"
+                  />
+                  <input
+                    type="number"
+                    id="p-zone-width-number"
+                    min="300"
+                    max="900"
+                    value="570"
+                    aria-label="Largeur des zones de texte en pixels"
+                  />
+                </div>
               </label>
             </div>
           </details>
@@ -793,6 +803,7 @@
                     <label class="field">
                       <span>Tour</span>
                       <select id="l-footer-round">
+                        <option value="Round of 32">Round of 32</option>
                         <option value="Round of 16">Round of 16</option>
                         <option value="Quarter Finals">Quarter Finals</option>
                         <option value="Semi Finals">Semi Finals</option>
@@ -1724,8 +1735,15 @@
           </details>
 
           <details class="collapsible">
-            <summary>Logo central (ballon)</summary>
+            <summary>Logo à gauche</summary>
             <div class="collapsible-body">
+              <label class="field">
+                <span>Logo</span>
+                <select id="s-left-logo">
+                  <option value="ucl">Ligue des Champions (ballon)</option>
+                  <option value="uefa">Logo UEFA</option>
+                </select>
+              </label>
               <div class="row">
                 <label class="field">
                   <span>Couleur du fond</span>
@@ -1742,6 +1760,15 @@
           <details class="collapsible">
             <summary>Trophée (séparateur)</summary>
             <div class="collapsible-body">
+              <label class="field">
+                <span>Logo du séparateur</span>
+                <select id="s-trophy-logo">
+                  <option value="trophy_logo.png">Trophée classique</option>
+                  <option value="trophy_logo_UCL.png">
+                    Trophée Ligue des Champions
+                  </option>
+                </select>
+              </label>
               <label class="checkbox-field">
                 <input type="checkbox" id="s-trophy-white-toggle" checked />
                 <span>Trophée en blanc</span>
@@ -2090,6 +2117,7 @@
                     <label class="field">
                       <span>Tour</span>
                       <select id="sd-round">
+                        <option value="Round of 32">Round of 32</option>
                         <option value="Round of 16">Round of 16</option>
                         <option value="Quarter Finals" selected>
                           Quarter Finals

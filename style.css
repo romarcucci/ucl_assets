@@ -290,6 +290,21 @@ body {
   accent-color: #1f6feb;
   cursor: pointer;
 }
+.range-with-number {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.range-with-number input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.field .range-with-number input[type="number"] {
+  flex: 0 0 76px;
+  width: 76px;
+  padding: 6px 4px;
+  text-align: center;
+}
 .field > span > span {
   color: #58a6ff;
   font-weight: 600;

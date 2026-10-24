@@ -74,6 +74,7 @@ const pGoalscorerClear = document.getElementById("p-goalscorer-clear");
 const pClubLogoFile = document.getElementById("p-club-logo-file");
 const pClubLogoClear = document.getElementById("p-club-logo-clear");
 const pZoneWidth = document.getElementById("p-zone-width");
+const pZoneWidthNumber = document.getElementById("p-zone-width-number");
 const pZoneWidthValue = document.getElementById("p-zone-width-value");
 const pLogoColor1 = document.getElementById("p-logo-color-1");
 const pLogoColor2 = document.getElementById("p-logo-color-2");
@@ -214,6 +215,35 @@ function updatePlayerBanner() {
   pMinuteSize,
   pClubnameSize,
 ].forEach((el) => el.addEventListener("input", updatePlayerBanner));
+pZoneWidth.addEventListener("input", () => {
+  pZoneWidthNumber.value = pZoneWidth.value;
+});
+pZoneWidthNumber.addEventListener("input", () => {
+  const width = Number(pZoneWidthNumber.value);
+  if (
+    !pZoneWidthNumber.validity.valid ||
+    !Number.isFinite(width)
+  ) {
+    return;
+  }
+  pZoneWidth.value = String(width);
+  updatePlayerBanner();
+  saveBanner();
+});
+pZoneWidthNumber.addEventListener("change", () => {
+  const width = Number(pZoneWidthNumber.value);
+  const nextWidth =
+    pZoneWidthNumber.value === "" || !Number.isFinite(width)
+      ? Number(pZoneWidth.value)
+      : Math.min(
+          Number(pZoneWidth.max),
+          Math.max(Number(pZoneWidth.min), Math.round(width)),
+        );
+  pZoneWidth.value = String(nextWidth);
+  pZoneWidthNumber.value = pZoneWidth.value;
+  updatePlayerBanner();
+  saveBanner();
+});
 [
   pLogoDir,
   pTopDir,
@@ -330,7 +360,10 @@ function applyBannerData(d) {
     typeof d.clubLogoURL === "string" && !d.clubLogoURL.startsWith("data:")
       ? d.clubLogoURL
       : null;
-  if (d.zoneWidth) pZoneWidth.value = d.zoneWidth;
+  if (d.zoneWidth) {
+    pZoneWidth.value = d.zoneWidth;
+    pZoneWidthNumber.value = pZoneWidth.value;
+  }
   if (d.logoColor1) pLogoColor1.value = d.logoColor1;
   if (d.logoColor2) pLogoColor2.value = d.logoColor2;
   if (d.logoDir) pLogoDir.value = d.logoDir;
@@ -2764,8 +2797,10 @@ const sBgOpacity = document.getElementById("s-bg-opacity");
 const sBgOpacityValue = document.getElementById("s-bg-opacity-value");
 const sBallBoxColor = document.getElementById("s-ball-box-color");
 const sBallColor = document.getElementById("s-ball-color");
+const sLeftLogo = document.getElementById("s-left-logo");
 const sBandWidth = document.getElementById("s-band-width");
 const sBandWidthValue = document.getElementById("s-band-width-value");
+const sTrophyLogo = document.getElementById("s-trophy-logo");
 const sTrophyColor = document.getElementById("s-trophy-color");
 const sTrophyWhiteToggle = document.getElementById("s-trophy-white-toggle");
 const sTrophySize = document.getElementById("s-trophy-size");
@@ -2806,13 +2841,25 @@ function updateScoreBanner() {
   document.getElementById("sb-away-color").style.width = bandPx;
   if (sBandWidthValue) sBandWidthValue.textContent = sBandWidth.value + "px";
 
+  const ballEl = document.getElementById("sb-ball");
+  const isUefaLogo = sLeftLogo.value === "uefa";
+  const uefaLogo = 'url("./Logos/UEFA_Logo.png")';
+  ballEl.style.maskImage = isUefaLogo ? "none" : 'url("./Logos/ucl_ball.png")';
+  ballEl.style.webkitMaskImage = ballEl.style.maskImage;
+  ballEl.style.backgroundImage = isUefaLogo ? uefaLogo : "none";
+  ballEl.style.backgroundSize = "contain";
+  ballEl.style.backgroundPosition = "center";
+  ballEl.style.backgroundRepeat = "no-repeat";
+  ballEl.style.backgroundColor = isUefaLogo ? "transparent" : sBallColor.value;
+  document.getElementById("s-ball-color").disabled = isUefaLogo;
+
   const trophyEl = document.querySelector("#score-banner .sb-trophy");
   if (trophyEl) {
     const tPx = sTrophySize.value + "px";
     trophyEl.style.width = tPx;
     trophyEl.style.height = tPx;
     const trophyWhite = sTrophyWhiteToggle.checked;
-    const trophyImage = 'url("./Logos/trophy_logo.png")';
+    const trophyImage = `url("./Logos/${sTrophyLogo.value}")`;
     trophyEl.style.maskImage = trophyWhite ? trophyImage : "none";
     trophyEl.style.webkitMaskImage = trophyWhite ? trophyImage : "none";
     trophyEl.style.backgroundImage = trophyWhite ? "none" : trophyImage;
@@ -2882,9 +2929,14 @@ function updateScoreBanner() {
   sAggregateHome,
   sAggregateAway,
 ].forEach((el) => el.addEventListener("input", updateScoreBanner));
-[sTeamFont, sTeamWeight, sScoreFont, sScoreWeight, sAggregateToggle].forEach(
-  (el) => el.addEventListener("change", updateScoreBanner),
-);
+[
+  sLeftLogo,
+  sTeamFont,
+  sTeamWeight,
+  sScoreFont,
+  sScoreWeight,
+  sAggregateToggle,
+].forEach((el) => el.addEventListener("change", updateScoreBanner));
 updateScoreBanner();
 
 const sSwapTeams = document.getElementById("s-swap-teams");
@@ -2917,11 +2969,13 @@ const S_BG_IMAGE_FADE_DIR_KEY = "ucl-score-bg-image-fade-dir-v1";
 const S_BG_IMAGE_FADE_END_KEY = "ucl-score-bg-image-fade-end-v1";
 const S_BALL_BOX_COLOR_KEY = "ucl-score-ball-box-color-v1";
 const S_BALL_COLOR_KEY = "ucl-score-ball-color-v1";
+const S_LEFT_LOGO_KEY = "ucl-score-left-logo-v1";
 const S_BG_OPACITY_KEY = "ucl-score-bg-opacity-v1";
 const S_BAND_WIDTH_KEY = "ucl-score-band-width-v1";
 const S_TROPHY_COLOR_KEY = "ucl-score-trophy-color-v1";
 const S_TROPHY_WHITE_KEY = "ucl-score-trophy-white-v1";
 const S_TROPHY_SIZE_KEY = "ucl-score-trophy-size-v1";
+const S_TROPHY_LOGO_KEY = "ucl-score-trophy-logo-v1";
 const S_TEAM_TYPO_KEY = "ucl-score-team-typo-v1";
 const S_SCORE_TYPO_KEY = "ucl-score-score-typo-v1";
 
@@ -2995,12 +3049,24 @@ const savedBallBoxColor = localStorage.getItem(S_BALL_BOX_COLOR_KEY);
 if (savedBallBoxColor) sBallBoxColor.value = savedBallBoxColor;
 const savedBallColor = localStorage.getItem(S_BALL_COLOR_KEY);
 if (savedBallColor) sBallColor.value = savedBallColor;
+const savedLeftLogo = localStorage.getItem(S_LEFT_LOGO_KEY);
+if (
+  savedLeftLogo &&
+  [...sLeftLogo.options].some((o) => o.value === savedLeftLogo)
+)
+  sLeftLogo.value = savedLeftLogo;
 const savedSBgOpacity = localStorage.getItem(S_BG_OPACITY_KEY);
 if (savedSBgOpacity != null) sBgOpacity.value = savedSBgOpacity;
 const savedSBandWidth = localStorage.getItem(S_BAND_WIDTH_KEY);
 if (savedSBandWidth != null) sBandWidth.value = savedSBandWidth;
 const savedTrophyColor = localStorage.getItem(S_TROPHY_COLOR_KEY);
 if (savedTrophyColor) sTrophyColor.value = savedTrophyColor;
+const savedTrophyLogo = localStorage.getItem(S_TROPHY_LOGO_KEY);
+if (
+  savedTrophyLogo &&
+  [...sTrophyLogo.options].some((o) => o.value === savedTrophyLogo)
+)
+  sTrophyLogo.value = savedTrophyLogo;
 sTrophyWhiteToggle.checked = localStorage.getItem(S_TROPHY_WHITE_KEY) !== "0";
 const savedTrophySize = localStorage.getItem(S_TROPHY_SIZE_KEY);
 if (savedTrophySize != null) sTrophySize.value = savedTrophySize;
@@ -3079,6 +3145,11 @@ sBallBoxColor.addEventListener("input", () => {
 });
 sBallColor.addEventListener("input", () => {
   localStorage.setItem(S_BALL_COLOR_KEY, sBallColor.value);
+  updateScoreBanner();
+});
+sLeftLogo.addEventListener("change", () => {
+  localStorage.setItem(S_LEFT_LOGO_KEY, sLeftLogo.value);
+  updateScoreBanner();
 });
 sBgOpacity.addEventListener("input", () => {
   localStorage.setItem(S_BG_OPACITY_KEY, sBgOpacity.value);
@@ -3094,6 +3165,10 @@ sTrophyWhiteToggle.addEventListener("change", () => {
     S_TROPHY_WHITE_KEY,
     sTrophyWhiteToggle.checked ? "1" : "0",
   );
+  updateScoreBanner();
+});
+sTrophyLogo.addEventListener("change", () => {
+  localStorage.setItem(S_TROPHY_LOGO_KEY, sTrophyLogo.value);
   updateScoreBanner();
 });
 sTrophySize.addEventListener("input", () => {
@@ -3147,10 +3222,12 @@ function collectScoreData() {
     bgOpacity: sBgOpacity.value,
     ballBoxColor: sBallBoxColor.value,
     ballColor: sBallColor.value,
+    leftLogo: sLeftLogo.value,
     bandWidth: sBandWidth.value,
     trophyColor: sTrophyColor.value,
     trophyWhite: sTrophyWhiteToggle.checked,
     trophySize: sTrophySize.value,
+    trophyLogo: sTrophyLogo.value,
     teamTypo: {
       font: sTeamFont.value,
       size: sTeamSize.value,
@@ -3185,11 +3262,22 @@ function applyScoreData(d) {
   if (d.bgOpacity != null) sBgOpacity.value = d.bgOpacity;
   if (d.ballBoxColor) sBallBoxColor.value = d.ballBoxColor;
   if (d.ballColor) sBallColor.value = d.ballColor;
+  if (d.leftLogo && [...sLeftLogo.options].some((o) => o.value === d.leftLogo)) {
+    sLeftLogo.value = d.leftLogo;
+    localStorage.setItem(S_LEFT_LOGO_KEY, d.leftLogo);
+  }
   if (d.bandWidth != null) sBandWidth.value = d.bandWidth;
   if (d.trophyColor) sTrophyColor.value = d.trophyColor;
   if (typeof d.trophyWhite === "boolean")
     sTrophyWhiteToggle.checked = d.trophyWhite;
   if (d.trophySize != null) sTrophySize.value = d.trophySize;
+  if (
+    d.trophyLogo &&
+    [...sTrophyLogo.options].some((o) => o.value === d.trophyLogo)
+  ) {
+    sTrophyLogo.value = d.trophyLogo;
+    localStorage.setItem(S_TROPHY_LOGO_KEY, d.trophyLogo);
+  }
   if (d.teamTypo) {
     if (d.teamTypo.font) sTeamFont.value = d.teamTypo.font;
     if (d.teamTypo.size != null) sTeamSize.value = d.teamTypo.size;

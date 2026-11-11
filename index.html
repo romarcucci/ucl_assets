@@ -1735,6 +1735,81 @@
           </details>
 
           <details class="collapsible">
+            <summary>Tirs au but en direct</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="s-penalty-toggle" />
+                <span>Afficher les tirs au but sous le score</span>
+              </label>
+              <p class="tn-info">
+                Ajoute chaque tir au fur et à mesure. Le cumul est calculé
+                automatiquement.
+              </p>
+              <div class="row">
+                <div class="penalty-team-controls">
+                  <strong id="s-penalty-home-label">LIV</strong>
+                  <div class="row">
+                    <button
+                      class="btn-secondary"
+                      id="s-penalty-home-goal"
+                      type="button"
+                    >
+                      ✓ Réussi
+                    </button>
+                    <button
+                      class="btn-secondary"
+                      id="s-penalty-home-miss"
+                      type="button"
+                    >
+                      × Manqué
+                    </button>
+                  </div>
+                  <button
+                    class="btn-secondary"
+                    id="s-penalty-home-undo"
+                    type="button"
+                  >
+                    Annuler le dernier tir
+                  </button>
+                </div>
+                <div class="penalty-team-controls">
+                  <strong id="s-penalty-away-label">RMA</strong>
+                  <div class="row">
+                    <button
+                      class="btn-secondary"
+                      id="s-penalty-away-goal"
+                      type="button"
+                    >
+                      ✓ Réussi
+                    </button>
+                    <button
+                      class="btn-secondary"
+                      id="s-penalty-away-miss"
+                      type="button"
+                    >
+                      × Manqué
+                    </button>
+                  </div>
+                  <button
+                    class="btn-secondary"
+                    id="s-penalty-away-undo"
+                    type="button"
+                  >
+                    Annuler le dernier tir
+                  </button>
+                </div>
+              </div>
+              <button
+                class="btn-secondary danger"
+                id="s-penalty-reset"
+                type="button"
+              >
+                Réinitialiser les tirs
+              </button>
+            </div>
+          </details>
+
+          <details class="collapsible">
             <summary>Logo à gauche</summary>
             <div class="collapsible-body">
               <label class="field">
@@ -1742,6 +1817,8 @@
                 <select id="s-left-logo">
                   <option value="ucl">Ligue des Champions (ballon)</option>
                   <option value="uefa">Logo UEFA</option>
+                  <option value="fifa100">Logo FIFA 100</option>
+                  <option value="euro84">Euro 1984</option>
                 </select>
               </label>
               <div class="row">
@@ -1770,6 +1847,10 @@
                   <option value="trophy_logo_SuperCup.png">
                     Trophée Supercoupe de l'UEFA
                   </option>
+                  <option value="trophy_logo_IntercontinentalCup.png">
+                    Coupe intercontinentale FIFA 2025
+                  </option>
+                  <option value="trophy_logo_Euro.png">Trophée Euro</option>
                 </select>
               </label>
               <label class="checkbox-field">
@@ -2230,6 +2311,72 @@
                   </div>
                 </label>
               </div>
+              <label class="checkbox-field">
+                <input type="checkbox" id="sd-penalty-toggle" />
+                <span>Afficher le score des tirs au but</span>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Tirs au but équipe 1</span>
+                  <div class="number-stepper">
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="sd-penalty-score-1"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      id="sd-penalty-score-1"
+                      value="0"
+                      min="0"
+                      max="99"
+                    />
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="sd-penalty-score-1"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Tirs au but équipe 2</span>
+                  <div class="number-stepper">
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="sd-penalty-score-2"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      id="sd-penalty-score-2"
+                      value="0"
+                      min="0"
+                      max="99"
+                    />
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="sd-penalty-score-2"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
+                  </div>
+                </label>
+              </div>
               <p class="tn-info">
                 La typographie du score se règle dans la section
                 <strong>Typographie → Score</strong>.
@@ -2383,11 +2530,20 @@ MBAPPÉ | 45+2'</textarea
                       <option value="Backgrounds/lineup_bg_01_CWC.png">
                         CWC
                       </option>
+                      <option value="Backgrounds/lineup_bg_01_IC.png">
+                        IC
+                      </option>
                       <option value="Backgrounds/lineup_bg_01_SC.png">
                         SC
                       </option>
                       <option value="Backgrounds/lineup_bg_05.png">
                         Result
+                      </option>
+                      <option value="Backgrounds/euro_1984_background.png">
+                        Euro 1984 (avec logo)
+                      </option>
+                      <option value="Backgrounds/euro_1984_background_no_logo.png">
+                        Euro 1984 (sans logo)
                       </option>
                     </select>
                   </label>
@@ -2899,6 +3055,26 @@ MBAPPÉ | 45+2'</textarea
         <div class="preview-toolbar">
           <span class="preview-label">Rendu en temps réel</span>
           <div class="preview-toolbar-right">
+            <div class="lineup-export-option">
+              <label class="preview-resolution-label" for="lineup-export-mode"
+                >Composition :</label
+              >
+              <select id="lineup-export-mode">
+                <option value="both" selected>Fond + équipe</option>
+                <option value="background">Fond seul</option>
+                <option value="team">Équipe seule</option>
+              </select>
+            </div>
+            <div class="showdown-export-option" hidden>
+              <label class="preview-resolution-label" for="showdown-export-mode"
+                >Composition :</label
+              >
+              <select id="showdown-export-mode">
+                <option value="both">Fond + texte</option>
+                <option value="background" selected>Fond seul</option>
+                <option value="team">Équipes seules</option>
+              </select>
+            </div>
             <label class="preview-resolution-label" for="export-format"
               >Format :</label
             >
@@ -3054,6 +3230,7 @@ MBAPPÉ | 45+2'</textarea
               <div class="sb-ball-box" id="sb-ball-box">
                 <div class="sb-ball" id="sb-ball"></div>
               </div>
+              <div class="sb-logo-divider"></div>
               <div class="sb-home-color" id="sb-home-color"></div>
               <div class="sb-team sb-home" id="sb-home">LIV</div>
               <div class="sb-score" id="sb-home-score">0</div>
@@ -3061,6 +3238,19 @@ MBAPPÉ | 45+2'</textarea
               <div class="sb-score" id="sb-away-score">0</div>
               <div class="sb-team sb-away" id="sb-away">RMA</div>
               <div class="sb-away-color" id="sb-away-color"></div>
+            </div>
+            <div
+              class="sb-penalty-score"
+              id="sb-penalty-score"
+              aria-live="polite"
+            >
+              <div class="sb-penalty-team">
+                <span class="sb-penalty-shots" id="sb-penalty-home-shots"></span>
+              </div>
+              <div class="sb-penalty-center-spacer" aria-hidden="true"></div>
+              <div class="sb-penalty-team">
+                <span class="sb-penalty-shots" id="sb-penalty-away-shots"></span>
+              </div>
             </div>
             <div class="sb-aggregate" id="sb-aggregate">( 0 | 0 )</div>
           </div>
@@ -3146,6 +3336,11 @@ MBAPPÉ | 45+2'</textarea
                   <span class="sd-score-num" id="sd-score-num-1">2</span>
                   <span class="sd-score-sep">-</span>
                   <span class="sd-score-num" id="sd-score-num-2">1</span>
+                </div>
+                <div class="sd-penalty-score" id="sd-penalty-score">
+                  <span id="sd-penalty-score-num-1">0</span>
+                  <span class="sd-penalty-score-sep">-</span>
+                  <span id="sd-penalty-score-num-2">0</span>
                 </div>
                 <div class="sd-scorers-row" id="sd-scorers-row">
                   <ul

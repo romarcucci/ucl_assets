@@ -18,6 +18,10 @@ tabs.forEach((tab) => {
     previewContainers.forEach((p) =>
       p.classList.toggle("active", p.dataset.preview === target),
     );
+    document.querySelector(".lineup-export-option").hidden =
+      target !== "lineup";
+    document.querySelector(".showdown-export-option").hidden =
+      target !== "showdown";
   });
 });
 
@@ -2816,6 +2820,9 @@ const sScoreWeight = document.getElementById("s-score-weight");
 const sAggregateToggle = document.getElementById("s-aggregate-toggle");
 const sAggregateHome = document.getElementById("s-aggregate-home");
 const sAggregateAway = document.getElementById("s-aggregate-away");
+const sPenaltyToggle = document.getElementById("s-penalty-toggle");
+let sPenaltyHomeShots = [];
+let sPenaltyAwayShots = [];
 
 const S_FONTS = {
   condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
@@ -2832,6 +2839,16 @@ function updateScoreBanner() {
   document.getElementById("sb-home-score").textContent = sHomeScore.value;
   document.getElementById("sb-away").textContent = sAway.value;
   document.getElementById("sb-away-score").textContent = sAwayScore.value;
+  document.getElementById("s-penalty-home-label").textContent = sHome.value;
+  document.getElementById("s-penalty-away-label").textContent = sAway.value;
+  renderPenaltyShots("sb-penalty-home-shots", sPenaltyHomeShots);
+  renderPenaltyShots("sb-penalty-away-shots", sPenaltyAwayShots);
+  document.getElementById("s-penalty-home-undo").disabled =
+    sPenaltyHomeShots.length === 0;
+  document.getElementById("s-penalty-away-undo").disabled =
+    sPenaltyAwayShots.length === 0;
+  document.getElementById("s-penalty-reset").disabled =
+    sPenaltyHomeShots.length === 0 && sPenaltyAwayShots.length === 0;
   document.getElementById("sb-home-color").style.background = sHomeColor.value;
   document.getElementById("sb-away-color").style.background = sAwayColor.value;
   document.getElementById("sb-ball-box").style.background = sBallBoxColor.value;
@@ -2842,16 +2859,20 @@ function updateScoreBanner() {
   if (sBandWidthValue) sBandWidthValue.textContent = sBandWidth.value + "px";
 
   const ballEl = document.getElementById("sb-ball");
-  const isUefaLogo = sLeftLogo.value === "uefa";
-  const uefaLogo = 'url("./Logos/UEFA_Logo.png")';
-  ballEl.style.maskImage = isUefaLogo ? "none" : 'url("./Logos/ucl_ball.png")';
+  const isBallLogo = sLeftLogo.value === "ucl";
+  const leftLogoImage = {
+    uefa: 'url("./Logos/UEFA_Logo.png")',
+    fifa100: 'url("./Logos/FIFA_100_Logo.png")',
+    euro84: 'url("./Logos/euro_84_logo.png")',
+  }[sLeftLogo.value];
+  ballEl.style.maskImage = isBallLogo ? 'url("./Logos/ucl_ball.png")' : "none";
   ballEl.style.webkitMaskImage = ballEl.style.maskImage;
-  ballEl.style.backgroundImage = isUefaLogo ? uefaLogo : "none";
+  ballEl.style.backgroundImage = leftLogoImage || "none";
   ballEl.style.backgroundSize = "contain";
   ballEl.style.backgroundPosition = "center";
   ballEl.style.backgroundRepeat = "no-repeat";
-  ballEl.style.backgroundColor = isUefaLogo ? "transparent" : sBallColor.value;
-  document.getElementById("s-ball-color").disabled = isUefaLogo;
+  ballEl.style.backgroundColor = isBallLogo ? sBallColor.value : "transparent";
+  document.getElementById("s-ball-color").disabled = !isBallLogo;
 
   const trophyEl = document.querySelector("#score-banner .sb-trophy");
   if (trophyEl) {
@@ -2906,8 +2927,30 @@ function updateScoreBanner() {
   const aggregateEl = document.getElementById("sb-aggregate");
   if (wrap && aggregateEl) {
     wrap.classList.toggle("show-aggregate", !!sAggregateToggle.checked);
+    wrap.classList.toggle("show-penalties", !!sPenaltyToggle.checked);
     aggregateEl.textContent = `( ${sAggregateHome.value} - ${sAggregateAway.value} )`;
   }
+}
+
+function renderPenaltyShots(containerId, shots) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.replaceChildren(
+    ...shots.map((scored, index) => {
+      const marker = document.createElement("span");
+      marker.className = `sb-penalty-shot ${scored ? "is-goal" : "is-miss"}`;
+      marker.setAttribute(
+        "aria-label",
+        `Tir ${index + 1} : ${scored ? "réussi" : "manqué"}`,
+      );
+      return marker;
+    }),
+  );
+}
+
+function addPenaltyShot(shots, scored) {
+  shots.push(scored);
+  updateScoreBanner();
 }
 
 [
@@ -2936,8 +2979,35 @@ function updateScoreBanner() {
   sScoreFont,
   sScoreWeight,
   sAggregateToggle,
+  sPenaltyToggle,
 ].forEach((el) => el.addEventListener("change", updateScoreBanner));
 updateScoreBanner();
+
+document
+  .getElementById("s-penalty-home-goal")
+  .addEventListener("click", () => addPenaltyShot(sPenaltyHomeShots, true));
+document
+  .getElementById("s-penalty-home-miss")
+  .addEventListener("click", () => addPenaltyShot(sPenaltyHomeShots, false));
+document
+  .getElementById("s-penalty-away-goal")
+  .addEventListener("click", () => addPenaltyShot(sPenaltyAwayShots, true));
+document
+  .getElementById("s-penalty-away-miss")
+  .addEventListener("click", () => addPenaltyShot(sPenaltyAwayShots, false));
+document.getElementById("s-penalty-home-undo").addEventListener("click", () => {
+  sPenaltyHomeShots.pop();
+  updateScoreBanner();
+});
+document.getElementById("s-penalty-away-undo").addEventListener("click", () => {
+  sPenaltyAwayShots.pop();
+  updateScoreBanner();
+});
+document.getElementById("s-penalty-reset").addEventListener("click", () => {
+  sPenaltyHomeShots = [];
+  sPenaltyAwayShots = [];
+  updateScoreBanner();
+});
 
 const sSwapTeams = document.getElementById("s-swap-teams");
 if (sSwapTeams) {
@@ -2955,6 +3025,10 @@ if (sSwapTeams) {
       a.dispatchEvent(new Event("input", { bubbles: true }));
       b.dispatchEvent(new Event("input", { bubbles: true }));
     });
+    [sPenaltyHomeShots, sPenaltyAwayShots] = [
+      sPenaltyAwayShots,
+      sPenaltyHomeShots,
+    ];
     sAggregateToggle.checked = !sAggregateToggle.checked;
     sAggregateToggle.dispatchEvent(new Event("change", { bubbles: true }));
   });
@@ -3215,6 +3289,9 @@ function collectScoreData() {
     home: sHome.value,
     homeScore: sHomeScore.value,
     homeColor: sHomeColor.value,
+    penaltyEnabled: sPenaltyToggle.checked,
+    penaltyHomeShots: [...sPenaltyHomeShots],
+    penaltyAwayShots: [...sPenaltyAwayShots],
     away: sAway.value,
     awayScore: sAwayScore.value,
     awayColor: sAwayColor.value,
@@ -3255,6 +3332,13 @@ function applyScoreData(d) {
   if (d.home != null) sHome.value = d.home;
   if (d.homeScore != null) sHomeScore.value = d.homeScore;
   if (d.homeColor) sHomeColor.value = d.homeColor;
+  sPenaltyToggle.checked = d.penaltyEnabled === true;
+  sPenaltyHomeShots = Array.isArray(d.penaltyHomeShots)
+    ? d.penaltyHomeShots.filter((shot) => typeof shot === "boolean")
+    : [];
+  sPenaltyAwayShots = Array.isArray(d.penaltyAwayShots)
+    ? d.penaltyAwayShots.filter((shot) => typeof shot === "boolean")
+    : [];
   if (d.away != null) sAway.value = d.away;
   if (d.awayScore != null) sAwayScore.value = d.awayScore;
   if (d.awayColor) sAwayColor.value = d.awayColor;
@@ -3664,6 +3748,9 @@ const sdMetaWeight = document.getElementById("sd-meta-weight");
 const sdResultToggle = document.getElementById("sd-result-toggle");
 const sdScore1 = document.getElementById("sd-score-1");
 const sdScore2 = document.getElementById("sd-score-2");
+const sdPenaltyToggle = document.getElementById("sd-penalty-toggle");
+const sdPenaltyScore1 = document.getElementById("sd-penalty-score-1");
+const sdPenaltyScore2 = document.getElementById("sd-penalty-score-2");
 const sdScoreSize = document.getElementById("sd-score-size");
 const sdScoreSizeValue = document.getElementById("sd-score-size-value");
 const sdScoreFont = document.getElementById("sd-score-font");
@@ -3805,9 +3892,9 @@ function updateShowdown() {
   board.classList.toggle("show-result", resultOn);
 
   const scoreWrap = document.getElementById("sd-score-wrap");
+  const scoreFont = SD_FONTS[sdScoreFont.value] || SD_FONTS.condensed;
   if (scoreWrap) {
     scoreWrap.style.display = resultOn ? "" : "none";
-    const scoreFont = SD_FONTS[sdScoreFont.value] || SD_FONTS.condensed;
     scoreWrap.style.fontFamily = scoreFont;
     scoreWrap.style.fontSize = sdScoreSize.value + "px";
     scoreWrap.style.fontWeight = sdScoreWeight.value;
@@ -3817,6 +3904,22 @@ function updateShowdown() {
   const scoreNum2 = document.getElementById("sd-score-num-2");
   if (scoreNum1) scoreNum1.textContent = sdScore1.value;
   if (scoreNum2) scoreNum2.textContent = sdScore2.value;
+  const penaltyScore = document.getElementById("sd-penalty-score");
+  if (penaltyScore) {
+    penaltyScore.classList.toggle(
+      "is-visible",
+      resultOn && sdPenaltyToggle.checked,
+    );
+    penaltyScore.style.fontFamily = scoreFont;
+    penaltyScore.style.fontSize =
+      Math.max(5, Math.round(Number(sdScoreSize.value) * 0.275)) + "px";
+    penaltyScore.style.fontWeight = sdScoreWeight.value;
+    penaltyScore.style.color = sdScoreColor.value;
+    document.getElementById("sd-penalty-score-num-1").textContent =
+      sdPenaltyScore1.value;
+    document.getElementById("sd-penalty-score-num-2").textContent =
+      sdPenaltyScore2.value;
+  }
   if (sdScoreSizeValue) sdScoreSizeValue.textContent = sdScoreSize.value + "px";
 
   // When result mode is on, hide the central UCL logo to leave room for score
@@ -3872,6 +3975,9 @@ function collectShowdownResultData() {
     enabled: sdResultToggle.checked,
     score1: sdScore1.value,
     score2: sdScore2.value,
+    penaltyEnabled: sdPenaltyToggle.checked,
+    penaltyScore1: sdPenaltyScore1.value,
+    penaltyScore2: sdPenaltyScore2.value,
     scoreFont: sdScoreFont.value,
     scoreSize: sdScoreSize.value,
     scoreWeight: sdScoreWeight.value,
@@ -3890,6 +3996,10 @@ function applyShowdownResultData(d) {
   if (typeof d.enabled === "boolean") sdResultToggle.checked = d.enabled;
   if (d.score1 != null) sdScore1.value = d.score1;
   if (d.score2 != null) sdScore2.value = d.score2;
+  if (typeof d.penaltyEnabled === "boolean")
+    sdPenaltyToggle.checked = d.penaltyEnabled;
+  if (d.penaltyScore1 != null) sdPenaltyScore1.value = d.penaltyScore1;
+  if (d.penaltyScore2 != null) sdPenaltyScore2.value = d.penaltyScore2;
   if (d.scoreFont) sdScoreFont.value = d.scoreFont;
   if (d.scoreSize != null) sdScoreSize.value = d.scoreSize;
   if (d.scoreWeight) sdScoreWeight.value = d.scoreWeight;
@@ -4310,6 +4420,8 @@ const sdInputEls = [
   sdMetaSize,
   sdScore1,
   sdScore2,
+  sdPenaltyScore1,
+  sdPenaltyScore2,
   sdScoreSize,
   sdScoreColor,
   sdScorers1,
@@ -4329,6 +4441,7 @@ const sdChangeEls = [
   sdMetaFont,
   sdMetaWeight,
   sdResultToggle,
+  sdPenaltyToggle,
   sdScoreFont,
   sdScoreWeight,
   sdScorersFont,
@@ -4347,7 +4460,7 @@ sdChangeEls.forEach((el) =>
   }),
 );
 
-// Swap teams (names, logos, scores, scorers)
+// Swap teams (names, logos, scores, scorers, penalty scores)
 const sdSwapTeams = document.getElementById("sd-swap-teams");
 if (sdSwapTeams) {
   sdSwapTeams.addEventListener("click", () => {
@@ -4357,6 +4470,10 @@ if (sdSwapTeams) {
     ];
     [sdLogo1URL, sdLogo2URL] = [sdLogo2URL, sdLogo1URL];
     [sdScore1.value, sdScore2.value] = [sdScore2.value, sdScore1.value];
+    [sdPenaltyScore1.value, sdPenaltyScore2.value] = [
+      sdPenaltyScore2.value,
+      sdPenaltyScore1.value,
+    ];
     [sdScorers1.value, sdScorers2.value] = [sdScorers2.value, sdScorers1.value];
     updateShowdown();
     saveShowdown();
@@ -4712,6 +4829,13 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   const active = document.querySelector(".preview-container.active");
   if (!active) return;
   const target = active.firstElementChild;
+  const compositionMode =
+    active.dataset.preview === "lineup" ||
+    active.dataset.preview === "showdown"
+      ? document.getElementById(
+          `${active.dataset.preview}-export-mode`,
+        ).value
+      : "both";
   const format = document.getElementById("export-format").value;
   const resolution = document.getElementById("export-resolution").value;
   const targetHeight = EXPORT_RESOLUTION_HEIGHT[resolution] || 1080;
@@ -4720,11 +4844,24 @@ document.getElementById("export-btn").addEventListener("click", async () => {
   const aspect = rect.width / rect.height;
   const scale =
     aspect > 3 ? targetWidth / rect.width : targetHeight / rect.height;
-  const baseName = buildGraphicExportBaseName(active, resolution);
-
-  const restored = await preInlineBgImages(target);
+  const modeSuffix =
+    compositionMode === "background"
+      ? "-fond"
+      : compositionMode === "team"
+        ? "-equipe"
+        : "";
+  const baseName =
+    buildGraphicExportBaseName(active, resolution) + modeSuffix;
+  const restored = [];
 
   try {
+    if (
+      active.dataset.preview === "lineup" ||
+      active.dataset.preview === "showdown"
+    ) {
+      target.dataset.exportMode = compositionMode;
+    }
+    restored.push(...(await preInlineBgImages(target)));
     await loadExternalScript(
       "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js",
       "htmlToImage",
@@ -4790,6 +4927,7 @@ document.getElementById("export-btn").addEventListener("click", async () => {
     restored.forEach(({ el, original }) => {
       el.style.backgroundImage = original;
     });
+    delete target.dataset.exportMode;
   }
 });
 

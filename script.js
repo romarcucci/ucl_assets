@@ -72,28 +72,32 @@ function updateEditorSearch() {
   const count = editorSearchResults.childElementCount;
   editorSearchResults.hidden = count === 0;
   editorSearchStatus.textContent = count
-    ? `${count} résultat${count > 1 ? "s" : ""}`
-    : "Aucun réglage trouvé dans cet onglet.";
+    ? translate(count === 1 ? "{count} résultat" : "{count} résultats", { count })
+    : translate("Aucun réglage trouvé dans cet onglet.");
 }
 
 editorSearch.addEventListener("input", updateEditorSearch);
 
 function clearPresetSaveStatuses(editor) {
   editor.querySelectorAll(".save-status").forEach((status) => {
+    delete status.dataset.interfaceMessage;
     status.textContent = "";
   });
 }
 
 function showPresetSaveStatus(nameInput, name) {
   nameInput.value = name;
-  nameInput.closest(".save-team-form").querySelector(".save-status").textContent =
-    "Sauvegarde enregistrée.";
+  const status = nameInput.closest(".save-team-form").querySelector(".save-status");
+  status.dataset.interfaceMessage = "Sauvegarde enregistrée.";
+  status.textContent = translate(status.dataset.interfaceMessage);
+  document.dispatchEvent(new CustomEvent("ucl-presets-changed", { detail: { inputId: nameInput.id, name } }));
 }
 
 for (const editor of editorSections) {
   const forms = editor.querySelectorAll(".save-team-form");
   if (!forms.length) continue;
   for (const form of forms) {
+    if (form.querySelector(".save-status")) continue;
     const status = document.createElement("p");
     status.className = "save-status";
     status.setAttribute("role", "status");
@@ -114,11 +118,83 @@ for (const editor of editorSections) {
   });
 }
 
+const quickSaveFooter = document.getElementById("editor-save-footer");
+const quickSaveButton = document.getElementById("editor-quick-save");
+const quickSaveStatus = document.getElementById("editor-quick-save-status");
+const quickSaveDialog = document.getElementById("editor-quick-save-dialog");
+const quickSaveName = document.getElementById("editor-quick-save-name");
+const quickSaveControls = new Map([
+  ["lineup", "#l-save-team"],
+  ["showdown", "#sd-save"],
+  ["score", "#s-save"],
+  ["player", "#p-save"],
+  ["shorts", "#shorts-save"],
+  ["video-thumbnail", '#vt-save-composition button[type="submit"]'],
+].map(([key, selector]) => {
+  const button = document.querySelector(selector);
+  const form = button.closest(".save-team-form");
+  return [key, { button, name: form.querySelector('input[type="text"]'), status: form.querySelector(".save-status") }];
+}));
+
+function updateQuickSave() {
+  const key = document.querySelector(".tab.active")?.dataset.tab;
+  const control = quickSaveControls.get(key);
+  quickSaveFooter.hidden = !control;
+  quickSaveButton.disabled = !!control?.button.disabled;
+  quickSaveStatus.textContent = control?.status.textContent ?? "";
+}
+
+const quickSaveObserver = new MutationObserver(updateQuickSave);
+for (const { button, status } of quickSaveControls.values()) {
+  quickSaveObserver.observe(button, { attributes: true, attributeFilter: ["disabled"] });
+  quickSaveObserver.observe(status, { childList: true, characterData: true, subtree: true });
+}
+updateQuickSave();
+
+let pendingQuickSave;
+quickSaveButton.addEventListener("click", () => {
+  const key = document.querySelector(".tab.active")?.dataset.tab;
+  const control = quickSaveControls.get(key);
+  if (!control || control.button.disabled) return;
+  if (key === "lineup" || key === "showdown") {
+    control.button.click();
+    return;
+  }
+  pendingQuickSave = control;
+  quickSaveName.value = control.name.value.trim();
+  if (!quickSaveName.value && key === "player") {
+    quickSaveName.value = `${pFirstname.value} ${pLastname.value}`.trim();
+  }
+  if (control.name.maxLength >= 0) quickSaveName.maxLength = control.name.maxLength;
+  else quickSaveName.removeAttribute("maxlength");
+  quickSaveName.setCustomValidity("");
+  quickSaveDialog.showModal();
+  quickSaveName.select();
+});
+
+quickSaveName.addEventListener("input", () => quickSaveName.setCustomValidity(""));
+document.getElementById("editor-quick-save-cancel").addEventListener("click", () => quickSaveDialog.close());
+document.getElementById("editor-quick-save-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const name = quickSaveName.value.trim();
+  if (!name) {
+    quickSaveName.setCustomValidity(translate("Donne un nom à la sauvegarde."));
+    quickSaveName.reportValidity();
+    return;
+  }
+  pendingQuickSave.name.value = name;
+  quickSaveDialog.close();
+  pendingQuickSave.button.click();
+});
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     const target = tab.dataset.tab;
-    tabs.forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
+    tabs.forEach((button) => {
+      button.classList.toggle("active", button === tab);
+      if (button === tab) button.setAttribute("aria-current", "true");
+      else button.removeAttribute("aria-current");
+    });
     editorSections.forEach((s) =>
       s.classList.toggle("active", s.dataset.editor === target),
     );
@@ -134,26 +210,70 @@ tabs.forEach((tab) => {
       target !== "showdown";
     document.getElementById("export-saved-renders").hidden =
       target !== "lineup" && target !== "showdown";
-    document.querySelector(".preview-toolbar").hidden =
+    document.querySelector(".preview-toolbar").hidden = target === "library";
+    document.querySelector(".editor-search").hidden = target === "library";
+    updateQuickSave();
+    document.getElementById("export-format-field").hidden =
       target === "video-thumbnail";
   });
 });
 
 /* ============ NUMBER STEPPER (custom +/- buttons) ============ */
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest(".stepper-btn");
-  if (!btn) return;
+function stepNumber(btn) {
   const input = document.getElementById(btn.dataset.target);
-  if (!input) return;
+  if (!input || input.disabled || input.readOnly) return false;
   const step = parseFloat(btn.dataset.step) || 1;
   const min = input.min !== "" ? parseFloat(input.min) : -Infinity;
   const max = input.max !== "" ? parseFloat(input.max) : Infinity;
   const current = parseFloat(input.value) || 0;
   const next = Math.min(max, Math.max(min, current + step));
-  if (next === current) return;
+  if (next === current) return false;
   input.value = next;
   input.dispatchEvent(new Event("input", { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
+  return true;
+}
+
+let stepperPress;
+let repeatedStepper;
+
+function stopStepperPress(event) {
+  if (!stepperPress || (event.pointerId !== undefined && event.pointerId !== stepperPress.pointerId)) return;
+  clearTimeout(stepperPress.timer);
+  stepperPress = undefined;
+}
+
+document.addEventListener("pointerdown", (event) => {
+  if (!event.isPrimary || event.button !== 0) return;
+  stopStepperPress(event);
+  repeatedStepper = undefined;
+  const button = event.target.closest('[data-editor="video-thumbnail"] .stepper-btn');
+  if (!button || button.disabled) return;
+  const press = { pointerId: event.pointerId };
+  stepperPress = press;
+  button.setPointerCapture(event.pointerId);
+
+  function repeat() {
+    if (stepperPress !== press || !button.isConnected || !button.getClientRects().length) return;
+    repeatedStepper = button;
+    if (stepNumber(button)) press.timer = setTimeout(repeat, 75);
+  }
+  press.timer = setTimeout(repeat, 360);
+});
+
+for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) {
+  document.addEventListener(event, stopStepperPress);
+}
+window.addEventListener("blur", stopStepperPress);
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".stepper-btn");
+  if (!button) return;
+  if (event.detail > 0 && repeatedStepper === button) {
+    repeatedStepper = undefined;
+    return;
+  }
+  stepNumber(button);
 });
 
 /* ============================================================
@@ -162,7 +282,7 @@ document.addEventListener("click", (e) => {
 function renderGoalscorerPhoto(url) {
   const box = document.getElementById("pb-logo");
   box.innerHTML = url
-    ? `<img src="${url}" alt="goalscorer" />`
+    ? `<img src="${url}" alt="Goalscorer" />`
     : `<div style="color:#666;font-size:12px;">Photo du buteur</div>`;
 }
 
@@ -633,12 +753,16 @@ function getSavedBanners() {
 function setSavedBanners(list) {
   localStorage.setItem(SAVED_BANNERS_KEY, JSON.stringify(list));
 }
+function emptyPresetOption(message) {
+  return `<option value="" data-interface-message="${message}">${translate(message)}</option>`;
+}
+
 function renderSavedBannersList() {
   const sel = document.getElementById("p-saved-select");
   if (!sel) return;
   const list = getSavedBanners();
   if (list.length === 0) {
-    sel.innerHTML = '<option value="">— Aucune bannière sauvegardée —</option>';
+    sel.innerHTML = emptyPresetOption("— Aucune bannière sauvegardée —");
   } else {
     sel.innerHTML = list
       .map((b, i) => `<option value="${i}">${b.name}</option>`)
@@ -650,7 +774,7 @@ function saveCurrentAsBanner() {
   const sName =
     nameInput.value.trim() || `${pFirstname.value} ${pLastname.value}`.trim();
   if (!sName) {
-    alert("Donne un nom à la bannière.");
+    alert(translate("Donne un nom à la bannière."));
     return;
   }
   const list = getSavedBanners();
@@ -870,7 +994,7 @@ pTopBgImgFile.addEventListener("change", (e) => {
       localStorage.setItem(P_TOP_BG_IMAGE_CUSTOM_KEY, pTopBgImageCustomUrl);
     } catch (err) {
       alert(
-        "Image trop volumineuse pour être sauvegardée localement. Elle reste active pour la session.",
+        translate("Image trop volumineuse pour être sauvegardée localement. Elle reste active pour la session."),
       );
     }
     applyPlayerTopBgImage();
@@ -1117,21 +1241,28 @@ function renderSavedTeamsList() {
   const sel = document.getElementById("l-saved-team-select");
   const teams = getSavedTeams();
   if (teams.length === 0) {
-    sel.innerHTML = '<option value="">— Aucune équipe sauvegardée —</option>';
+    sel.innerHTML = emptyPresetOption("— Aucune équipe sauvegardée —");
   } else {
     sel.innerHTML = teams
       .map((t, i) => `<option value="${i}">${t.name}</option>`)
       .join("");
   }
+  window.matchPresetMenus?.refresh(sel);
 }
 function saveCurrentAsTeam() {
   const nameInput = document.getElementById("l-save-team-name");
+  if (window.matchPresetMenus?.nameSave("lineup", nameInput, persistTeamPreset)) return;
   const name =
     nameInput.value.trim() || document.getElementById("l-team").value.trim();
   if (!name) {
-    alert("Donne un nom à la sauvegarde.");
+    alert(translate("Donne un nom à la sauvegarde."));
     return;
   }
+  persistTeamPreset(name);
+}
+
+function persistTeamPreset(name, naming) {
+  const nameInput = document.getElementById("l-save-team-name");
   const teams = getSavedTeams();
   const existing = teams.findIndex((t) => t.name === name);
   // Capture current background as a style snapshot so compressLineupData can
@@ -1145,7 +1276,7 @@ function saveCurrentAsTeam() {
   // on team identity (kit/typo/style stay as their own dedicated systems).
   if (teamData.style && !teamData.styleRef) delete teamData.style;
   if (teamData.typo && !teamData.typoRef) delete teamData.typo;
-  const entry = { name, data: teamData };
+  const entry = { name, data: teamData, naming };
   if (existing >= 0) {
     teams[existing] = entry;
   } else {
@@ -1160,6 +1291,7 @@ function saveCurrentAsTeam() {
 }
 function loadSelectedTeam() {
   const sel = document.getElementById("l-saved-team-select");
+  if (window.matchPresetMenus?.load(sel)) return;
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
@@ -1174,6 +1306,7 @@ function loadSelectedTeam() {
 }
 function deleteSelectedTeam() {
   const sel = document.getElementById("l-saved-team-select");
+  if (window.matchPresetMenus?.remove(sel)) return;
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
@@ -1198,7 +1331,7 @@ function renderSavedFormationsList() {
   const formations = getSavedFormations();
   if (formations.length === 0) {
     sel.innerHTML =
-      '<option value="">— Aucune formation sauvegardée —</option>';
+      emptyPresetOption("— Aucune formation sauvegardée —");
   } else {
     sel.innerHTML = formations
       .map((f, i) => `<option value="${i}">${f.name}</option>`)
@@ -1209,7 +1342,7 @@ function saveCurrentAsFormation() {
   const nameInput = document.getElementById("l-save-formation-name");
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom à la formation.");
+    alert(translate("Donne un nom à la formation."));
     return;
   }
   const formations = getSavedFormations();
@@ -1234,7 +1367,10 @@ function loadSelectedFormation() {
   const idx = parseInt(sel.value, 10);
   const formations = getSavedFormations();
   if (isNaN(idx) || !formations[idx]) return;
-  const positions = formations[idx].positions;
+  applySavedFormation(formations[idx]);
+}
+
+function applySavedFormation({ name, positions }) {
   if (!Array.isArray(positions) || positions.length !== 11) return;
   positions.forEach((pos, i) => {
     if (!starters[i]) return;
@@ -1242,7 +1378,7 @@ function loadSelectedFormation() {
     starters[i].y = pos.y;
     if (typeof pos.gk === "boolean") starters[i].gk = pos.gk;
   });
-  document.getElementById("l-save-formation-name").value = formations[idx].name;
+  document.getElementById("l-save-formation-name").value = name;
   renderPitch();
   saveLineup();
 }
@@ -1272,7 +1408,7 @@ function renderSavedStylesList() {
   if (!sel) return;
   const styles = getSavedStyles();
   if (styles.length === 0) {
-    sel.innerHTML = '<option value="">— Aucun style sauvegardé —</option>';
+    sel.innerHTML = emptyPresetOption("— Aucun style sauvegardé —");
   } else {
     sel.innerHTML = styles
       .map((s, i) => `<option value="${i}">${s.name}</option>`)
@@ -1361,7 +1497,7 @@ function saveCurrentAsStyle() {
   const nameInput = document.getElementById("l-save-style-name");
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom au style.");
+    alert(translate("Donne un nom au style."));
     return;
   }
   const styles = getSavedStyles();
@@ -1413,7 +1549,7 @@ function renderSavedTyposList() {
   const list = getSavedTypos();
   if (list.length === 0) {
     sel.innerHTML =
-      '<option value="">— Aucune typographie sauvegardée —</option>';
+      emptyPresetOption("— Aucune typographie sauvegardée —");
   } else {
     sel.innerHTML = list
       .map((t, i) => `<option value="${i}">${t.name}</option>`)
@@ -1455,7 +1591,7 @@ function saveCurrentAsTypo() {
   const nameInput = document.getElementById("l-save-typo-name");
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom à la typographie.");
+    alert(translate("Donne un nom à la typographie."));
     return;
   }
   const list = getSavedTypos();
@@ -1523,7 +1659,7 @@ function renderSavedKitsList() {
   if (!sel) return;
   const list = getSavedKits();
   if (list.length === 0) {
-    sel.innerHTML = '<option value="">— Aucun kit sauvegardé —</option>';
+    sel.innerHTML = emptyPresetOption("— Aucun kit sauvegardé —");
   } else {
     sel.innerHTML = list
       .map((k, i) => `<option value="${i}">${k.name}</option>`)
@@ -1599,7 +1735,7 @@ function saveCurrentAsKit() {
   const nameInput = document.getElementById("l-save-kit-name");
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom au kit.");
+    alert(translate("Donne un nom au kit."));
     return;
   }
   const list = getSavedKits();
@@ -1773,11 +1909,11 @@ function renderStartersEditor() {
     row.innerHTML = `
       <input type="number" value="${p.num}" min="0" max="99" data-i="${i}" data-field="num" />
       <input type="text" value="${p.name}" data-i="${i}" data-field="name" />
-      <label class="captain-cell" title="Capitaine">
+      <label class="captain-cell" title="${translate("Capitaine")}">
         <input type="checkbox" data-i="${i}" data-field="captain" ${p.captain ? "checked" : ""} />
         <span>C</span>
       </label>
-      <span class="role-tag">${p.gk ? "GK" : "#" + (i + 1)}</span>
+      <span class="role-tag">${p.gk ? translate("GK") : "#" + (i + 1)}</span>
     `;
     list.appendChild(row);
   });
@@ -1901,7 +2037,7 @@ function renderPitch() {
           numberFont,
         };
     const captainBadge = p.captain
-      ? '<span class="lb-captain-badge" aria-label="Capitaine">C</span>'
+      ? `<span class="lb-captain-badge" aria-label="Captain">C</span>`
       : "";
     el.innerHTML = `
       ${renderShirtSVG(shirtColor, numColor, p.num, styleOpts)}
@@ -2060,7 +2196,7 @@ function makeDraggable(el, playerObj) {
 function renderTeamLogo() {
   const box = document.getElementById("lb-team-logo");
   box.innerHTML = teamLogoURL
-    ? `<img src="${teamLogoURL}" alt="team logo" />`
+    ? `<img src="${teamLogoURL}" alt="Team logo" />`
     : "";
 }
 
@@ -2202,7 +2338,7 @@ updateLineupCommon();
 renderSavedTeamsList();
 
 document.getElementById("l-reset").addEventListener("click", () => {
-  if (confirm("Réinitialiser la composition aux valeurs par défaut ?"))
+  if (confirm(translate("Réinitialiser la composition aux valeurs par défaut ?")))
     resetLineup();
 });
 
@@ -2252,7 +2388,7 @@ function applyParsedComposition(entries) {
   };
   const named = entries.filter((e) => e.name);
   if (!named.length) {
-    setStatus("Aucun joueur détecté.", false);
+    setStatus(translate("Aucun joueur détecté."), false);
     return;
   }
   const n = Math.min(named.length, starters.length);
@@ -2268,11 +2404,11 @@ function applyParsedComposition(entries) {
   renderStartersEditor();
   renderPitch();
   saveLineup();
-  let msg = `${n} joueur(s) appliqué(s).`;
+  let msg = translate("{n} joueur(s) appliqué(s).", { n });
   if (named.length > starters.length)
-    msg += ` ${named.length - starters.length} ignoré(s) (max ${starters.length}).`;
+    msg += " " + translate("{n} ignoré(s) (max {max}).", { n: named.length - starters.length, max: starters.length });
   else if (n < starters.length)
-    msg += ` ${starters.length - n} emplacement(s) inchangé(s).`;
+    msg += " " + translate("{n} emplacement(s) inchangé(s).", { n: starters.length - n });
   setStatus(msg, true);
 }
 
@@ -2409,104 +2545,6 @@ function collectStorageStateByCategory() {
   return { counts, byCat };
 }
 
-function downloadJsonPayload(state, selectedCategories) {
-  const payload = {
-    version: 2,
-    exportedAt: new Date().toISOString(),
-    state,
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  const date = new Date().toISOString().slice(0, 10);
-  const cats = Array.isArray(selectedCategories) ? selectedCategories : [];
-  const tag =
-    cats.length === 0
-      ? "empty"
-      : cats.length === IMPORT_CATEGORIES.length
-        ? "all"
-        : cats.join("-");
-  a.download = `ucl-saves-${tag}-${date}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function exportSavesToJson() {
-  const modal = document.getElementById("l-export-modal");
-  const { counts, byCat } = collectStorageStateByCategory();
-  const activeTab = document.querySelector(".tab.active");
-  const activeCategory = activeTab?.dataset.tab === "player"
-    ? "banner"
-    : activeTab?.dataset.tab;
-  const activeBtn = document.getElementById("l-export-modal-active-tab");
-  activeBtn.disabled = !counts[activeCategory];
-  IMPORT_CATEGORIES.forEach((cat) => {
-    const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
-    const cb = modal.querySelector(`input[data-cat="${cat}"]`);
-    const wrap = cb ? cb.closest(".import-category") : null;
-    if (countEl) countEl.textContent = counts[cat];
-    if (cb) {
-      cb.checked = counts[cat] > 0;
-      cb.disabled = counts[cat] === 0;
-    }
-    if (wrap) wrap.classList.toggle("import-category-empty", counts[cat] === 0);
-  });
-  const cancelBtn = document.getElementById("l-export-modal-cancel");
-  const confirmBtn = document.getElementById("l-export-modal-confirm");
-  const toggleBtn = document.getElementById("l-export-modal-toggle-all");
-  const cleanup = () => {
-    modal.removeEventListener("close", cleanup);
-    cancelBtn.removeEventListener("click", onCancel);
-    confirmBtn.removeEventListener("click", onOk);
-    toggleBtn.removeEventListener("click", onToggle);
-    activeBtn.removeEventListener("click", onExportActive);
-  };
-  const onCancel = () => {
-    cleanup();
-    modal.close();
-  };
-  const onOk = () => {
-    const selected = IMPORT_CATEGORIES.filter((cat) => {
-      const cb = modal.querySelector(`input[data-cat="${cat}"]`);
-      return cb && cb.checked && !cb.disabled;
-    });
-    if (selected.length === 0) {
-      alert("Sélectionne au moins une section à exporter.");
-      return;
-    }
-    cleanup();
-    modal.close();
-    const state = {};
-    selected.forEach((cat) => Object.assign(state, byCat[cat]));
-    downloadJsonPayload(state, selected);
-  };
-  const onToggle = () => {
-    const boxes = IMPORT_CATEGORIES.map((cat) =>
-      modal.querySelector(`input[data-cat="${cat}"]`),
-    ).filter((cb) => cb && !cb.disabled);
-    const allChecked = boxes.every((cb) => cb.checked);
-    boxes.forEach((cb) => (cb.checked = !allChecked));
-  };
-  const onExportActive = () => {
-    if (!counts[activeCategory]) return;
-    cleanup();
-    modal.close();
-    downloadJsonPayload(byCat[activeCategory], [activeCategory]);
-  };
-  cancelBtn.addEventListener("click", onCancel);
-  confirmBtn.addEventListener("click", onOk);
-  toggleBtn.addEventListener("click", onToggle);
-  activeBtn.addEventListener("click", onExportActive);
-  modal.addEventListener("close", cleanup);
-  if (typeof modal.showModal === "function") modal.showModal();
-  else modal.setAttribute("open", "");
-}
-
 const IMPORT_CATEGORIES = ["lineup", "banner", "score", "shorts", "showdown", "prefs"];
 function categorizeStorageKey(key) {
   if (!key || !key.startsWith("ucl-")) return null;
@@ -2517,200 +2555,6 @@ function categorizeStorageKey(key) {
   if (key.startsWith("ucl-shorts-")) return "shorts";
   if (key.startsWith("ucl-showdown-")) return "showdown";
   return "prefs";
-}
-
-function openImportCategoryModal(entries, onConfirm) {
-  const modal = document.getElementById("l-import-modal");
-  const counts = Object.fromEntries(IMPORT_CATEGORIES.map((c) => [c, 0]));
-  entries.forEach(([k]) => {
-    const cat = categorizeStorageKey(k);
-    if (cat) counts[cat]++;
-  });
-  IMPORT_CATEGORIES.forEach((cat) => {
-    const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
-    const cb = modal.querySelector(`input[data-cat="${cat}"]`);
-    const wrap = cb ? cb.closest(".import-category") : null;
-    if (countEl) countEl.textContent = counts[cat];
-    if (cb) {
-      cb.checked = counts[cat] > 0;
-      cb.disabled = counts[cat] === 0;
-    }
-    if (wrap) wrap.classList.toggle("import-category-empty", counts[cat] === 0);
-  });
-  const cancelBtn = document.getElementById("l-import-modal-cancel");
-  const confirmBtn = document.getElementById("l-import-modal-confirm");
-  const toggleBtn = document.getElementById("l-import-modal-toggle-all");
-  const cleanup = () => {
-    cancelBtn.removeEventListener("click", onCancel);
-    confirmBtn.removeEventListener("click", onOk);
-    toggleBtn.removeEventListener("click", onToggle);
-  };
-  const onCancel = () => {
-    cleanup();
-    modal.close();
-  };
-  const onOk = () => {
-    const selected = new Set(
-      IMPORT_CATEGORIES.filter((cat) => {
-        const cb = modal.querySelector(`input[data-cat="${cat}"]`);
-        return cb && cb.checked && !cb.disabled;
-      }),
-    );
-    if (selected.size === 0) {
-      alert("Sélectionne au moins une section à importer.");
-      return;
-    }
-    cleanup();
-    modal.close();
-    onConfirm(selected);
-  };
-  const onToggle = () => {
-    const boxes = IMPORT_CATEGORIES.map((cat) =>
-      modal.querySelector(`input[data-cat="${cat}"]`),
-    ).filter((cb) => cb && !cb.disabled);
-    const allChecked = boxes.every((cb) => cb.checked);
-    boxes.forEach((cb) => (cb.checked = !allChecked));
-  };
-  cancelBtn.addEventListener("click", onCancel);
-  confirmBtn.addEventListener("click", onOk);
-  toggleBtn.addEventListener("click", onToggle);
-  if (typeof modal.showModal === "function") modal.showModal();
-  else modal.setAttribute("open", "");
-}
-
-function importSavesFromJson(file) {
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    let parsed;
-    try {
-      parsed = JSON.parse(ev.target.result);
-    } catch (e) {
-      alert("Fichier JSON invalide : " + e.message);
-      return;
-    }
-    if (parsed && typeof parsed.state === "object" && parsed.state) {
-      const entries = Object.entries(parsed.state).filter(
-        ([k, v]) =>
-          typeof k === "string" &&
-          k.startsWith("ucl-") &&
-          typeof v === "string",
-      );
-      if (entries.length === 0) {
-        alert("Aucune donnée trouvée dans le fichier.");
-        return;
-      }
-      openImportCategoryModal(entries, (selectedCats) => {
-        const selectedEntries = entries.filter(([k]) =>
-          selectedCats.has(categorizeStorageKey(k)),
-        );
-        const toRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && selectedCats.has(categorizeStorageKey(k))) toRemove.push(k);
-        }
-        toRemove.forEach((k) => localStorage.removeItem(k));
-        selectedEntries.forEach(([k, v]) => localStorage.setItem(k, v));
-        location.reload();
-      });
-      return;
-    }
-    const importedTeams = Array.isArray(parsed.teams) ? parsed.teams : [];
-    const importedFormations = Array.isArray(parsed.formations)
-      ? parsed.formations
-      : [];
-    const importedStyles = Array.isArray(parsed.styles) ? parsed.styles : [];
-    const importedBanners = Array.isArray(parsed.banners) ? parsed.banners : [];
-    const importedTypos = Array.isArray(parsed.typos) ? parsed.typos : [];
-    const importedShowdowns = Array.isArray(parsed.showdowns)
-      ? parsed.showdowns
-      : [];
-    const importedShowdownTypos = Array.isArray(parsed.showdownTypos)
-      ? parsed.showdownTypos
-      : [];
-    const importedShowdownBgs = Array.isArray(parsed.showdownBgs)
-      ? parsed.showdownBgs
-      : [];
-    const totalCount =
-      importedTeams.length +
-      importedFormations.length +
-      importedStyles.length +
-      importedBanners.length +
-      importedTypos.length +
-      importedShowdowns.length +
-      importedShowdownTypos.length +
-      importedShowdownBgs.length;
-    if (totalCount === 0) {
-      alert("Aucune donnée trouvée dans le fichier.");
-      return;
-    }
-    const msg = `Importer ${importedTeams.length} équipe(s), ${importedFormations.length} formation(s), ${importedStyles.length} style(s), ${importedBanners.length} bannière(s), ${importedTypos.length} typo(s), ${importedShowdowns.length} showdown(s), ${importedShowdownTypos.length} typo showdown(s) et ${importedShowdownBgs.length} fond showdown(s) ?\n\nLes entrées avec le même nom seront écrasées par celles du fichier.`;
-    if (!confirm(msg)) return;
-    const teams = getSavedTeams();
-    importedTeams.forEach((t) => {
-      if (!t || typeof t.name !== "string") return;
-      const i = teams.findIndex((x) => x.name === t.name);
-      if (i >= 0) teams[i] = t;
-      else teams.push(t);
-    });
-    setSavedTeams(teams);
-    const formations = getSavedFormations();
-    importedFormations.forEach((f) => {
-      if (!f || typeof f.name !== "string") return;
-      const i = formations.findIndex((x) => x.name === f.name);
-      if (i >= 0) formations[i] = f;
-      else formations.push(f);
-    });
-    setSavedFormations(formations);
-    const styles = getSavedStyles();
-    importedStyles.forEach((s) => {
-      if (!s || typeof s.name !== "string") return;
-      const i = styles.findIndex((x) => x.name === s.name);
-      if (i >= 0) styles[i] = s;
-      else styles.push(s);
-    });
-    setSavedStyles(styles);
-    const banners = getSavedBanners();
-    importedBanners.forEach((b) => {
-      if (!b || typeof b.name !== "string") return;
-      const i = banners.findIndex((x) => x.name === b.name);
-      if (i >= 0) banners[i] = b;
-      else banners.push(b);
-    });
-    setSavedBanners(banners);
-    const typos = getSavedTypos();
-    importedTypos.forEach((t) => {
-      if (!t || typeof t.name !== "string") return;
-      const i = typos.findIndex((x) => x.name === t.name);
-      if (i >= 0) typos[i] = t;
-      else typos.push(t);
-    });
-    setSavedTypos(typos);
-    const mergeList = (existing, incoming) => {
-      incoming.forEach((item) => {
-        if (!item || typeof item.name !== "string") return;
-        const i = existing.findIndex((x) => x.name === item.name);
-        if (i >= 0) existing[i] = item;
-        else existing.push(item);
-      });
-      return existing;
-    };
-    sdShowdownCRUD.set(mergeList(sdShowdownCRUD.get(), importedShowdowns));
-    sdTypoCRUD.set(mergeList(sdTypoCRUD.get(), importedShowdownTypos));
-    sdBgCRUD.set(mergeList(sdBgCRUD.get(), importedShowdownBgs));
-    renderSavedTeamsList();
-    renderSavedFormationsList();
-    renderSavedStylesList();
-    renderSavedBannersList();
-    renderSavedTyposList();
-    renderSavedKitsList();
-    sdShowdownCRUD.render();
-    sdTypoCRUD.render();
-    sdBgCRUD.render();
-    alert(
-      `Import terminé : ${importedTeams.length} équipe(s), ${importedFormations.length} formation(s), ${importedStyles.length} style(s), ${importedBanners.length} bannière(s), ${importedTypos.length} typo(s), ${importedShowdowns.length} showdown(s), ${importedShowdownTypos.length} typo SD et ${importedShowdownBgs.length} fond SD.`,
-    );
-  };
-  reader.readAsText(file);
 }
 
 function clearSavesByCategory() {
@@ -2747,7 +2591,7 @@ function clearSavesByCategory() {
       }),
     );
     if (selected.size === 0) {
-      alert("Sélectionne au moins une section à supprimer.");
+      alert(translate("Sélectionne au moins une section à supprimer."));
       return;
     }
     const labels = {
@@ -2758,11 +2602,11 @@ function clearSavesByCategory() {
       showdown: "Showdown",
       prefs: "Préférences",
     };
-    const names = [...selected].map((c) => labels[c]).join(", ");
+    const names = [...selected].map((c) => translate(labels[c])).join(", ");
     if (
       !confirm(
-        `Supprimer toutes les sauvegardes locales de : ${names} ?\n\n` +
-          `Cette action est irréversible. La page sera rechargée.`,
+        translate("Supprimer toutes les sauvegardes locales de : {names} ?", { names }) + "\n\n" +
+          translate("Cette action est irréversible. La page sera rechargée."),
       )
     )
       return;
@@ -2790,20 +2634,6 @@ function clearSavesByCategory() {
   else modal.setAttribute("open", "");
 }
 
-document
-  .getElementById("l-export-json")
-  .addEventListener("click", exportSavesToJson);
-document.getElementById("l-import-json-btn").addEventListener("click", () => {
-  document.getElementById("l-import-json-file").click();
-});
-document
-  .getElementById("l-import-json-file")
-  .addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    importSavesFromJson(file);
-    e.target.value = "";
-  });
 document
   .getElementById("l-clear-json-btn")
   .addEventListener("click", clearSavesByCategory);
@@ -3155,10 +2985,10 @@ function updateScoreBanner() {
   document
     .getElementById("score-banner")
     .classList.toggle("show-timer", sTimerToggle.checked);
-  document.getElementById("sb-home").textContent = sHome.value;
-  document.getElementById("sb-home-score").textContent = sHomeScore.value;
-  document.getElementById("sb-away").textContent = sAway.value;
-  document.getElementById("sb-away-score").textContent = sAwayScore.value;
+  document.querySelector("#sb-home .sb-text").textContent = sHome.value;
+  document.querySelector("#sb-home-score .sb-text").textContent = sHomeScore.value;
+  document.querySelector("#sb-away .sb-text").textContent = sAway.value;
+  document.querySelector("#sb-away-score .sb-text").textContent = sAwayScore.value;
   document.getElementById("s-penalty-home-label").textContent = sHome.value;
   document.getElementById("s-penalty-away-label").textContent = sAway.value;
   renderPenaltyShots("sb-penalty-home-shots", sPenaltyHomeShots);
@@ -3277,7 +3107,7 @@ function updateScoreBanner() {
   timer.style.fontWeight = sScoreWeight.value;
 
   const wrap = document.getElementById("score-banner-wrap");
-  const aggregateEl = document.getElementById("sb-aggregate");
+  const aggregateEl = document.querySelector("#sb-aggregate .sb-text");
   if (wrap && aggregateEl) {
     wrap.classList.toggle("show-aggregate", !!sAggregateToggle.checked);
     wrap.classList.toggle("show-penalties", !!sPenaltyToggle.checked);
@@ -3327,7 +3157,7 @@ function renderPenaltyShots(containerId, shots) {
       marker.className = `sb-penalty-shot ${scored ? "is-goal" : "is-miss"}`;
       marker.setAttribute(
         "aria-label",
-        `Tir ${index + 1} : ${scored ? "réussi" : "manqué"}`,
+        `Kick ${index + 1}: ${scored ? "scored" : "missed"}`,
       );
       return marker;
     }),
@@ -3611,7 +3441,7 @@ sBgImgFile.addEventListener("change", (e) => {
       localStorage.setItem(S_BG_IMAGE_CUSTOM_KEY, sBgImageCustomUrl);
     } catch (err) {
       alert(
-        "Image trop volumineuse pour être sauvegardée localement. Elle reste active pour la session.",
+        translate("Image trop volumineuse pour être sauvegardée localement. Elle reste active pour la session."),
       );
     }
     applyScoreBgImage();
@@ -3902,14 +3732,14 @@ function renderSavedScoresList() {
   const list = getSavedScores();
   sel.innerHTML =
     list.length === 0
-      ? '<option value="">— Aucune sauvegarde —</option>'
+      ? emptyPresetOption("— Aucune sauvegarde —")
       : list.map((s, i) => `<option value="${i}">${s.name}</option>`).join("");
 }
 
 function saveCurrentScore() {
   const name = sSaveName.value.trim();
   if (!name) {
-    alert("Donne un nom à la sauvegarde.");
+    alert(translate("Donne un nom à la sauvegarde."));
     return;
   }
   const list = getSavedScores();
@@ -4021,7 +3851,7 @@ function renderBracketEditor() {
     if (i % 2 === 0) {
       const label = document.createElement("div");
       label.className = "match-label";
-      label.textContent = MATCH_LABELS[i / 2];
+      label.textContent = translate(MATCH_LABELS[i / 2]);
       list.appendChild(label);
     }
     const card = document.createElement("div");
@@ -4032,16 +3862,16 @@ function renderBracketEditor() {
     card.innerHTML = `
       <div class="team-card-row">
         <div class="team-thumb" data-i="${i}">${thumb}</div>
-        <input type="text" value="${t.name}" data-i="${i}" data-field="name" placeholder="Nom équipe" />
+        <input type="text" value="${t.name}" data-i="${i}" data-field="name" placeholder="${translate("Nom équipe")}" />
       </div>
       <div class="team-card-row">
-        <input type="text" value="${t.letter}" data-i="${i}" data-field="letter" maxlength="3" placeholder="Initiales" class="letter-input" title="Affiché si pas de PNG" />
-        <input type="color" value="${t.color}" data-i="${i}" data-field="color" title="Couleur de secours" />
-        <label class="upload-btn" title="Importer un PNG">
+        <input type="text" value="${t.letter}" data-i="${i}" data-field="letter" maxlength="3" placeholder="${translate("Initiales")}" class="letter-input" title="${translate("Affiché si pas de PNG")}" />
+        <input type="color" value="${t.color}" data-i="${i}" data-field="color" title="${translate("Couleur de secours")}" />
+        <label class="upload-btn" title="${translate("Importer un PNG")}">
           📁
           <input type="file" accept="image/*" data-i="${i}" data-field="logoURL" hidden />
         </label>
-        ${t.logoURL ? `<button class="remove-logo-btn" data-i="${i}" title="Supprimer le logo">×</button>` : ""}
+        ${t.logoURL ? `<button class="remove-logo-btn" data-i="${i}" title="${translate("Supprimer le logo")}">×</button>` : ""}
       </div>
     `;
     list.appendChild(card);
@@ -4283,6 +4113,7 @@ function setShortsLogo(image, fallback, url, alt, fallbackText) {
 
 function syncShortsCompetitionLogoSelect() {
   const selectedLogo = shortsCompetitionLogoURL || "";
+  const customLabel = translate("Personnalisé — {file}", { file: selectedLogo.split(/[\\/]/).pop() });
   [...shortsCompetitionLogoSelect.options]
     .filter(
       (option) =>
@@ -4290,6 +4121,9 @@ function syncShortsCompetitionLogoSelect() {
         option.value !== selectedLogo,
     )
     .forEach((option) => option.remove());
+
+  const customOption = shortsCompetitionLogoSelect.querySelector('[data-custom-logo="true"]');
+  if (customOption) customOption.textContent = customLabel;
 
   if (
     selectedLogo &&
@@ -4299,7 +4133,7 @@ function syncShortsCompetitionLogoSelect() {
   ) {
     const option = document.createElement("option");
     option.value = selectedLogo;
-    option.textContent = `Personnalisé — ${selectedLogo.split(/[\\/]/).pop()}`;
+    option.textContent = customLabel;
     option.dataset.customLogo = "true";
     shortsCompetitionLogoSelect.append(option);
   }
@@ -4509,19 +4343,28 @@ function updateShortsPreview() {
   );
   document.getElementById("shorts-center-width-value").textContent =
     actualCenterWidth < centerWidth
-      ? `${shortsCenterWidth.value} px (réduit à ${Math.round(actualCenterWidth)} px)`
+      ? translate("{requested} px (réduit à {actual} px)", {
+          requested: shortsCenterWidth.value,
+          actual: Math.round(actualCenterWidth),
+        })
       : `${shortsCenterWidth.value} px`;
   document.getElementById("shorts-center-vertical-value").textContent =
     `${centerVerticalPosition} px`;
   document.getElementById("shorts-score-width-value").textContent =
     actualScoreWidth < scoreWidth
-      ? `${shortsScoreWidth.value} px (réduit à ${Math.round(actualScoreWidth)} px)`
+      ? translate("{requested} px (réduit à {actual} px)", {
+          requested: shortsScoreWidth.value,
+          actual: Math.round(actualScoreWidth),
+        })
       : `${shortsScoreWidth.value} px`;
   document.getElementById("shorts-meta-font-size-value").textContent =
     `${shortsMetaFontSize.value} px`;
   document.getElementById("shorts-penalty-width-value").textContent =
     actualPenaltyWidth < requestedPenaltyWidth
-      ? `${shortsPenaltyWidth.value} px (limité à ${Math.round(actualPenaltyWidth)} px)`
+      ? translate("{requested} px (limité à {actual} px)", {
+          requested: shortsPenaltyWidth.value,
+          actual: Math.round(actualPenaltyWidth),
+        })
       : `${shortsPenaltyWidth.value} px`;
   document.getElementById("shorts-competition-logo-size-value").textContent =
     `${competitionLogoSize} px`;
@@ -4544,7 +4387,10 @@ function updateShortsPreview() {
   );
   document.getElementById("shorts-logo-size-value").textContent =
     actualLogoSliderSize < logoSize - 1
-      ? `${logoSize} px (réduit à ${Math.round(actualLogoSliderSize)} px)`
+      ? translate("{requested} px (réduit à {actual} px)", {
+          requested: logoSize,
+          actual: Math.round(actualLogoSliderSize),
+        })
       : `${logoSize} px`;
   document.getElementById("shorts-logo-gap-value").textContent =
     `${shortsLogoGap.value} px`;
@@ -4563,7 +4409,7 @@ function updateShortsPreview() {
     document.getElementById("shorts-competition-logo"),
     document.getElementById("shorts-competition-fallback"),
     shortsCompetitionLogoURL,
-    "Logo de la compétition",
+    "Competition logo",
     "UCL",
   );
   const competitionLogo = document.getElementById("shorts-competition-logo");
@@ -4576,14 +4422,14 @@ function updateShortsPreview() {
     document.getElementById("shorts-home-logo"),
     document.getElementById("shorts-home-fallback"),
     shortsHomeLogoURL,
-    "Logo du club domicile",
+    "Home club logo",
     "LIV",
   );
   setShortsLogo(
     document.getElementById("shorts-away-logo"),
     document.getElementById("shorts-away-fallback"),
     shortsAwayLogoURL,
-    "Logo du club extérieur",
+    "Away club logo",
     "RMA",
   );
 
@@ -4798,7 +4644,8 @@ function renderShortsPresets(selectedIndex = "") {
   shortsSavedSelect.replaceChildren();
   const placeholder = document.createElement("option");
   placeholder.value = "";
-  placeholder.textContent = "Choisir une sauvegarde…";
+  placeholder.dataset.interfaceMessage = "Choisir une sauvegarde…";
+  placeholder.textContent = translate(placeholder.dataset.interfaceMessage);
   shortsSavedSelect.append(placeholder);
 
   presets.forEach((preset, index) => {
@@ -4813,7 +4660,7 @@ function renderShortsPresets(selectedIndex = "") {
 function saveShortsPreset() {
   const name = shortsSaveName.value.trim();
   if (!name) {
-    alert("Saisis un nom pour cette sauvegarde.");
+    alert(translate("Saisis un nom pour cette sauvegarde."));
     shortsSaveName.focus();
     return;
   }
@@ -4832,7 +4679,7 @@ function saveShortsPreset() {
     showPresetSaveStatus(shortsSaveName, name);
   } catch (error) {
     console.error("Impossible d'enregistrer cette sauvegarde Shorts.", error);
-    alert("La sauvegarde Shorts n'a pas pu être enregistrée.");
+    alert(translate("La sauvegarde Shorts n'a pas pu être enregistrée."));
   }
 }
 
@@ -4848,7 +4695,7 @@ function loadShortsPreset() {
     shortsSaveName.value = preset.name;
   } catch (error) {
     console.error("Impossible de charger cette sauvegarde Shorts.", error);
-    alert("La sauvegarde Shorts n'a pas pu être chargée.");
+    alert(translate("La sauvegarde Shorts n'a pas pu être chargée."));
   }
 }
 
@@ -4866,7 +4713,7 @@ function deleteShortsPreset() {
     shortsSaveName.value = "";
   } catch (error) {
     console.error("Impossible de supprimer cette sauvegarde Shorts.", error);
-    alert("La sauvegarde Shorts n'a pas pu être supprimée.");
+    alert(translate("La sauvegarde Shorts n'a pas pu être supprimée."));
   }
 }
 
@@ -5559,7 +5406,7 @@ function loadShowdown() {
 }
 
 // CRUD helpers
-function makeListCRUD(storageKey, selectId, nameInputId, label) {
+function makeListCRUD(storageKey, selectId, emptyMessage) {
   return {
     get: () => {
       try {
@@ -5575,10 +5422,11 @@ function makeListCRUD(storageKey, selectId, nameInputId, label) {
       const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
       sel.innerHTML =
         list.length === 0
-          ? `<option value="">— Aucun ${label} sauvegardé —</option>`
+          ? emptyPresetOption(emptyMessage)
           : list
               .map((s, i) => `<option value="${i}">${s.name}</option>`)
               .join("");
+      window.matchPresetMenus?.refresh(sel);
     },
   };
 }
@@ -5586,20 +5434,17 @@ function makeListCRUD(storageKey, selectId, nameInputId, label) {
 const sdShowdownCRUD = makeListCRUD(
   SD_SAVED_KEY,
   "sd-saved-select",
-  "sd-save-name",
-  "showdown",
+  "— Aucune affiche sauvegardée —",
 );
 const sdTypoCRUD = makeListCRUD(
   SD_SAVED_TYPOS_KEY,
   "sd-saved-typo-select",
-  "sd-save-typo-name",
-  "typo",
+  "— Aucune typographie sauvegardée —",
 );
 const sdBgCRUD = makeListCRUD(
   SD_SAVED_BGS_KEY,
   "sd-saved-bg-select",
-  "sd-save-bg-name",
-  "fond",
+  "— Aucun fond sauvegardé —",
 );
 
 function stripDataUrlLogosFromSdSaves() {
@@ -5623,14 +5468,20 @@ function stripDataUrlLogosFromSdSaves() {
 
 function saveCurrentShowdown() {
   const nameInput = document.getElementById("sd-save-name");
+  if (window.matchPresetMenus?.nameSave("showdown", nameInput, persistShowdownPreset)) return;
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom au showdown.");
+    alert(translate("Donne un nom au showdown."));
     return;
   }
+  persistShowdownPreset(name);
+}
+
+function persistShowdownPreset(name, naming) {
+  const nameInput = document.getElementById("sd-save-name");
   let list = sdShowdownCRUD.get();
   let i = list.findIndex((s) => s.name === name);
-  const entry = { name, data: compressShowdownData(collectShowdownData()) };
+  const entry = { name, data: compressShowdownData(collectShowdownData()), naming };
   if (i >= 0) {
     list[i] = entry;
   } else list.push(entry);
@@ -5647,12 +5498,12 @@ function saveCurrentShowdown() {
         sdShowdownCRUD.set(list);
         if (stripped > 0) {
           alert(
-            `Quota localStorage atteint : ${stripped} logo(s) intégré(s) dans d'anciennes sauvegardes ont été retirés pour libérer de l'espace. Re-sélectionne-les depuis ./Logos/ si nécessaire.`,
+            translate("Quota localStorage atteint : {n} logo(s) intégré(s) dans d’anciennes sauvegardes ont été retirés pour libérer de l’espace. Sélectionne-les de nouveau dans ./Logos/ si nécessaire.", { n: stripped }),
           );
         }
       } catch (err2) {
         alert(
-          "Impossible de sauvegarder : quota localStorage toujours dépassé. Supprime quelques showdowns sauvegardés et réessaie.",
+          translate("Impossible de sauvegarder : quota localStorage toujours dépassé. Supprime quelques showdowns sauvegardés et réessaie."),
         );
         return;
       }
@@ -5667,7 +5518,9 @@ function saveCurrentShowdown() {
   showPresetSaveStatus(nameInput, name);
 }
 function loadCurrentShowdown() {
-  const idx = parseInt(document.getElementById("sd-saved-select").value, 10);
+  const sel = document.getElementById("sd-saved-select");
+  if (window.matchPresetMenus?.load(sel)) return;
+  const idx = parseInt(sel.value, 10);
   const list = sdShowdownCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
   applyShowdownData(
@@ -5678,7 +5531,9 @@ function loadCurrentShowdown() {
   saveShowdown();
 }
 function deleteCurrentShowdown() {
-  const idx = parseInt(document.getElementById("sd-saved-select").value, 10);
+  const sel = document.getElementById("sd-saved-select");
+  if (window.matchPresetMenus?.remove(sel)) return;
+  const idx = parseInt(sel.value, 10);
   const list = sdShowdownCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
   list.splice(idx, 1);
@@ -5690,7 +5545,7 @@ function saveCurrentSdTypo() {
   const nameInput = document.getElementById("sd-save-typo-name");
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom à la typographie.");
+    alert(translate("Donne un nom à la typographie."));
     return;
   }
   const list = sdTypoCRUD.get();
@@ -5732,7 +5587,7 @@ function saveCurrentSdBg() {
   const nameInput = document.getElementById("sd-save-bg-name");
   const name = nameInput.value.trim();
   if (!name) {
-    alert("Donne un nom au fond.");
+    alert(translate("Donne un nom au fond."));
     return;
   }
   const list = sdBgCRUD.get();
@@ -6088,7 +5943,7 @@ function loadExternalScript(src, globalName) {
     const s = document.createElement("script");
     s.src = src;
     s.onload = resolve;
-    s.onerror = () => reject(new Error("Failed to load " + src));
+    s.onerror = () => reject(new Error(translate("Failed to load") + " " + src));
     document.head.appendChild(s);
   });
 }
@@ -6108,7 +5963,7 @@ function imageUrlToDataUrl(url) {
         reject(e);
       }
     };
-    img.onerror = () => reject(new Error("Image load failed: " + url));
+    img.onerror = () => reject(new Error(translate("Image load failed:") + " " + url));
     img.src = url;
   });
 }
@@ -6205,12 +6060,8 @@ function buildGraphicExportBaseName(activeContainer, resolution) {
       if (leg) parts.push(leg);
       break;
     }
-    case "thumbnail": {
-      const team = slugForExport(val("tn-team-name"));
-      const year = slugForExport(val("tn-year"));
-      parts.push("thumbnail");
-      if (team) parts.push(team);
-      if (year) parts.push(year);
+    case "video-thumbnail": {
+      parts.push("video-thumbnail", slugForExport(val("vt-title")), slugForExport(val("vt-year")));
       break;
     }
     default:
@@ -6239,10 +6090,14 @@ async function renderGraphicExport(target, format, options) {
     return pdf.output("blob");
   }
 
+  return encodeGraphicPng(canvas);
+}
+
+function encodeGraphicPng(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("Impossible de générer le PNG."));
+      else reject(new Error(translate("Impossible de générer le PNG.")));
     }, "image/png");
   });
 }
@@ -6344,6 +6199,12 @@ exportButton.addEventListener("click", async () => {
   const separate = mode === "separate";
   exportButton.disabled = exportSavedRenders.disabled = true;
   try {
+    if (preview === "video-thumbnail") {
+      const canvas = await videoThumbnail.renderExport(EXPORT_RESOLUTION_HEIGHT[settings.resolution] || 1080);
+      const blob = await encodeGraphicPng(canvas);
+      downloadGraphicExport(blob, `${baseName}.png`);
+      return;
+    }
     await loadGraphicExportLibraries(settings.format, separate);
     const archive = separate ? new window.JSZip() : null;
     await renderGraphicComposition(
@@ -6354,7 +6215,7 @@ exportButton.addEventListener("click", async () => {
       downloadGraphicExport(blob, `${baseName}-calques.zip`);
     }
   } catch (err) {
-    alert("Export échoué : " + err.message);
+    alert(translate("Export échoué :") + " " + err.message);
   } finally {
     exportButton.disabled = exportSavedRenders.disabled = false;
   }
@@ -6369,7 +6230,7 @@ exportSavedRenders.addEventListener("click", async () => {
   const saved = isLineup ? getSavedTeams() : sdShowdownCRUD.get();
   const presets = Array.isArray(saved) ? saved.filter((preset) => preset?.data) : [];
   if (presets.length === 0) {
-    alert("Aucune sauvegarde complète à exporter dans cet onglet.");
+    alert(translate("Aucune sauvegarde complète à exporter dans cet onglet."));
     return;
   }
 
@@ -6382,18 +6243,18 @@ exportSavedRenders.addEventListener("click", async () => {
   const settings = graphicExportSettings();
   const header = document.querySelector(".app-header");
   const editor = document.querySelector(".editor-panel");
-  const originalLabel = exportSavedRenders.textContent;
+  const originalLabel = "Exporter les rendus sauvegardés";
   const digits = String(presets.length).length;
   exportButton.disabled = exportSavedRenders.disabled = true;
   header.inert = editor.inert = true;
 
   try {
-    exportSavedRenders.textContent = "Préparation de l’export…";
+    exportSavedRenders.textContent = translate("Préparation de l’export…");
     await loadGraphicExportLibraries(settings.format, true);
     const archive = new window.JSZip();
     for (const [index, preset] of presets.entries()) {
       const position = index + 1;
-      exportSavedRenders.textContent = `Export ${position}/${presets.length}…`;
+      exportSavedRenders.textContent = translate("Export {position}/{total}…", { position, total: presets.length });
       apply(snapshot, false);
       apply(expand(JSON.parse(JSON.stringify(preset.data))), false);
       update();
@@ -6406,14 +6267,14 @@ exportSavedRenders.addEventListener("click", async () => {
     const blob = await archive.generateAsync({ type: "blob" });
     downloadGraphicExport(blob, `${preview}-rendus-${settings.resolution}.zip`);
   } catch (err) {
-    alert("Export des rendus échoué : " + err.message);
+    alert(translate("Export des rendus échoué :") + " " + err.message);
   } finally {
     try {
       apply(snapshot, false);
       update();
     } finally {
       header.inert = editor.inert = false;
-      exportSavedRenders.textContent = originalLabel;
+      exportSavedRenders.textContent = translate(originalLabel);
       exportButton.disabled = exportSavedRenders.disabled = false;
     }
   }
@@ -6437,7 +6298,7 @@ exportSavedRenders.addEventListener("click", async () => {
 
   function summarySlug(details) {
     const s = details.querySelector(":scope > summary");
-    return s ? slugify(s.textContent) : "";
+    return s ? slugify(originalSectionNames.get(s) ?? s.textContent) : "";
   }
 
   function computeInitialId(details) {
@@ -6692,7 +6553,8 @@ exportSavedRenders.addEventListener("click", async () => {
         sw.type = "button";
         sw.className = "color-swatch";
         sw.style.background = color;
-        sw.title = `${color} — clic pour appliquer, clic droit pour retirer`;
+        sw.dataset.paletteColor = color;
+        sw.title = translate("{color} — clic pour appliquer, clic droit pour retirer", { color });
         sw.addEventListener("click", () => {
           if (!input) return;
           input.value = color;
@@ -6717,7 +6579,7 @@ exportSavedRenders.addEventListener("click", async () => {
     saveBtn.type = "button";
     saveBtn.className = "color-save-btn";
     saveBtn.textContent = "+";
-    saveBtn.title = "Sauvegarder cette couleur dans la palette";
+    saveBtn.title = translate("Sauvegarder cette couleur dans la palette");
     saveBtn.addEventListener("click", (e) => {
       e.preventDefault();
       addColor(input.value);
@@ -6743,144 +6605,20 @@ exportSavedRenders.addEventListener("click", async () => {
   }
 })();
 
-/* ============================================================
-   6) THUMBNAIL PROMPT GENERATOR
-   ============================================================ */
-(function () {
-  const tnTeam = document.getElementById("tn-team-name");
-  const tnYear = document.getElementById("tn-year");
-  const tnStadium = document.getElementById("tn-stadium");
-  const tnStadiumCity = document.getElementById("tn-stadium-city");
-  const tnStar = document.getElementById("tn-star-player");
-  const tnColors = document.getElementById("tn-team-colors");
-  const tnNotes = document.getElementById("tn-extra-notes");
-  const tnOutput = document.getElementById("tn-prompt-output");
-  const tnCopyBtn = document.getElementById("tn-copy-btn");
-  const tnCopyBtn2 = document.getElementById("tn-copy-btn-2");
-  const tnResetBtn = document.getElementById("tn-reset-btn");
-  const tnStatus = document.getElementById("tn-copy-status");
-
-  if (!tnOutput) return;
-
-  const DEFAULTS = {
-    team: "AJAX",
-    year: "1973",
-    stadium: "Red Star Stadium",
-    stadiumCity: "Belgrade",
-    star: "Johann Cruyff",
-    colors: "rouge et blanc",
-    notes: "",
-  };
-
-  function prettyCase(s) {
-    const v = (s || "").trim();
-    if (!v) return "";
-    return v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+document.addEventListener("interface-language-change", () => {
+  for (const element of document.querySelectorAll("[data-interface-message]")) {
+    element.textContent = translate(element.dataset.interfaceMessage);
   }
-
-  function buildPrompt() {
-    const teamRaw = (tnTeam.value || "").trim();
-    const team = teamRaw.toUpperCase() || "TEAM";
-    const teamPretty = prettyCase(teamRaw) || "Team";
-    const year = (tnYear.value || "").trim() || "YEAR";
-    const stadium = (tnStadium.value || "").trim() || "Stadium";
-    const city = (tnStadiumCity.value || "").trim() || "City";
-    const star = (tnStar.value || "").trim() || "Star Player";
-    const colors = (tnColors.value || "").trim() || "team colors";
-    const notes = (tnNotes.value || "").trim();
-
-    const lines = [];
-    lines.push(
-      `Génère la même miniature/poster que l'image de référence, mais adaptée à la victoire européenne de l'${teamPretty} en ${year}.`,
-    );
-    lines.push("");
-    lines.push(
-      "Conserve EXACTEMENT le même style artistique, la même composition, le même cadrage, la même typographie, le même éclairage et la même atmosphère cinématique vintage que l'image d'origine. Seuls les éléments listés ci-dessous doivent changer :",
-    );
-    lines.push("");
-    lines.push(
-      `- Stade en arrière-plan : Parc des Princes 1956 → ${stadium}, ${city} ${year}.`,
-    );
-    lines.push(
-      `- Blason du club : blason du Real Madrid → blason officiel de l'${teamPretty} (fidèle à l'époque ${year}).`,
-    );
-    lines.push(
-      `- Titre principal : « REAL MADRID - ROAD TO VICTORY » → « ${team} - ROAD TO VICTORY ».`,
-    );
-    lines.push(`- Mention de l'année : « UCL 1956 » → « UCL ${year} ».`);
-    lines.push(
-      `- Joueurs représentés : effectif du Real Madrid 1956 → effectif de l'${teamPretty} ${year} (maillots, coupes de cheveux et physionomies fidèles à l'époque).`,
-    );
-    lines.push(
-      `- Joueur vedette à droite : Alfredo Di Stéfano (1956) → ${star} (${year}).`,
-    );
-    lines.push(
-      `- Palette de couleurs : tons blanc et or du Real Madrid → couleurs de l'${teamPretty} (${colors}).`,
-    );
-    lines.push("");
-    lines.push(
-      "Important : ne modifie ni la mise en page, ni les proportions, ni les polices, ni la direction artistique générale. Le rendu doit ressembler à une variante directe de l'image de référence, comme si elle appartenait à la même série de posters.",
-    );
-
-    if (notes) {
-      lines.push("");
-      lines.push(`Précisions additionnelles : ${notes}`);
-    }
-
-    return lines.join("\n");
+  for (const swatch of document.querySelectorAll("[data-palette-color]")) {
+    swatch.title = translate("{color} — clic pour appliquer, clic droit pour retirer", {
+      color: swatch.dataset.paletteColor,
+    });
   }
-
-  function render() {
-    tnOutput.value = buildPrompt();
+  for (const button of document.querySelectorAll(".color-save-btn")) {
+    button.title = translate("Sauvegarder cette couleur dans la palette");
   }
-
-  let statusTimer = null;
-  function flashStatus(msg) {
-    if (!tnStatus) return;
-    tnStatus.textContent = msg;
-    if (statusTimer) clearTimeout(statusTimer);
-    statusTimer = setTimeout(() => {
-      tnStatus.textContent = "";
-    }, 2500);
-  }
-
-  async function copyPrompt() {
-    const text = tnOutput.value;
-    try {
-      await navigator.clipboard.writeText(text);
-      flashStatus("✓ Prompt copié dans le presse-papier");
-    } catch {
-      tnOutput.focus();
-      tnOutput.select();
-      try {
-        document.execCommand("copy");
-        flashStatus("✓ Prompt copié");
-      } catch {
-        flashStatus("⚠ Copie impossible — sélectionnez et copiez manuellement");
-      }
-    }
-  }
-
-  function reset() {
-    tnTeam.value = DEFAULTS.team;
-    tnYear.value = DEFAULTS.year;
-    tnStadium.value = DEFAULTS.stadium;
-    tnStadiumCity.value = DEFAULTS.stadiumCity;
-    tnStar.value = DEFAULTS.star;
-    tnColors.value = DEFAULTS.colors;
-    tnNotes.value = DEFAULTS.notes;
-    render();
-  }
-
-  [tnTeam, tnYear, tnStadium, tnStadiumCity, tnStar, tnColors, tnNotes].forEach(
-    (el) => {
-      if (el) el.addEventListener("input", render);
-    },
-  );
-
-  if (tnCopyBtn) tnCopyBtn.addEventListener("click", copyPrompt);
-  if (tnCopyBtn2) tnCopyBtn2.addEventListener("click", copyPrompt);
-  if (tnResetBtn) tnResetBtn.addEventListener("click", reset);
-
-  render();
-})();
+  renderStartersEditor();
+  syncShortsCompetitionLogoSelect();
+  renderBracketEditor();
+  updateEditorSearch();
+});

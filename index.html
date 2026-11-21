@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Barlow+Condensed:wght@500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Barlow+Condensed:wght@500;600;700;800;900&family=Montserrat:wght@500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
@@ -19,9 +19,10 @@
         <button class="tab active" data-tab="lineup">Lineup</button>
         <button class="tab" data-tab="player">Goal Scoreboard</button>
         <button class="tab" data-tab="score">Live Score</button>
-        <button class="tab" data-tab="bracket">Playoff Table</button>
+        <button class="tab" data-tab="shorts">Shorts</button>
         <button class="tab" data-tab="showdown">Showdown</button>
         <button class="tab" data-tab="thumbnail">Thumbnail</button>
+        <button class="tab" data-tab="video-thumbnail">Miniature vidéo</button>
       </nav>
       <div class="header-actions">
         <button
@@ -86,6 +87,11 @@
             <span class="import-cat-count" data-cat-count="showdown">0</span>
           </label>
           <label class="import-category">
+            <input type="checkbox" data-cat="shorts" />
+            <span class="import-cat-label">Shorts</span>
+            <span class="import-cat-count" data-cat-count="shorts">0</span>
+          </label>
+          <label class="import-category">
             <input type="checkbox" data-cat="prefs" />
             <span class="import-cat-label">Préférences (ordre, couleurs)</span>
             <span class="import-cat-count" data-cat-count="prefs">0</span>
@@ -126,6 +132,9 @@
           Sélectionne les sections à exporter. Seules les données des sections
           cochées seront incluses dans le fichier.
         </p>
+        <button type="button" class="import-modal-btn-secondary" id="l-export-modal-active-tab">
+          Exporter l’onglet actif
+        </button>
         <div class="import-categories">
           <label class="import-category">
             <input type="checkbox" data-cat="lineup" checked />
@@ -146,6 +155,11 @@
             <input type="checkbox" data-cat="showdown" checked />
             <span class="import-cat-label">Showdown</span>
             <span class="import-cat-count" data-cat-count="showdown">0</span>
+          </label>
+          <label class="import-category">
+            <input type="checkbox" data-cat="shorts" checked />
+            <span class="import-cat-label">Shorts</span>
+            <span class="import-cat-count" data-cat-count="shorts">0</span>
           </label>
           <label class="import-category">
             <input type="checkbox" data-cat="prefs" checked />
@@ -210,6 +224,11 @@
             <span class="import-cat-count" data-cat-count="showdown">0</span>
           </label>
           <label class="import-category">
+            <input type="checkbox" data-cat="shorts" checked />
+            <span class="import-cat-label">Shorts</span>
+            <span class="import-cat-count" data-cat-count="shorts">0</span>
+          </label>
+          <label class="import-category">
             <input type="checkbox" data-cat="prefs" checked />
             <span class="import-cat-label">Préférences (ordre, couleurs)</span>
             <span class="import-cat-count" data-cat-count="prefs">0</span>
@@ -246,308 +265,339 @@
     <main class="workspace">
       <!-- ============ EDITOR PANEL (LEFT) ============ -->
       <aside class="editor-panel">
+        <div class="editor-search" role="search">
+          <label class="field">
+            <span>Rechercher un réglage</span>
+            <input type="search" id="editor-search" placeholder="Ex. espacement, chrono…" />
+          </label>
+          <p id="editor-search-status" role="status"></p>
+          <ul id="editor-search-results" class="editor-search-results" hidden></ul>
+        </div>
         <!-- ============ PLAYER BANNER EDITOR ============ -->
         <section class="editor-section" data-editor="player">
           <h2>Bannière joueur</h2>
 
           <details class="collapsible">
-            <summary>Contenu</summary>
+            <summary>Buteur et club</summary>
             <div class="collapsible-body">
-              <label class="field">
-                <span>Numéro (optionnel)</span>
-                <input type="text" id="p-number" value="" placeholder="ex: 7" />
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Prénom (optionnel)</span>
-                  <input
-                    type="text"
-                    id="p-firstname"
-                    value="VINÍCIUS"
-                    placeholder="ex: Lionel"
-                  />
-                </label>
-                <label class="field">
-                  <span>Nom</span>
-                  <input type="text" id="p-lastname" value="JÚNIOR" />
-                </label>
-              </div>
-              <label class="field">
-                <span>Minute</span>
-                <input
-                  type="text"
-                  id="p-minute"
-                  value="45'"
-                  placeholder="ex: 45'"
-                />
-              </label>
-              <label class="field">
-                <span>Nom du club</span>
-                <input type="text" id="p-club-name" value="REAL MADRID" />
-              </label>
-              <label class="field">
-                <span>Photo du buteur (fichier dans ./Goalscorers/)</span>
-                <input type="file" id="p-goalscorer-file" accept="image/*" />
-              </label>
-              <button
-                class="btn-secondary"
-                id="p-goalscorer-clear"
-                type="button"
-              >
-                Retirer la photo
-              </button>
-              <label class="field">
-                <span>Logo du club (fichier dans ./Logos/)</span>
-                <input type="file" id="p-club-logo-file" accept="image/*" />
-              </label>
-              <button
-                class="btn-secondary"
-                id="p-club-logo-clear"
-                type="button"
-              >
-                Retirer le logo
-              </button>
-            </div>
-          </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Buteur et minute du but</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Numéro (optionnel)</span>
+                    <input type="text" id="p-number" value="" placeholder="ex: 7" />
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Prénom (optionnel)</span>
+                      <input
+                        type="text"
+                        id="p-firstname"
+                        value="VINÍCIUS"
+                        placeholder="ex: Lionel"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Nom</span>
+                      <input type="text" id="p-lastname" value="JÚNIOR" />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Minute</span>
+                    <input
+                      type="text"
+                      id="p-minute"
+                      value="45'"
+                      placeholder="ex: 45'"
+                    />
+                  </label>
 
-          <details class="collapsible">
-            <summary>Mise en page</summary>
-            <div class="collapsible-body">
-              <label class="field">
-                <span
-                  >Largeur des zones de texte
-                  <span id="p-zone-width-value">570px</span></span
-                >
-                <div class="range-with-number">
-                  <input
-                    type="range"
-                    id="p-zone-width"
-                    min="300"
-                    max="900"
-                    value="570"
-                  />
-                  <input
-                    type="number"
-                    id="p-zone-width-number"
-                    min="300"
-                    max="900"
-                    value="570"
-                    aria-label="Largeur des zones de texte en pixels"
-                  />
-                </div>
-              </label>
-            </div>
-          </details>
-
-          <details class="collapsible">
-            <summary>Zone logo (gauche)</summary>
-            <div class="collapsible-body">
-              <div class="row">
-                <label class="field">
-                  <span>Couleur 1</span>
-                  <input type="color" id="p-logo-color-1" value="#ffffff" />
-                </label>
-                <label class="field">
-                  <span>Couleur 2</span>
-                  <input type="color" id="p-logo-color-2" value="#ffffff" />
-                </label>
-              </div>
-              <label class="field">
-                <span>Direction du gradient</span>
-                <select id="p-logo-direction">
-                  <option value="180">↓ Vertical (haut → bas)</option>
-                  <option value="0">↑ Vertical inverse</option>
-                  <option value="90">→ Horizontal</option>
-                  <option value="270">← Horizontal inverse</option>
-                  <option value="135">↘ Diagonal</option>
-                  <option value="45">↗ Diagonal</option>
-                </select>
-              </label>
-            </div>
-          </details>
-
-          <details class="collapsible">
-            <summary>Zone haut (nom + minute)</summary>
-            <div class="collapsible-body">
-              <div class="row">
-                <label class="field">
-                  <span>Couleur 1</span>
-                  <input type="color" id="p-top-color-1" value="#0a1a4a" />
-                </label>
-                <label class="field">
-                  <span>Couleur 2</span>
-                  <input type="color" id="p-top-color-2" value="#162a6e" />
-                </label>
-              </div>
-              <label class="field">
-                <span>Direction du gradient</span>
-                <select id="p-top-direction">
-                  <option value="180">↓ Vertical (haut → bas)</option>
-                  <option value="0">↑ Vertical inverse</option>
-                  <option value="90">→ Horizontal</option>
-                  <option value="270">← Horizontal inverse</option>
-                  <option value="135">↘ Diagonal</option>
-                  <option value="45">↗ Diagonal</option>
-                </select>
-              </label>
-            </div>
-          </details>
-
-          <details class="collapsible">
-            <summary>Image de fond (nom joueur + club)</summary>
-            <div class="collapsible-body">
-              <label class="checkbox-field">
-                <input type="checkbox" id="p-top-bg-image-toggle" />
-                <span>Activer l'image de fond</span>
-              </label>
-              <label class="field">
-                <span>Choix de l'image (préréglages)</span>
-                <select id="p-top-bg-image-select">
-                  <option value="">Aucune image</option>
-                  <option value="backgrounds/lineup_bg_01.png">
-                    Background 01
-                  </option>
-                  <option value="backgrounds/lineup_bg_02.png">
-                    Background 02
-                  </option>
-                  <option value="backgrounds/lineup_bg_03.png">
-                    Background 03
-                  </option>
-                  <option value="backgrounds/lineup_bg_04.png">
-                    Background 04
-                  </option>
-                  <option value="backgrounds/lineup_bg_05.png">
-                    Background 05
-                  </option>
-                  <option value="backgrounds/lineup_bg_06.png">
-                    Background 06
-                  </option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Importer une image personnalisée</span>
-                <input type="file" id="p-top-bg-image-file" accept="image/*" />
-              </label>
-              <button
-                class="btn-secondary"
-                id="p-top-bg-image-clear"
-                type="button"
-              >
-                Retirer l'image personnalisée
-              </button>
-              <label class="field">
-                <span
-                  >Opacité de l'image
-                  <span id="p-top-bg-image-opacity-value">50%</span></span
-                >
-                <input
-                  type="range"
-                  id="p-top-bg-image-opacity"
-                  min="0"
-                  max="100"
-                  value="50"
-                />
-              </label>
-              <label class="checkbox-field">
-                <input type="checkbox" id="p-top-bg-image-fade-toggle" />
-                <span>Dégradé d'opacité sur l'image</span>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Direction du fade</span>
-                  <select id="p-top-bg-image-fade-dir">
-                    <option value="right">→ vers droite</option>
-                    <option value="left">← vers gauche</option>
-                    <option value="bottom">↓ vers bas</option>
-                    <option value="top">↑ vers haut</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span
-                    >Opacité fin
-                    <span id="p-top-bg-image-fade-end-value">0%</span></span
+                  <label class="field">
+                    <span>Photo du buteur (fichier dans ./Goalscorers/)</span>
+                    <input type="file" id="p-goalscorer-file" accept="image/*" />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="p-goalscorer-clear"
+                    type="button"
                   >
-                  <input
-                    type="range"
-                    id="p-top-bg-image-fade-end"
-                    min="0"
-                    max="100"
-                    value="0"
-                  />
-                </label>
-              </div>
+                    Retirer la photo
+                  </button>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Nom et logo du club</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Nom du club</span>
+                    <input type="text" id="p-club-name" value="REAL MADRID" />
+                  </label>
+
+                  <label class="field">
+                    <span>Logo du club (fichier dans ./Logos/)</span>
+                    <input type="file" id="p-club-logo-file" accept="image/*" />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="p-club-logo-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
+                </div>
+              </details>
             </div>
           </details>
 
           <details class="collapsible">
-            <summary>Zone bas (nom du club)</summary>
+            <summary>Habillage du bandeau</summary>
             <div class="collapsible-body">
-              <div class="row">
-                <label class="field">
-                  <span>Couleur 1</span>
-                  <input type="color" id="p-bottom-color-1" value="#162a6e" />
-                </label>
-                <label class="field">
-                  <span>Couleur 2</span>
-                  <input type="color" id="p-bottom-color-2" value="#162a6e" />
-                </label>
-              </div>
-              <label class="field">
-                <span>Direction du gradient</span>
-                <select id="p-bottom-direction">
-                  <option value="180">↓ Vertical (haut → bas)</option>
-                  <option value="0">↑ Vertical inverse</option>
-                  <option value="90">→ Horizontal</option>
-                  <option value="270">← Horizontal inverse</option>
-                  <option value="135">↘ Diagonal</option>
-                  <option value="45">↗ Diagonal</option>
-                </select>
-              </label>
-            </div>
-          </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Largeur de la zone gauche</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span
+                      >Largeur des zones de texte
+                      <span id="p-zone-width-value">570px</span></span
+                    >
+                    <div class="range-with-number">
+                      <input
+                        type="range"
+                        id="p-zone-width"
+                        min="300"
+                        max="900"
+                        value="570"
+                      />
+                      <input
+                        type="number"
+                        id="p-zone-width-number"
+                        min="300"
+                        max="900"
+                        value="570"
+                        aria-label="Largeur des zones de texte en pixels"
+                      />
+                    </div>
+                  </label>
+                </div>
+              </details>
 
-          <details class="collapsible">
-            <summary>Texte</summary>
-            <div class="collapsible-body">
-              <label class="field">
-                <span>Couleur du texte</span>
-                <input type="color" id="p-color-text" value="#ffffff" />
-              </label>
-            </div>
-          </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Fond de la zone gauche</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur 1</span>
+                      <input type="color" id="p-logo-color-1" value="#ffffff" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur 2</span>
+                      <input type="color" id="p-logo-color-2" value="#ffffff" />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Direction du gradient</span>
+                    <select id="p-logo-direction">
+                      <option value="180">↓ Vertical (haut → bas)</option>
+                      <option value="0">↑ Vertical inverse</option>
+                      <option value="90">→ Horizontal</option>
+                      <option value="270">← Horizontal inverse</option>
+                      <option value="135">↘ Diagonal</option>
+                      <option value="45">↗ Diagonal</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
 
-          <details class="collapsible">
-            <summary>Bannières sauvegardées</summary>
-            <div class="collapsible-body">
-              <div class="saved-teams-controls">
-                <select id="p-saved-select"></select>
-                <button class="btn-secondary" id="p-load" type="button">
-                  Charger
-                </button>
-                <button
-                  class="btn-secondary danger"
-                  id="p-delete"
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-              <div class="save-team-form">
-                <input
-                  type="text"
-                  id="p-save-name"
-                  placeholder="Nom de la bannière…"
-                />
-                <button class="btn-primary" id="p-save" type="button">
-                  💾 Enregistrer
-                </button>
-              </div>
+              <details class="collapsible collapsible-nested">
+                <summary>Fond du nom et de la minute</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur 1</span>
+                      <input type="color" id="p-top-color-1" value="#0a1a4a" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur 2</span>
+                      <input type="color" id="p-top-color-2" value="#162a6e" />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Direction du gradient</span>
+                    <select id="p-top-direction">
+                      <option value="180">↓ Vertical (haut → bas)</option>
+                      <option value="0">↑ Vertical inverse</option>
+                      <option value="90">→ Horizontal</option>
+                      <option value="270">← Horizontal inverse</option>
+                      <option value="135">↘ Diagonal</option>
+                      <option value="45">↗ Diagonal</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Fond du nom du club</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur 1</span>
+                      <input type="color" id="p-bottom-color-1" value="#162a6e" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur 2</span>
+                      <input type="color" id="p-bottom-color-2" value="#162a6e" />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Direction du gradient</span>
+                    <select id="p-bottom-direction">
+                      <option value="180">↓ Vertical (haut → bas)</option>
+                      <option value="0">↑ Vertical inverse</option>
+                      <option value="90">→ Horizontal</option>
+                      <option value="270">← Horizontal inverse</option>
+                      <option value="135">↘ Diagonal</option>
+                      <option value="45">↗ Diagonal</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Image de fond du bandeau</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="p-top-bg-image-toggle" />
+                    <span>Activer l'image de fond</span>
+                  </label>
+                  <label class="field">
+                    <span>Choix de l'image (préréglages)</span>
+                    <select id="p-top-bg-image-select">
+                      <option value="">Aucune image</option>
+                      <option value="backgrounds/lineup_bg_01.png">
+                        Background 01
+                      </option>
+                      <option value="backgrounds/lineup_bg_02.png">
+                        Background 02
+                      </option>
+                      <option value="backgrounds/lineup_bg_03.png">
+                        Background 03
+                      </option>
+                      <option value="backgrounds/lineup_bg_04.png">
+                        Background 04
+                      </option>
+                      <option value="backgrounds/lineup_bg_05.png">
+                        Background 05
+                      </option>
+                      <option value="backgrounds/lineup_bg_06.png">
+                        Background 06
+                      </option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Importer une image personnalisée</span>
+                    <input type="file" id="p-top-bg-image-file" accept="image/*" />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="p-top-bg-image-clear"
+                    type="button"
+                  >
+                    Retirer l'image personnalisée
+                  </button>
+                  <label class="field">
+                    <span
+                      >Opacité de l'image
+                      <span id="p-top-bg-image-opacity-value">50%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="p-top-bg-image-opacity"
+                      min="0"
+                      max="100"
+                      value="50"
+                    />
+                  </label>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="p-top-bg-image-fade-toggle" />
+                    <span>Dégradé d'opacité sur l'image</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Direction du dégradé</span>
+                      <select id="p-top-bg-image-fade-dir">
+                        <option value="right">→ vers droite</option>
+                        <option value="left">← vers gauche</option>
+                        <option value="bottom">↓ vers bas</option>
+                        <option value="top">↑ vers haut</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span
+                        >Opacité fin
+                        <span id="p-top-bg-image-fade-end-value">0%</span></span
+                      >
+                      <input
+                        type="range"
+                        id="p-top-bg-image-fade-end"
+                        min="0"
+                        max="100"
+                        value="0"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Ombres du logo du club</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input
+                      type="checkbox"
+                      id="p-club-logo-shadows-toggle"
+                      checked
+                    />
+                    <span>Activer les ombres</span>
+                  </label>
+                  <label class="field">
+                    <span>Couleur des ombres</span>
+                    <select id="p-club-logo-shadows-color">
+                      <option value="white" selected>Blanc</option>
+                      <option value="black">Noir</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Intensité des ombres
+                      <span id="p-club-logo-shadows-intensity-value">100%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="p-club-logo-shadows-intensity"
+                      min="0"
+                      max="100"
+                      value="100"
+                    />
+                  </label>
+                </div>
+              </details>
             </div>
           </details>
 
           <details class="collapsible">
             <summary>Typographie</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Couleur du texte</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Couleur du texte</span>
+                    <input type="color" id="p-color-text" value="#ffffff" />
+                  </label>
+                </div>
+              </details>
+
               <details class="collapsible collapsible-nested">
                 <summary>Prénom (haut)</summary>
                 <div class="collapsible-body">
@@ -740,6 +790,35 @@
               </details>
             </div>
           </details>
+
+          <details class="collapsible">
+            <summary>Sauvegardes</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="p-saved-select"></select>
+                <button class="btn-secondary" id="p-load" type="button">
+                  Charger
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="p-delete"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="p-save-name"
+                  placeholder="Nom de la bannière…"
+                />
+                <button class="btn-primary" id="p-save" type="button">
+                  💾 Enregistrer
+                </button>
+              </div>
+            </div>
+          </details>
         </section>
 
         <!-- ============ LINEUP EDITOR ============ -->
@@ -747,10 +826,10 @@
           <h2>Composition d'équipe</h2>
 
           <details class="collapsible">
-            <summary>Identité de l'équipe</summary>
+            <summary>Équipe et match</summary>
             <div class="collapsible-body">
               <details class="collapsible collapsible-nested">
-                <summary>Équipe</summary>
+                <summary>Nom et logo</summary>
                 <div class="collapsible-body">
                   <label class="field">
                     <span>Nom de l'équipe</span>
@@ -771,7 +850,7 @@
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Coach</summary>
+                <summary>Entraîneur</summary>
                 <div class="collapsible-body">
                   <div class="row">
                     <label class="field">
@@ -797,12 +876,13 @@
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Sous-texte (bas)</summary>
+                <summary>Tour, manche et sous-texte</summary>
                 <div class="collapsible-body">
                   <div class="row">
                     <label class="field">
                       <span>Tour</span>
                       <select id="l-footer-round">
+                        <option value="Group phase">Group phase</option>
                         <option value="Round of 32">Round of 32</option>
                         <option value="Round of 16">Round of 16</option>
                         <option value="Quarter Finals">Quarter Finals</option>
@@ -813,6 +893,9 @@
                     <label class="field">
                       <span>Manche</span>
                       <select id="l-footer-leg">
+                        <option value="Game 1">Game 1</option>
+                        <option value="Game 2">Game 2</option>
+                        <option value="Game 3">Game 3</option>
                         <option value="First Leg">First Leg</option>
                         <option value="Second Leg">Second Leg</option>
                         <option value="Replay">Replay</option>
@@ -830,57 +913,65 @@
                   </label>
                 </div>
               </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Couleur des textes</summary>
-                <div class="collapsible-body">
-                  <label class="field">
-                    <span>Couleur (équipe, joueurs, coach, sous-texte)</span>
-                    <input type="color" id="l-color-text" value="#ffffff" />
-                  </label>
-                </div>
-              </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Équipes sauvegardées</summary>
-                <div class="collapsible-body">
-                  <div class="saved-teams-controls">
-                    <select id="l-saved-team-select"></select>
-                    <button
-                      class="btn-secondary"
-                      id="l-load-team"
-                      type="button"
-                    >
-                      Charger
-                    </button>
-                    <button
-                      class="btn-secondary danger"
-                      id="l-delete-team"
-                      type="button"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div class="save-team-form">
-                    <input
-                      type="text"
-                      id="l-save-team-name"
-                      placeholder="Nom de la sauvegarde…"
-                    />
-                    <button class="btn-primary" id="l-save-team" type="button">
-                      💾 Enregistrer
-                    </button>
-                  </div>
-                </div>
-              </details>
             </div>
           </details>
 
           <details class="collapsible">
-            <summary>Apparence du maillot</summary>
+            <summary>Joueurs et placement</summary>
             <div class="collapsible-body">
               <details class="collapsible collapsible-nested">
-                <summary>Maillots & couleurs</summary>
+                <summary>Coller la liste des joueurs</summary>
+                <div class="collapsible-body">
+                  <p class="paste-comp-help">
+                    Colle la liste (numéro puis nom, une info par ligne). Les
+                    marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
+                    <code>(C)</code> ou un <code>C</code> collé au numéro =
+                    capitaine sont reconnus puis retirés du nom.
+                  </p>
+                  <label class="field">
+                    <span>Composition</span>
+                    <textarea
+                      id="l-paste-comp"
+                      rows="12"
+                      placeholder="1C&#10;Alonso (GA) (C)&#10;2&#10;Marquitos&#10;3&#10;Santamaría&#10;…"
+                    ></textarea>
+                  </label>
+                  <div class="paste-comp-actions">
+                    <button
+                      class="btn-primary"
+                      id="l-paste-comp-apply"
+                      type="button"
+                    >
+                      Remplir les joueurs
+                    </button>
+                    <span
+                      id="l-paste-comp-status"
+                      class="paste-comp-status"
+                    ></span>
+                  </div>
+                </div>
+              </details>
+
+              <label class="checkbox-field">
+                <input type="checkbox" id="l-show-grid" />
+                <span>Afficher la grille d'alignement</span>
+              </label>
+
+              <div id="l-starters" class="player-list"></div>
+              <div class="storage-info">
+                <span>💾 Sauvegarde automatique activée</span>
+                <button class="btn-secondary" id="l-reset" type="button">
+                  Réinitialiser la composition
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Maillots et numéros</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Maillots</summary>
                 <div class="collapsible-body">
                   <div class="row">
                     <label class="field">
@@ -939,14 +1030,6 @@
                       <input type="color" id="l-color-num-gk" value="#ffffff" />
                     </label>
                   </div>
-                  <label class="field">
-                    <span>Fond du numéro (maillot rayé)</span>
-                    <input
-                      type="color"
-                      id="l-color-number-plate"
-                      value="#111111"
-                    />
-                  </label>
                   <div class="row">
                     <label class="field">
                       <span>
@@ -992,34 +1075,54 @@
                       <option value="mono">Monospace</option>
                     </select>
                   </label>
+
+                  <label class="field" id="l-number-plate-color-field" hidden>
+                    <span>Couleur du carré derrière le numéro</span>
+                    <input
+                      type="color"
+                      id="l-color-number-plate"
+                      value="#111111"
+                    />
+                  </label>
                 </div>
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Kits sauvegardés (maillot + couleurs)</summary>
+                <summary>Ombres des maillots et du logo</summary>
                 <div class="collapsible-body">
-                  <div class="saved-teams-controls">
-                    <select id="l-saved-kit-select"></select>
-                    <button class="btn-secondary" id="l-load-kit" type="button">
-                      Appliquer
-                    </button>
-                    <button
-                      class="btn-secondary danger"
-                      id="l-delete-kit"
-                      type="button"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div class="save-team-form">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="l-shirt-shadows-toggle" checked />
+                    <span>Activer les ombres sur les maillots</span>
+                  </label>
+                  <label class="checkbox-field">
                     <input
-                      type="text"
-                      id="l-save-kit-name"
-                      placeholder="Nom du kit…"
+                      type="checkbox"
+                      id="l-team-logo-shadows-toggle"
+                      checked
                     />
-                    <button class="btn-primary" id="l-save-kit" type="button">
-                      💾 Enregistrer kit
-                    </button>
+                    <span>Activer les ombres sur le logo de l'équipe</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur des ombres</span>
+                      <select id="l-shirt-shadows-color">
+                        <option value="white" selected>Blanc</option>
+                        <option value="black">Noir</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span
+                        >Intensité
+                        <span id="l-shirt-shadows-intensity-value">100%</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-shirt-shadows-intensity"
+                        min="0"
+                        max="100"
+                        value="100"
+                      />
+                    </label>
                   </div>
                 </div>
               </details>
@@ -1027,10 +1130,10 @@
           </details>
 
           <details class="collapsible">
-            <summary>Apparence du terrain</summary>
+            <summary>Terrain et fond</summary>
             <div class="collapsible-body">
               <details class="collapsible collapsible-nested">
-                <summary>Fond du terrain</summary>
+                <summary>Couleurs du fond</summary>
                 <div class="collapsible-body">
                   <div class="row">
                     <label class="field">
@@ -1055,6 +1158,12 @@
                       value="100"
                     />
                   </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Image de fond</summary>
+                <div class="collapsible-body">
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-bg-image-toggle" />
                     <span>Image de fond du terrain</span>
@@ -1128,19 +1237,15 @@
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Lignes & guides</summary>
+                <summary>Rayures du terrain</summary>
                 <div class="collapsible-body">
-                  <label class="checkbox-field">
-                    <input type="checkbox" id="l-show-grid" />
-                    <span>Afficher la grille d'alignement</span>
-                  </label>
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-pitch-stripes" />
                     <span>Terrain rayé (10 bandes)</span>
                   </label>
                   <div class="row">
                     <label class="field">
-                      <span>Direction du fade</span>
+                      <span>Direction du dégradé</span>
                       <select id="l-stripes-fade-dir">
                         <option value="left" selected>← vers gauche</option>
                         <option value="right">→ vers droite</option>
@@ -1162,6 +1267,12 @@
                       />
                     </label>
                   </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Lignes du terrain</summary>
+                <div class="collapsible-body">
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-divider-toggle" />
                     <span>Ligne médiane + surface de réparation (teal)</span>
@@ -1199,45 +1310,22 @@
                   </div>
                 </div>
               </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Styles de fond sauvegardés</summary>
-                <div class="collapsible-body">
-                  <div class="saved-teams-controls">
-                    <select id="l-saved-style-select"></select>
-                    <button
-                      class="btn-secondary"
-                      id="l-load-style"
-                      type="button"
-                    >
-                      Appliquer
-                    </button>
-                    <button
-                      class="btn-secondary danger"
-                      id="l-delete-style"
-                      type="button"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div class="save-team-form">
-                    <input
-                      type="text"
-                      id="l-save-style-name"
-                      placeholder="Nom du style (ex: Bleu nuit)…"
-                    />
-                    <button class="btn-primary" id="l-save-style" type="button">
-                      💾 Enregistrer style
-                    </button>
-                  </div>
-                </div>
-              </details>
             </div>
           </details>
 
           <details class="collapsible">
             <summary>Typographie</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Couleur des textes</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Couleur (équipe, joueurs, coach, sous-texte)</span>
+                    <input type="color" id="l-color-text" value="#ffffff" />
+                  </label>
+                </div>
+              </details>
+
               <details class="collapsible collapsible-nested">
                 <summary>Nom de l'équipe</summary>
                 <div class="collapsible-body">
@@ -1278,90 +1366,6 @@
                         <option value="700">700 Bold</option>
                         <option value="800">800 Extra-Bold</option>
                         <option value="900">900 Black</option>
-                      </select>
-                    </label>
-                  </div>
-                </div>
-              </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Sous-texte (bas)</summary>
-                <div class="collapsible-body">
-                  <label class="field">
-                    <span>Police</span>
-                    <select id="l-footer-font">
-                      <option value="system" selected>Système</option>
-                      <option value="condensed">Barlow Condensed</option>
-                      <option value="cinzel">Cinzel (serif)</option>
-                      <option value="arial">Arial / Helvetica</option>
-                      <option value="impact">Impact</option>
-                      <option value="mono">Monospace</option>
-                    </select>
-                  </label>
-                  <div class="row">
-                    <label class="field">
-                      <span
-                        >Taille <span id="l-footer-size-value">15px</span></span
-                      >
-                      <input
-                        type="range"
-                        id="l-footer-size"
-                        min="10"
-                        max="32"
-                        value="15"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Poids (normal)</span>
-                      <select id="l-footer-weight">
-                        <option value="100" selected>100 Thin</option>
-                        <option value="300">300 Light</option>
-                        <option value="400">400 Regular</option>
-                        <option value="500">500 Medium</option>
-                        <option value="600">600 Semibold</option>
-                        <option value="700">700 Bold</option>
-                      </select>
-                    </label>
-                  </div>
-                </div>
-              </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Coach</summary>
-                <div class="collapsible-body">
-                  <label class="field">
-                    <span>Police</span>
-                    <select id="l-coach-font">
-                      <option value="system" selected>Système</option>
-                      <option value="condensed">Barlow Condensed</option>
-                      <option value="cinzel">Cinzel (serif)</option>
-                      <option value="arial">Arial / Helvetica</option>
-                      <option value="impact">Impact</option>
-                      <option value="mono">Monospace</option>
-                    </select>
-                  </label>
-                  <div class="row">
-                    <label class="field">
-                      <span
-                        >Taille <span id="l-coach-size-value">18px</span></span
-                      >
-                      <input
-                        type="range"
-                        id="l-coach-size"
-                        min="10"
-                        max="36"
-                        value="18"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Poids (prénom)</span>
-                      <select id="l-coach-weight">
-                        <option value="100" selected>100 Thin</option>
-                        <option value="300">300 Light</option>
-                        <option value="400">400 Regular</option>
-                        <option value="500">500 Medium</option>
-                        <option value="600">600 Semibold</option>
-                        <option value="700">700 Bold</option>
                       </select>
                     </label>
                   </div>
@@ -1413,20 +1417,109 @@
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Typographies sauvegardées</summary>
+                <summary>Nom de l’entraîneur</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="l-coach-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="l-coach-size-value">18px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-coach-size"
+                        min="10"
+                        max="36"
+                        value="18"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids (prénom)</span>
+                      <select id="l-coach-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Sous-texte du match</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="l-footer-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille <span id="l-footer-size-value">15px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="l-footer-size"
+                        min="10"
+                        max="32"
+                        value="15"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids (normal)</span>
+                      <select id="l-footer-weight">
+                        <option value="100" selected>100 Thin</option>
+                        <option value="300">300 Light</option>
+                        <option value="400">400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Sauvegardes</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Équipes</summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
-                    <select id="l-saved-typo-select"></select>
+                    <select id="l-saved-team-select"></select>
                     <button
                       class="btn-secondary"
-                      id="l-load-typo"
+                      id="l-load-team"
                       type="button"
                     >
-                      Appliquer
+                      Charger
                     </button>
                     <button
                       class="btn-secondary danger"
-                      id="l-delete-typo"
+                      id="l-delete-team"
                       type="button"
                     >
                       ×
@@ -1435,66 +1528,18 @@
                   <div class="save-team-form">
                     <input
                       type="text"
-                      id="l-save-typo-name"
-                      placeholder="Nom de la typographie…"
+                      id="l-save-team-name"
+                      placeholder="Nom de la sauvegarde…"
                     />
-                    <button class="btn-primary" id="l-save-typo" type="button">
-                      💾 Enregistrer typographie
+                    <button class="btn-primary" id="l-save-team" type="button">
+                      💾 Enregistrer
                     </button>
                   </div>
                 </div>
               </details>
-            </div>
-          </details>
-
-          <details class="collapsible">
-            <summary>Formation</summary>
-            <div class="collapsible-body">
-              <details class="collapsible collapsible-nested">
-                <summary>Coller une composition</summary>
-                <div class="collapsible-body">
-                  <p class="paste-comp-help">
-                    Colle la liste (numéro puis nom, une info par ligne). Les
-                    marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
-                    <code>(C)</code> ou un <code>C</code> collé au numéro =
-                    capitaine sont reconnus puis retirés du nom.
-                  </p>
-                  <label class="field">
-                    <span>Composition</span>
-                    <textarea
-                      id="l-paste-comp"
-                      rows="12"
-                      placeholder="1C&#10;Alonso (GA) (C)&#10;2&#10;Marquitos&#10;3&#10;Santamaría&#10;…"
-                    ></textarea>
-                  </label>
-                  <div class="paste-comp-actions">
-                    <button
-                      class="btn-primary"
-                      id="l-paste-comp-apply"
-                      type="button"
-                    >
-                      Remplir les joueurs
-                    </button>
-                    <span
-                      id="l-paste-comp-status"
-                      class="paste-comp-status"
-                    ></span>
-                  </div>
-                </div>
-              </details>
-
-              <div id="l-starters" class="player-list"></div>
-              <div class="storage-info">
-                <span>💾 Sauvegarde automatique activée</span>
-                <button class="btn-secondary" id="l-reset" type="button">
-                  Réinitialiser
-                </button>
-              </div>
 
               <details class="collapsible collapsible-nested">
-                <summary>
-                  Formations sauvegardées (positions uniquement)
-                </summary>
+                <summary>Formations (positions)</summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
                     <select id="l-saved-formation-select"></select>
@@ -1529,6 +1574,101 @@
                   </div>
                 </div>
               </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Kits (maillots et couleurs)</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="l-saved-kit-select"></select>
+                    <button class="btn-secondary" id="l-load-kit" type="button">
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-kit"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="l-save-kit-name"
+                      placeholder="Nom du kit…"
+                    />
+                    <button class="btn-primary" id="l-save-kit" type="button">
+                      💾 Enregistrer kit
+                    </button>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Styles de fond</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="l-saved-style-select"></select>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-style"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-style"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="l-save-style-name"
+                      placeholder="Nom du style (ex: Bleu nuit)…"
+                    />
+                    <button class="btn-primary" id="l-save-style" type="button">
+                      💾 Enregistrer style
+                    </button>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Typographies</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="l-saved-typo-select"></select>
+                    <button
+                      class="btn-secondary"
+                      id="l-load-typo"
+                      type="button"
+                    >
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="l-delete-typo"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="l-save-typo-name"
+                      placeholder="Nom de la typographie…"
+                    />
+                    <button class="btn-primary" id="l-save-typo" type="button">
+                      💾 Enregistrer typographie
+                    </button>
+                  </div>
+                </div>
+              </details>
             </div>
           </details>
         </section>
@@ -1538,7 +1678,7 @@
           <h2>Bandeau score live</h2>
 
           <details class="collapsible">
-            <summary>Équipes</summary>
+            <summary>Équipes et score</summary>
             <div class="collapsible-body">
               <details class="collapsible collapsible-nested">
                 <summary>Équipe domicile</summary>
@@ -1583,8 +1723,16 @@
                       </div>
                     </label>
                     <label class="field">
-                      <span>Couleur</span>
+                      <span>Couleur haute</span>
                       <input type="color" id="s-home-color" value="#c00000" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur basse</span>
+                      <input
+                        type="color"
+                        id="s-home-color-2"
+                        value="#c00000"
+                      />
                     </label>
                   </div>
                 </div>
@@ -1633,8 +1781,16 @@
                       </div>
                     </label>
                     <label class="field">
-                      <span>Couleur</span>
+                      <span>Couleur haute</span>
                       <input type="color" id="s-away-color" value="#1a3a8a" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur basse</span>
+                      <input
+                        type="color"
+                        id="s-away-color-2"
+                        value="#1a3a8a"
+                      />
                     </label>
                   </div>
                 </div>
@@ -1653,11 +1809,15 @@
                   value="6"
                 />
               </label>
+              <label class="field">
+                <span>Espacement avec le score <span id="s-team-gap-value">6 px</span></span>
+                <input type="range" id="s-team-gap" min="0" max="30" value="6" />
+              </label>
               <button
                 class="btn-secondary"
                 id="s-swap-teams"
                 type="button"
-                title="Inverser les équipes domicile et extérieur (code, score, couleur, agrégé)"
+                title="Inverser les équipes, reporter le résultat à l’agrégé et remettre le score du match à zéro"
               >
                 ⇄ Inverser domicile / extérieur
               </button>
@@ -1665,317 +1825,372 @@
           </details>
 
           <details class="collapsible">
-            <summary>Score agrégé</summary>
+            <summary>Scores complémentaires</summary>
             <div class="collapsible-body">
-              <label class="checkbox-field">
-                <input type="checkbox" id="s-aggregate-toggle" />
-                <span>Afficher le score agrégé à droite</span>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Domicile</span>
-                  <div class="number-stepper">
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="-1"
-                      data-target="s-aggregate-home"
-                      aria-label="Diminuer"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="s-aggregate-home"
-                      value="0"
-                      min="0"
-                    />
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="1"
-                      data-target="s-aggregate-home"
-                      aria-label="Augmenter"
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-                <label class="field">
-                  <span>Extérieur</span>
-                  <div class="number-stepper">
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="-1"
-                      data-target="s-aggregate-away"
-                      aria-label="Diminuer"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="s-aggregate-away"
-                      value="0"
-                      min="0"
-                    />
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="1"
-                      data-target="s-aggregate-away"
-                      aria-label="Augmenter"
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </details>
-
-          <details class="collapsible">
-            <summary>Tirs au but en direct</summary>
-            <div class="collapsible-body">
-              <label class="checkbox-field">
-                <input type="checkbox" id="s-penalty-toggle" />
-                <span>Afficher les tirs au but sous le score</span>
-              </label>
-              <p class="tn-info">
-                Ajoute chaque tir au fur et à mesure. Le cumul est calculé
-                automatiquement.
-              </p>
-              <div class="row">
-                <div class="penalty-team-controls">
-                  <strong id="s-penalty-home-label">LIV</strong>
+              <details class="collapsible collapsible-nested">
+                <summary>Score agrégé</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-aggregate-toggle" />
+                    <span>Afficher le score agrégé à droite</span>
+                  </label>
                   <div class="row">
-                    <button
-                      class="btn-secondary"
-                      id="s-penalty-home-goal"
-                      type="button"
-                    >
-                      ✓ Réussi
-                    </button>
-                    <button
-                      class="btn-secondary"
-                      id="s-penalty-home-miss"
-                      type="button"
-                    >
-                      × Manqué
-                    </button>
+                    <label class="field">
+                      <span>Domicile</span>
+                      <div class="number-stepper">
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="s-aggregate-home"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          id="s-aggregate-home"
+                          value="0"
+                          min="0"
+                        />
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="s-aggregate-home"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
+                    <label class="field">
+                      <span>Extérieur</span>
+                      <div class="number-stepper">
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="s-aggregate-away"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          id="s-aggregate-away"
+                          value="0"
+                          min="0"
+                        />
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="s-aggregate-away"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Tirs au but en direct</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-penalty-toggle" />
+                    <span>Afficher les tirs au but sous le score</span>
+                  </label>
+                  <p class="tn-info">
+                    Ajoute chaque tir au fur et à mesure. Le cumul est calculé
+                    automatiquement.
+                  </p>
+                  <label class="field">
+                    <span>Couleur du fond des cases</span>
+                    <input type="color" id="s-penalty-color" value="#0a1a4a" />
+                  </label>
+                  <div class="row">
+                    <div class="penalty-team-controls">
+                      <strong id="s-penalty-home-label">LIV</strong>
+                      <div class="row">
+                        <button
+                          class="btn-secondary"
+                          id="s-penalty-home-goal"
+                          type="button"
+                        >
+                          ✓ Réussi
+                        </button>
+                        <button
+                          class="btn-secondary"
+                          id="s-penalty-home-miss"
+                          type="button"
+                        >
+                          × Manqué
+                        </button>
+                      </div>
+                      <button
+                        class="btn-secondary"
+                        id="s-penalty-home-undo"
+                        type="button"
+                      >
+                        Annuler le dernier tir
+                      </button>
+                    </div>
+                    <div class="penalty-team-controls">
+                      <strong id="s-penalty-away-label">RMA</strong>
+                      <div class="row">
+                        <button
+                          class="btn-secondary"
+                          id="s-penalty-away-goal"
+                          type="button"
+                        >
+                          ✓ Réussi
+                        </button>
+                        <button
+                          class="btn-secondary"
+                          id="s-penalty-away-miss"
+                          type="button"
+                        >
+                          × Manqué
+                        </button>
+                      </div>
+                      <button
+                        class="btn-secondary"
+                        id="s-penalty-away-undo"
+                        type="button"
+                      >
+                        Annuler le dernier tir
+                      </button>
+                    </div>
                   </div>
                   <button
-                    class="btn-secondary"
-                    id="s-penalty-home-undo"
+                    class="btn-secondary danger"
+                    id="s-penalty-reset"
                     type="button"
                   >
-                    Annuler le dernier tir
+                    Réinitialiser les tirs
                   </button>
                 </div>
-                <div class="penalty-team-controls">
-                  <strong id="s-penalty-away-label">RMA</strong>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Habillage du bandeau</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Fond du score et chevrons</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Couleur centrale</span>
+                    <input type="color" id="s-bg" value="#0a1a4a" />
+                  </label>
+                  <label class="field">
+                    <span>Opacité commune <span id="s-bg-opacity-value">100%</span></span>
+                    <input
+                      type="range"
+                      id="s-bg-opacity"
+                      min="0"
+                      max="100"
+                      value="100"
+                    />
+                  </label>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-chevron-toggle" />
+                    <span>Motif à chevrons</span>
+                  </label>
                   <div class="row">
-                    <button
-                      class="btn-secondary"
-                      id="s-penalty-away-goal"
-                      type="button"
-                    >
-                      ✓ Réussi
-                    </button>
-                    <button
-                      class="btn-secondary"
-                      id="s-penalty-away-miss"
-                      type="button"
-                    >
-                      × Manqué
-                    </button>
+                    <label class="field">
+                      <span>Couleur des côtés du dégradé</span>
+                      <input type="color" id="s-chevron-side-color" value="#2420a6" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur des chevrons</span>
+                      <input type="color" id="s-chevron-color" value="#818cff" />
+                    </label>
                   </div>
-                  <button
-                    class="btn-secondary"
-                    id="s-penalty-away-undo"
-                    type="button"
-                  >
-                    Annuler le dernier tir
-                  </button>
                 </div>
-              </div>
-              <button
-                class="btn-secondary danger"
-                id="s-penalty-reset"
-                type="button"
-              >
-                Réinitialiser les tirs
-              </button>
-            </div>
-          </details>
+              </details>
 
-          <details class="collapsible">
-            <summary>Logo à gauche</summary>
-            <div class="collapsible-body">
-              <label class="field">
-                <span>Logo</span>
-                <select id="s-left-logo">
-                  <option value="ucl">Ligue des Champions (ballon)</option>
-                  <option value="uefa">Logo UEFA</option>
-                  <option value="fifa100">Logo FIFA 100</option>
-                  <option value="euro84">Euro 1984</option>
-                </select>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Couleur du fond</span>
-                  <input type="color" id="s-ball-box-color" value="#1a1a1a" />
-                </label>
-                <label class="field">
-                  <span>Couleur du ballon</span>
-                  <input type="color" id="s-ball-color" value="#ffffff" />
-                </label>
-              </div>
-            </div>
-          </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Chrono</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-timer-toggle" checked />
+                    <span>Afficher la case du chrono</span>
+                  </label>
+                  <label class="field">
+                    <span>Couleur du fond du chrono</span>
+                    <input type="color" id="s-timer-bg" value="#0a1a4a" />
+                  </label>
+                </div>
+              </details>
 
-          <details class="collapsible">
-            <summary>Trophée (séparateur)</summary>
-            <div class="collapsible-body">
-              <label class="field">
-                <span>Logo du séparateur</span>
-                <select id="s-trophy-logo">
-                  <option value="trophy_logo.png">Trophée classique</option>
-                  <option value="trophy_logo_UCL.png">
-                    Trophée Ligue des Champions
-                  </option>
-                  <option value="trophy_logo_SuperCup.png">
-                    Trophée Supercoupe de l'UEFA
-                  </option>
-                  <option value="trophy_logo_IntercontinentalCup.png">
-                    Coupe intercontinentale FIFA 2025
-                  </option>
-                  <option value="trophy_logo_Euro.png">Trophée Euro</option>
-                </select>
-              </label>
-              <label class="checkbox-field">
-                <input type="checkbox" id="s-trophy-white-toggle" checked />
-                <span>Trophée en blanc</span>
-              </label>
-              <label class="field">
-                <span>Couleur du trophée</span>
-                <input type="color" id="s-trophy-color" value="#ffffff" />
-              </label>
-              <label class="field">
-                <span
-                  >Taille du trophée
-                  <span id="s-trophy-size-value">24px</span></span
-                >
-                <input
-                  type="range"
-                  id="s-trophy-size"
-                  min="0"
-                  max="48"
-                  value="24"
-                />
-              </label>
-            </div>
-          </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Image de fond</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-bg-image-toggle" />
+                    <span>Activer l'image de fond</span>
+                  </label>
+                  <label class="field">
+                    <span>Choix de l'image (préréglages)</span>
+                    <select id="s-bg-image-select">
+                      <option value="">Aucune image</option>
+                      <option value="backgrounds/lineup_bg_01.png">
+                        Background 01
+                      </option>
+                      <option value="backgrounds/lineup_bg_02.png">
+                        Background 02
+                      </option>
+                      <option value="backgrounds/lineup_bg_03.png">
+                        Background 03
+                      </option>
+                      <option value="backgrounds/lineup_bg_04.png">
+                        Background 04
+                      </option>
+                      <option value="backgrounds/lineup_bg_05.png">
+                        Background 05
+                      </option>
+                      <option value="backgrounds/lineup_bg_06.png">
+                        Background 06
+                      </option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Importer une image personnalisée</span>
+                    <input type="file" id="s-bg-image-file" accept="image/*" />
+                  </label>
+                  <button class="btn-secondary" id="s-bg-image-clear" type="button">
+                    Retirer l'image personnalisée
+                  </button>
+                  <label class="field">
+                    <span
+                      >Opacité de l'image
+                      <span id="s-bg-image-opacity-value">50%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="s-bg-image-opacity"
+                      min="0"
+                      max="100"
+                      value="50"
+                    />
+                  </label>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-bg-image-fade-toggle" />
+                    <span>Dégradé d'opacité sur l'image</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Direction du fade</span>
+                      <select id="s-bg-image-fade-dir">
+                        <option value="right">→ vers droite</option>
+                        <option value="left">← vers gauche</option>
+                        <option value="bottom">↓ vers bas</option>
+                        <option value="top">↑ vers haut</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span
+                        >Opacité fin
+                        <span id="s-bg-image-fade-end-value">0%</span></span
+                      >
+                      <input
+                        type="range"
+                        id="s-bg-image-fade-end"
+                        min="0"
+                        max="100"
+                        value="0"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </details>
 
-          <details class="collapsible">
-            <summary>Fond central</summary>
-            <div class="collapsible-body">
-              <label class="field">
-                <span>Couleur</span>
-                <input type="color" id="s-bg" value="#0a1a4a" />
-              </label>
-              <label class="field">
-                <span>Opacité <span id="s-bg-opacity-value">100%</span></span>
-                <input
-                  type="range"
-                  id="s-bg-opacity"
-                  min="0"
-                  max="100"
-                  value="100"
-                />
-              </label>
-            </div>
-          </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Logo à gauche</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Logo</span>
+                    <select id="s-left-logo">
+                      <option value="ucl">Ligue des Champions (ballon)</option>
+                      <option value="uefa">Logo UEFA</option>
+                      <option value="fifa100">Logo FIFA 100</option>
+                      <option value="euro84">Euro 1984</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Taille du logo
+                      <span id="s-left-logo-size-value">30px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="s-left-logo-size"
+                      min="10"
+                      max="50"
+                      value="30"
+                    />
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur du fond</span>
+                      <input type="color" id="s-ball-box-color" value="#1a1a1a" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur du ballon</span>
+                      <input type="color" id="s-ball-color" value="#ffffff" />
+                    </label>
+                  </div>
+                </div>
+              </details>
 
-          <details class="collapsible">
-            <summary>Image de fond</summary>
-            <div class="collapsible-body">
-              <label class="checkbox-field">
-                <input type="checkbox" id="s-bg-image-toggle" />
-                <span>Activer l'image de fond</span>
-              </label>
-              <label class="field">
-                <span>Choix de l'image (préréglages)</span>
-                <select id="s-bg-image-select">
-                  <option value="">Aucune image</option>
-                  <option value="backgrounds/lineup_bg_01.png">
-                    Background 01
-                  </option>
-                  <option value="backgrounds/lineup_bg_02.png">
-                    Background 02
-                  </option>
-                  <option value="backgrounds/lineup_bg_03.png">
-                    Background 03
-                  </option>
-                  <option value="backgrounds/lineup_bg_04.png">
-                    Background 04
-                  </option>
-                  <option value="backgrounds/lineup_bg_05.png">
-                    Background 05
-                  </option>
-                  <option value="backgrounds/lineup_bg_06.png">
-                    Background 06
-                  </option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Importer une image personnalisée</span>
-                <input type="file" id="s-bg-image-file" accept="image/*" />
-              </label>
-              <button class="btn-secondary" id="s-bg-image-clear" type="button">
-                Retirer l'image personnalisée
-              </button>
-              <label class="field">
-                <span
-                  >Opacité de l'image
-                  <span id="s-bg-image-opacity-value">50%</span></span
-                >
-                <input
-                  type="range"
-                  id="s-bg-image-opacity"
-                  min="0"
-                  max="100"
-                  value="50"
-                />
-              </label>
-              <label class="checkbox-field">
-                <input type="checkbox" id="s-bg-image-fade-toggle" />
-                <span>Dégradé d'opacité sur l'image</span>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Direction du fade</span>
-                  <select id="s-bg-image-fade-dir">
-                    <option value="right">→ vers droite</option>
-                    <option value="left">← vers gauche</option>
-                    <option value="bottom">↓ vers bas</option>
-                    <option value="top">↑ vers haut</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span
-                    >Opacité fin
-                    <span id="s-bg-image-fade-end-value">0%</span></span
-                  >
-                  <input
-                    type="range"
-                    id="s-bg-image-fade-end"
-                    min="0"
-                    max="100"
-                    value="0"
-                  />
-                </label>
-              </div>
+              <details class="collapsible collapsible-nested">
+                <summary>Trophée (séparateur)</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Logo du séparateur</span>
+                    <select id="s-trophy-logo">
+                      <option value="trophy_logo.png">Trophée classique</option>
+                      <option value="trophy_logo_UCL.png">
+                        Trophée Ligue des Champions
+                      </option>
+                      <option value="trophy_logo_SuperCup.png">
+                        Trophée Supercoupe de l'UEFA
+                      </option>
+                      <option value="trophy_logo_IntercontinentalCup.png">
+                        Coupe intercontinentale FIFA 2025
+                      </option>
+                      <option value="trophy_logo_Euro.png">Trophée Euro</option>
+                    </select>
+                  </label>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="s-trophy-white-toggle" checked />
+                    <span>Trophée en blanc</span>
+                  </label>
+                  <label class="field">
+                    <span>Couleur du trophée</span>
+                    <input type="color" id="s-trophy-color" value="#ffffff" />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Taille du trophée
+                      <span id="s-trophy-size-value">24px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="s-trophy-size"
+                      min="0"
+                      max="48"
+                      value="24"
+                    />
+                  </label>
+                </div>
+              </details>
             </div>
           </details>
 
@@ -2137,17 +2352,525 @@
           </label>
         </section>
 
+        <section class="editor-section" data-editor="shorts">
+          <h2>Live Score pour Shorts</h2>
+          <p class="tn-info">
+            Bandeau horizontal à placer en haut du Short. Pour les logos,
+            choisis les fichiers dans
+            <code>./Logos/</code>.
+            Les tirs au but se règlent indépendamment dans leur section dédiée.
+          </p>
+
+          <details class="collapsible" open>
+            <summary>Équipes et match</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested" open>
+                <summary>Tour et saison</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Saison / année</span>
+                      <input type="text" id="shorts-season" value="2025/26" />
+                    </label>
+                    <label class="field">
+                      <span>Tour</span>
+                      <select id="shorts-round">
+                        <option value="ROUND OF 16">Round of 16</option>
+                        <option value="QUARTER-FINALS">Quart de finale</option>
+                        <option value="SEMI-FINALS">Demi-finales</option>
+                        <option value="FINAL">Finale</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Équipe domicile</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Logo de l'équipe</span>
+                    <input
+                      type="file"
+                      id="shorts-home-logo-file"
+                      accept="image/*"
+                    />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="shorts-home-logo-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
+                  <label class="field">
+                    <span>Score (laisser vide pour un espace blanc)</span>
+                    <input
+                      type="number"
+                      id="shorts-home-score"
+                      min="0"
+                      inputmode="numeric"
+                      placeholder=" "
+                    />
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Équipe extérieure</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Logo de l'équipe</span>
+                    <input
+                      type="file"
+                      id="shorts-away-logo-file"
+                      accept="image/*"
+                    />
+                  </label>
+                  <button
+                    class="btn-secondary"
+                    id="shorts-away-logo-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
+                  <label class="field">
+                    <span>Score (laisser vide pour un espace blanc)</span>
+                    <input
+                      type="number"
+                      id="shorts-away-score"
+                      min="0"
+                      inputmode="numeric"
+                      placeholder=" "
+                    />
+                  </label>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Tirs au but</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="shorts-penalty-toggle" />
+                <span>Afficher les tirs au but dans le bandeau Shorts</span>
+              </label>
+              <p class="tn-info">
+                Saisis les tentatives indépendamment de l’onglet Live Score.
+              </p>
+              <label class="field">
+                <span>Couleur de fond des cases</span>
+                <input
+                  type="color"
+                  id="shorts-penalty-color"
+                  value="#0a1a4a"
+                />
+              </label>
+              <label class="field">
+                <span
+                  >Largeur des fonds des tirs
+                  <span id="shorts-penalty-width-value">135 px</span></span
+                >
+                <input
+                  type="range"
+                  id="shorts-penalty-width"
+                  min="155"
+                  max="360"
+                  step="5"
+                  value="155"
+                />
+              </label>
+              <p class="tn-info">
+                La largeur minimale permet d’afficher cinq tirs sur une ligne.
+                À partir du sixième, ils passent à la ligne suivante.
+              </p>
+              <div class="row">
+                <div class="penalty-team-controls">
+                  <strong>Équipe domicile</strong>
+                  <div class="row">
+                    <button
+                      class="btn-secondary"
+                      id="shorts-penalty-home-goal"
+                      type="button"
+                    >
+                      ✓ Réussi
+                    </button>
+                    <button
+                      class="btn-secondary"
+                      id="shorts-penalty-home-miss"
+                      type="button"
+                    >
+                      × Manqué
+                    </button>
+                  </div>
+                  <button
+                    class="btn-secondary"
+                    id="shorts-penalty-home-undo"
+                    type="button"
+                  >
+                    Annuler le dernier tir
+                  </button>
+                </div>
+                <div class="penalty-team-controls">
+                  <strong>Équipe extérieure</strong>
+                  <div class="row">
+                    <button
+                      class="btn-secondary"
+                      id="shorts-penalty-away-goal"
+                      type="button"
+                    >
+                      ✓ Réussi
+                    </button>
+                    <button
+                      class="btn-secondary"
+                      id="shorts-penalty-away-miss"
+                      type="button"
+                    >
+                      × Manqué
+                    </button>
+                  </div>
+                  <button
+                    class="btn-secondary"
+                    id="shorts-penalty-away-undo"
+                    type="button"
+                  >
+                    Annuler le dernier tir
+                  </button>
+                </div>
+              </div>
+              <button
+                class="btn-secondary danger"
+                id="shorts-penalty-reset"
+                type="button"
+              >
+                Réinitialiser les tirs Shorts
+              </button>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Habillage du bandeau</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Dimensions du bloc central</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span
+                      >Largeur du bloc central
+                      <span id="shorts-center-width-value">320 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-center-width"
+                      min="120"
+                      max="340"
+                      step="10"
+                      value="320"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Position verticale du bloc tour / saison (− haut / + bas)
+                      <span id="shorts-center-vertical-value">0 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-center-vertical"
+                      min="-80"
+                      max="80"
+                      step="4"
+                      value="0"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Largeur des cases de score
+                      <span id="shorts-score-width-value">90 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-score-width"
+                      min="70"
+                      max="160"
+                      step="10"
+                      value="90"
+                    />
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Couleurs et bordure du bloc central</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Bordure du bloc score — couleur de départ</span>
+                    <input
+                      type="color"
+                      id="shorts-border-start"
+                      value="#ffffff"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Bordure du bloc score — couleur de fin</span>
+                    <input
+                      type="color"
+                      id="shorts-border-end"
+                      value="#ffffff"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Épaisseur de la bordure du bloc score
+                      <span id="shorts-border-width-value">2 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-border-width"
+                      min="1"
+                      max="8"
+                      step="1"
+                      value="2"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Fond de la case tour / saison</span>
+                    <input type="color" id="shorts-center-bg" value="#0a1228" />
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Typographie du tour et de la saison</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police du tour et de la saison</span>
+                    <select id="shorts-meta-font">
+                      <option value="montserrat">Montserrat</option>
+                      <option value="system">System</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Taille de la police du tour et de la saison
+                      <span id="shorts-meta-font-size-value">23 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-meta-font-size"
+                      min="10"
+                      max="40"
+                      step="1"
+                      value="23"
+                    />
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Taille et espacement des logos d’équipe</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span
+                      >Taille des logos des clubs
+                      <span id="shorts-logo-size-value">340 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-logo-size"
+                      min="180"
+                      max="800"
+                      step="10"
+                      value="340"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Espace entre les logos et le bloc central
+                      <span id="shorts-logo-gap-value">20 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-logo-gap"
+                      min="0"
+                      max="200"
+                      step="5"
+                      value="20"
+                    />
+                  </label>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Compétition</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Choix et position du logo</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Logo de la compétition</span>
+                    <select id="shorts-competition-logo-select">
+                      <option value="">Aucun logo</option>
+                      <option value="./Logos/ucl_full_logo.png" selected>
+                        UEFA Champions League
+                      </option>
+                      <option value="./Logos/UEFA_Super_Cup.png">
+                        UEFA Super Cup
+                      </option>
+                      <option value="./Logos/trophy_logo_IntercontinentalCup.png">
+                        FIFA Intercontinental Cup
+                      </option>
+                      <option value="./Logos/trophy_logo.png">
+                        Logo de trophée
+                      </option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Logo personnalisé (optionnel)</span>
+                    <input
+                      type="file"
+                      id="shorts-competition-logo-file"
+                      accept="image/*"
+                    />
+                  </label>
+                  <label class="checkbox-field">
+                    <input
+                      type="checkbox"
+                      id="shorts-competition-logo-white"
+                      checked
+                    />
+                    <span>Convertir le logo en blanc</span>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Taille du logo de la compétition
+                      <span id="shorts-competition-logo-size-value">64 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-competition-logo-size"
+                      min="40"
+                      max="192"
+                      step="4"
+                      value="64"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Position verticale du logo de compétition (− haut / + bas)
+                      <span id="shorts-competition-logo-vertical-value"
+                        >0 px</span
+                      ></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-competition-logo-vertical"
+                      min="-100"
+                      max="40"
+                      step="4"
+                      value="0"
+                    />
+                  </label>
+
+                  <button
+                    class="btn-secondary"
+                    id="shorts-competition-logo-clear"
+                    type="button"
+                  >
+                    Retirer le logo
+                  </button>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Fond et bordure du cadre</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Fond du cadre du logo de compétition</span>
+                    <input
+                      type="color"
+                      id="shorts-competition-bg"
+                      value="#0a1228"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Bordure du logo — couleur de départ</span>
+                    <input
+                      type="color"
+                      id="shorts-competition-border-start"
+                      value="#ffffff"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Bordure du logo — couleur de fin</span>
+                    <input
+                      type="color"
+                      id="shorts-competition-border-end"
+                      value="#ffffff"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Épaisseur de la bordure du logo
+                      <span id="shorts-competition-border-width-value">2 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-competition-border-width"
+                      min="1"
+                      max="8"
+                      step="1"
+                      value="2"
+                    />
+                  </label>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Sauvegardes</summary>
+            <div class="collapsible-body">
+              <div class="saved-teams-controls">
+                <select id="shorts-saved-select"></select>
+                <button class="btn-secondary" id="shorts-load" type="button">
+                  Charger
+                </button>
+                <button
+                  class="btn-secondary danger"
+                  id="shorts-delete"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="shorts-save-name"
+                  placeholder="Nom de la sauvegarde…"
+                />
+                <button class="btn-primary" id="shorts-save" type="button">
+                  💾 Enregistrer
+                </button>
+              </div>
+            </div>
+          </details>
+        </section>
+
         <!-- ============ SHOWDOWN EDITOR ============ -->
         <section class="editor-section" data-editor="showdown">
           <h2>Showdown (panel match)</h2>
 
-          <button class="btn-secondary" id="sd-swap-teams" type="button">
-            ⇄ Intervertir les équipes
-          </button>
-
           <details class="collapsible">
-            <summary>Contenu</summary>
+            <summary>Équipes et match</summary>
             <div class="collapsible-body">
+              <button class="btn-secondary" id="sd-swap-teams" type="button">
+                ⇄ Intervertir les équipes
+              </button>
+
               <details class="collapsible collapsible-nested">
                 <summary>Équipe 1 (gauche)</summary>
                 <div class="collapsible-body">
@@ -2195,12 +2918,13 @@
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Match</summary>
+                <summary>Informations du match</summary>
                 <div class="collapsible-body">
                   <div class="row">
                     <label class="field">
                       <span>Tour</span>
                       <select id="sd-round">
+                        <option value="Group phase">Group phase</option>
                         <option value="Round of 32">Round of 32</option>
                         <option value="Round of 16">Round of 16</option>
                         <option value="Quarter Finals" selected>
@@ -2213,6 +2937,9 @@
                     <label class="field">
                       <span>Manche</span>
                       <select id="sd-leg">
+                        <option value="Game 1">Game 1</option>
+                        <option value="Game 2">Game 2</option>
+                        <option value="Game 3">Game 3</option>
                         <option value="First Leg" selected>First Leg</option>
                         <option value="Second Leg">Second Leg</option>
                         <option value="Replay">Replay</option>
@@ -2237,150 +2964,161 @@
                     <span>Arbitre</span>
                     <input type="text" id="sd-referee" value="D. ORSATO" />
                   </label>
+                  <label class="field">
+                    <span>Nationalité de l’arbitre</span>
+                    <input type="text" id="sd-referee-country" maxlength="3" placeholder="Ex. FRA" />
+                  </label>
                 </div>
               </details>
             </div>
           </details>
 
           <details class="collapsible">
-            <summary>Résultat & buteurs</summary>
+            <summary>Score et buteurs</summary>
             <div class="collapsible-body">
-              <label class="checkbox-field">
-                <input type="checkbox" id="sd-result-toggle" />
-                <span>Afficher le score au centre</span>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Score équipe 1</span>
-                  <div class="number-stepper">
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="-1"
-                      data-target="sd-score-1"
-                      aria-label="Diminuer"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="sd-score-1"
-                      value="2"
-                      min="0"
-                      max="99"
-                    />
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="1"
-                      data-target="sd-score-1"
-                      aria-label="Augmenter"
-                    >
-                      +
-                    </button>
+              <details class="collapsible collapsible-nested">
+                <summary>Score du match</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-result-toggle" />
+                    <span>Afficher le score au centre</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Score équipe 1</span>
+                      <div class="number-stepper">
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="sd-score-1"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          id="sd-score-1"
+                          value="2"
+                          min="0"
+                          max="99"
+                        />
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="sd-score-1"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
+                    <label class="field">
+                      <span>Score équipe 2</span>
+                      <div class="number-stepper">
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="sd-score-2"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          id="sd-score-2"
+                          value="1"
+                          min="0"
+                          max="99"
+                        />
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="sd-score-2"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
                   </div>
-                </label>
-                <label class="field">
-                  <span>Score équipe 2</span>
-                  <div class="number-stepper">
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="-1"
-                      data-target="sd-score-2"
-                      aria-label="Diminuer"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="sd-score-2"
-                      value="1"
-                      min="0"
-                      max="99"
-                    />
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="1"
-                      data-target="sd-score-2"
-                      aria-label="Augmenter"
-                    >
-                      +
-                    </button>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Tirs au but</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-penalty-toggle" />
+                    <span>Afficher le score des tirs au but</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Tirs au but équipe 1</span>
+                      <div class="number-stepper">
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="sd-penalty-score-1"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          id="sd-penalty-score-1"
+                          value="0"
+                          min="0"
+                          max="99"
+                        />
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="sd-penalty-score-1"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
+                    <label class="field">
+                      <span>Tirs au but équipe 2</span>
+                      <div class="number-stepper">
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="-1"
+                          data-target="sd-penalty-score-2"
+                          aria-label="Diminuer"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          id="sd-penalty-score-2"
+                          value="0"
+                          min="0"
+                          max="99"
+                        />
+                        <button
+                          type="button"
+                          class="stepper-btn"
+                          data-step="1"
+                          data-target="sd-penalty-score-2"
+                          aria-label="Augmenter"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
                   </div>
-                </label>
-              </div>
-              <label class="checkbox-field">
-                <input type="checkbox" id="sd-penalty-toggle" />
-                <span>Afficher le score des tirs au but</span>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Tirs au but équipe 1</span>
-                  <div class="number-stepper">
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="-1"
-                      data-target="sd-penalty-score-1"
-                      aria-label="Diminuer"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="sd-penalty-score-1"
-                      value="0"
-                      min="0"
-                      max="99"
-                    />
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="1"
-                      data-target="sd-penalty-score-1"
-                      aria-label="Augmenter"
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-                <label class="field">
-                  <span>Tirs au but équipe 2</span>
-                  <div class="number-stepper">
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="-1"
-                      data-target="sd-penalty-score-2"
-                      aria-label="Diminuer"
-                    >
-                      −
-                    </button>
-                    <input
-                      type="number"
-                      id="sd-penalty-score-2"
-                      value="0"
-                      min="0"
-                      max="99"
-                    />
-                    <button
-                      type="button"
-                      class="stepper-btn"
-                      data-step="1"
-                      data-target="sd-penalty-score-2"
-                      aria-label="Augmenter"
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-              </div>
-              <p class="tn-info">
-                La typographie du score se règle dans la section
-                <strong>Typographie → Score</strong>.
-              </p>
+                </div>
+              </details>
 
               <details class="collapsible collapsible-nested">
                 <summary>Buteurs équipe 1 (gauche)</summary>
@@ -2422,96 +3160,51 @@ MBAPPÉ | 45+2'</textarea
                   </label>
                 </div>
               </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Typographie des buteurs</summary>
-                <div class="collapsible-body">
-                  <label class="field">
-                    <span>Police</span>
-                    <select id="sd-scorers-font">
-                      <option value="system" selected>Système</option>
-                      <option value="condensed">Barlow Condensed</option>
-                      <option value="cinzel">Cinzel (serif)</option>
-                      <option value="arial">Arial / Helvetica</option>
-                      <option value="impact">Impact</option>
-                      <option value="mono">Monospace</option>
-                    </select>
-                  </label>
-                  <div class="row">
-                    <label class="field">
-                      <span
-                        >Taille
-                        <span id="sd-scorers-size-value">18px</span></span
-                      >
-                      <input
-                        type="range"
-                        id="sd-scorers-size"
-                        min="10"
-                        max="40"
-                        value="18"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Poids</span>
-                      <select id="sd-scorers-weight">
-                        <option value="300">300 Light</option>
-                        <option value="400" selected>400 Regular</option>
-                        <option value="500">500 Medium</option>
-                        <option value="600">600 Semibold</option>
-                        <option value="700">700 Bold</option>
-                      </select>
-                    </label>
-                  </div>
-                  <label class="field">
-                    <span>Couleur</span>
-                    <input type="color" id="sd-scorers-color" value="#ffffff" />
-                  </label>
-                </div>
-              </details>
             </div>
           </details>
 
           <details class="collapsible">
-            <summary>Fond</summary>
+            <summary>Habillage</summary>
             <div class="collapsible-body">
-              <div class="row">
-                <label class="field">
-                  <span>Couleur 1</span>
-                  <input type="color" id="sd-bg-color-1" value="#0a1228" />
-                </label>
-                <label class="field">
-                  <span>Couleur 2</span>
-                  <input type="color" id="sd-bg-color-2" value="#050a1a" />
-                </label>
-              </div>
-              <label class="field">
-                <span>Direction du gradient</span>
-                <select id="sd-bg-direction">
-                  <option value="180" selected>↓ Vertical (haut → bas)</option>
-                  <option value="0">↑ Vertical inverse</option>
-                  <option value="90">→ Horizontal</option>
-                  <option value="270">← Horizontal inverse</option>
-                  <option value="135">↘ Diagonal</option>
-                  <option value="45">↗ Diagonal</option>
-                </select>
-              </label>
-              <label class="field">
-                <span
-                  >Opacité du fond
-                  <span id="sd-bg-opacity-value">100%</span></span
-                >
-                <input
-                  type="range"
-                  id="sd-bg-opacity"
-                  min="0"
-                  max="100"
-                  value="100"
-                />
-              </label>
-              <label class="field">
-                <span>Couleur du texte</span>
-                <input type="color" id="sd-color-text" value="#ffffff" />
-              </label>
+              <details class="collapsible collapsible-nested">
+                <summary>Dégradé de fond</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Couleur 1</span>
+                      <input type="color" id="sd-bg-color-1" value="#0a1228" />
+                    </label>
+                    <label class="field">
+                      <span>Couleur 2</span>
+                      <input type="color" id="sd-bg-color-2" value="#050a1a" />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Direction du dégradé</span>
+                    <select id="sd-bg-direction">
+                      <option value="180" selected>↓ Vertical (haut → bas)</option>
+                      <option value="0">↑ Vertical inverse</option>
+                      <option value="90">→ Horizontal</option>
+                      <option value="270">← Horizontal inverse</option>
+                      <option value="135">↘ Diagonal</option>
+                      <option value="45">↗ Diagonal</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Opacité du fond
+                      <span id="sd-bg-opacity-value">100%</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-bg-opacity"
+                      min="0"
+                      max="100"
+                      value="100"
+                    />
+                  </label>
+                </div>
+              </details>
 
               <details class="collapsible collapsible-nested">
                 <summary>Image de fond</summary>
@@ -2566,7 +3259,7 @@ MBAPPÉ | 45+2'</textarea
                   </label>
                   <div class="row">
                     <label class="field">
-                      <span>Direction du fade</span>
+                      <span>Direction du dégradé</span>
                       <select id="sd-bg-image-fade-dir">
                         <option value="right">→ vers droite</option>
                         <option value="left">← vers gauche</option>
@@ -2592,7 +3285,7 @@ MBAPPÉ | 45+2'</textarea
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Ligne de bordure (haut)</summary>
+                <summary>Bordure supérieure</summary>
                 <div class="collapsible-body">
                   <label class="checkbox-field">
                     <input type="checkbox" id="sd-topline-toggle" />
@@ -2631,12 +3324,101 @@ MBAPPÉ | 45+2'</textarea
                   </div>
                 </div>
               </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Logos et espacement</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-center-logo-toggle" checked />
+                    <span>Afficher le logo central</span>
+                  </label>
+                  <label class="field">
+                    <span
+                      >Logo central
+                      <span id="sd-center-logo-size-value">200px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-center-logo-size"
+                      min="60"
+                      max="300"
+                      value="200"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Logos d'équipe
+                      <span id="sd-team-logo-size-value">200px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-team-logo-size"
+                      min="80"
+                      max="300"
+                      value="200"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Écart entre les équipes
+                      <span id="sd-team-gap-value">0px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="sd-team-gap"
+                      min="-300"
+                      max="60"
+                      value="0"
+                    />
+                  </label>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Ombres des logos</summary>
+                <div class="collapsible-body">
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-logo-shadows-toggle" checked />
+                    <span>Ombres des logos</span>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span>Ombre du logo équipe 1</span>
+                      <select id="sd-logo-1-shadows-color">
+                        <option value="white" selected>Blanc</option>
+                        <option value="black">Noir</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span>Ombre du logo équipe 2</span>
+                      <select id="sd-logo-2-shadows-color">
+                        <option value="white" selected>Blanc</option>
+                        <option value="black">Noir</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </details>
             </div>
           </details>
 
           <details class="collapsible">
             <summary>Typographie</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Couleur et ombre du texte</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Couleur du texte</span>
+                    <input type="color" id="sd-color-text" value="#ffffff" />
+                  </label>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="sd-text-shadows-toggle" checked />
+                    <span>Ombres du texte</span>
+                  </label>
+                </div>
+              </details>
+
               <details class="collapsible collapsible-nested">
                 <summary>Tour (haut)</summary>
                 <div class="collapsible-body">
@@ -2726,56 +3508,7 @@ MBAPPÉ | 45+2'</textarea
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Logos (tailles)</summary>
-                <div class="collapsible-body">
-                  <label class="checkbox-field">
-                    <input type="checkbox" id="sd-center-logo-toggle" checked />
-                    <span>Afficher le logo central</span>
-                  </label>
-                  <label class="field">
-                    <span
-                      >Logo central
-                      <span id="sd-center-logo-size-value">200px</span></span
-                    >
-                    <input
-                      type="range"
-                      id="sd-center-logo-size"
-                      min="60"
-                      max="300"
-                      value="200"
-                    />
-                  </label>
-                  <label class="field">
-                    <span
-                      >Logos d'équipe
-                      <span id="sd-team-logo-size-value">200px</span></span
-                    >
-                    <input
-                      type="range"
-                      id="sd-team-logo-size"
-                      min="80"
-                      max="300"
-                      value="200"
-                    />
-                  </label>
-                  <label class="field">
-                    <span
-                      >Écart entre les équipes
-                      <span id="sd-team-gap-value">0px</span></span
-                    >
-                    <input
-                      type="range"
-                      id="sd-team-gap"
-                      min="-300"
-                      max="60"
-                      value="0"
-                    />
-                  </label>
-                </div>
-              </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Métadonnées (lieu, date, arbitre)</summary>
+                <summary>Lieu, date et arbitre</summary>
                 <div class="collapsible-body">
                   <label class="field">
                     <span>Police</span>
@@ -2817,7 +3550,7 @@ MBAPPÉ | 45+2'</textarea
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Score (mode résultat)</summary>
+                <summary>Score</summary>
                 <div class="collapsible-body">
                   <label class="field">
                     <span>Police</span>
@@ -2867,7 +3600,116 @@ MBAPPÉ | 45+2'</textarea
               </details>
 
               <details class="collapsible collapsible-nested">
-                <summary>Typographies sauvegardées</summary>
+                <summary>Buteurs</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Police</span>
+                    <select id="sd-scorers-font">
+                      <option value="system" selected>Système</option>
+                      <option value="condensed">Barlow Condensed</option>
+                      <option value="cinzel">Cinzel (serif)</option>
+                      <option value="arial">Arial / Helvetica</option>
+                      <option value="impact">Impact</option>
+                      <option value="mono">Monospace</option>
+                    </select>
+                  </label>
+                  <div class="row">
+                    <label class="field">
+                      <span
+                        >Taille
+                        <span id="sd-scorers-size-value">18px</span></span
+                      >
+                      <input
+                        type="range"
+                        id="sd-scorers-size"
+                        min="10"
+                        max="40"
+                        value="18"
+                      />
+                    </label>
+                    <label class="field">
+                      <span>Poids</span>
+                      <select id="sd-scorers-weight">
+                        <option value="300">300 Light</option>
+                        <option value="400" selected>400 Regular</option>
+                        <option value="500">500 Medium</option>
+                        <option value="600">600 Semibold</option>
+                        <option value="700">700 Bold</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span>Couleur</span>
+                    <input type="color" id="sd-scorers-color" value="#ffffff" />
+                  </label>
+                </div>
+              </details>
+            </div>
+          </details>
+
+          <details class="collapsible">
+            <summary>Sauvegardes</summary>
+            <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Showdown complet</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="sd-saved-select"></select>
+                    <button class="btn-secondary" id="sd-load" type="button">
+                      Charger
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="sd-delete"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="sd-save-name"
+                      placeholder="Nom du showdown…"
+                    />
+                    <button class="btn-primary" id="sd-save" type="button">
+                      💾 Enregistrer
+                    </button>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Fonds</summary>
+                <div class="collapsible-body">
+                  <div class="saved-teams-controls">
+                    <select id="sd-saved-bg-select"></select>
+                    <button class="btn-secondary" id="sd-load-bg" type="button">
+                      Appliquer
+                    </button>
+                    <button
+                      class="btn-secondary danger"
+                      id="sd-delete-bg"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div class="save-team-form">
+                    <input
+                      type="text"
+                      id="sd-save-bg-name"
+                      placeholder="Nom du fond…"
+                    />
+                    <button class="btn-primary" id="sd-save-bg" type="button">
+                      💾 Enregistrer fond
+                    </button>
+                  </div>
+                </div>
+              </details>
+
+              <details class="collapsible collapsible-nested">
+                <summary>Typographies</summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
                     <select id="sd-saved-typo-select"></select>
@@ -2900,64 +3742,6 @@ MBAPPÉ | 45+2'</textarea
               </details>
             </div>
           </details>
-
-          <details class="collapsible">
-            <summary>Fonds sauvegardés</summary>
-            <div class="collapsible-body">
-              <div class="saved-teams-controls">
-                <select id="sd-saved-bg-select"></select>
-                <button class="btn-secondary" id="sd-load-bg" type="button">
-                  Appliquer
-                </button>
-                <button
-                  class="btn-secondary danger"
-                  id="sd-delete-bg"
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-              <div class="save-team-form">
-                <input
-                  type="text"
-                  id="sd-save-bg-name"
-                  placeholder="Nom du fond…"
-                />
-                <button class="btn-primary" id="sd-save-bg" type="button">
-                  💾 Enregistrer fond
-                </button>
-              </div>
-            </div>
-          </details>
-
-          <details class="collapsible">
-            <summary>Showdowns sauvegardés (complet)</summary>
-            <div class="collapsible-body">
-              <div class="saved-teams-controls">
-                <select id="sd-saved-select"></select>
-                <button class="btn-secondary" id="sd-load" type="button">
-                  Charger
-                </button>
-                <button
-                  class="btn-secondary danger"
-                  id="sd-delete"
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-              <div class="save-team-form">
-                <input
-                  type="text"
-                  id="sd-save-name"
-                  placeholder="Nom du showdown…"
-                />
-                <button class="btn-primary" id="sd-save" type="button">
-                  💾 Enregistrer
-                </button>
-              </div>
-            </div>
-          </details>
         </section>
 
         <!-- ============ THUMBNAIL PROMPT EDITOR ============ -->
@@ -2965,7 +3749,7 @@ MBAPPÉ | 45+2'</textarea
           <h2>Thumbnail (générateur de prompt)</h2>
 
           <details class="collapsible" open>
-            <summary>Nouvelle miniature — équipe & année</summary>
+            <summary>Équipe et joueur</summary>
             <div class="collapsible-body">
               <div class="row">
                 <label class="field">
@@ -2977,16 +3761,7 @@ MBAPPÉ | 45+2'</textarea
                   <input type="text" id="tn-year" value="1973" />
                 </label>
               </div>
-              <div class="row">
-                <label class="field">
-                  <span>Stade</span>
-                  <input type="text" id="tn-stadium" value="Red Star Stadium" />
-                </label>
-                <label class="field">
-                  <span>Ville du stade</span>
-                  <input type="text" id="tn-stadium-city" value="Belgrade" />
-                </label>
-              </div>
+
               <label class="field">
                 <span>Joueur vedette (à droite)</span>
                 <input type="text" id="tn-star-player" value="Johann Cruyff" />
@@ -3000,6 +3775,23 @@ MBAPPÉ | 45+2'</textarea
                   placeholder="ex: rouge et blanc"
                 />
               </label>
+            </div>
+          </details>
+
+          <details class="collapsible" open>
+            <summary>Stade et consignes</summary>
+            <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Stade</span>
+                  <input type="text" id="tn-stadium" value="Red Star Stadium" />
+                </label>
+                <label class="field">
+                  <span>Ville du stade</span>
+                  <input type="text" id="tn-stadium-city" value="Belgrade" />
+                </label>
+              </div>
+
               <label class="field">
                 <span>Notes supplémentaires (optionnel)</span>
                 <textarea
@@ -3011,8 +3803,23 @@ MBAPPÉ | 45+2'</textarea
             </div>
           </details>
 
+          <div class="row">
+            <button
+              class="btn-primary"
+              id="tn-copy-btn"
+              type="button"
+              style="flex: 1"
+            >
+              📋 Copier le prompt
+            </button>
+            <button class="btn-secondary" id="tn-reset-btn" type="button">
+              ↺ Réinitialiser
+            </button>
+          </div>
+          <p class="tn-info" id="tn-copy-status"></p>
+
           <details class="collapsible">
-            <summary>Référence (image de base — non modifiable)</summary>
+            <summary>Image de référence</summary>
             <div class="collapsible-body">
               <p class="tn-info">
                 Ces éléments correspondent à la miniature d'origine et restent
@@ -3027,26 +3834,10 @@ MBAPPÉ | 45+2'</textarea
               </ul>
             </div>
           </details>
-
-          <details class="collapsible" open>
-            <summary>Actions</summary>
-            <div class="collapsible-body">
-              <div class="row">
-                <button
-                  class="btn-primary"
-                  id="tn-copy-btn"
-                  type="button"
-                  style="flex: 1"
-                >
-                  📋 Copier le prompt
-                </button>
-                <button class="btn-secondary" id="tn-reset-btn" type="button">
-                  ↺ Réinitialiser
-                </button>
-              </div>
-              <p class="tn-info" id="tn-copy-status"></p>
-            </div>
-          </details>
+        </section>
+        <section class="editor-section" data-editor="video-thumbnail">
+          <h2>Miniature vidéo</h2>
+          <p class="tn-info">À compléter.</p>
         </section>
       </aside>
 
@@ -3057,42 +3848,49 @@ MBAPPÉ | 45+2'</textarea
           <div class="preview-toolbar-right">
             <div class="lineup-export-option">
               <label class="preview-resolution-label" for="lineup-export-mode"
-                >Composition :</label
+                >Composition</label
               >
               <select id="lineup-export-mode">
                 <option value="both" selected>Fond + équipe</option>
                 <option value="background">Fond seul</option>
                 <option value="team">Équipe seule</option>
+                <option value="separate">Fond et équipe séparés (ZIP)</option>
               </select>
             </div>
             <div class="showdown-export-option" hidden>
               <label class="preview-resolution-label" for="showdown-export-mode"
-                >Composition :</label
+                >Composition</label
               >
               <select id="showdown-export-mode">
                 <option value="both">Fond + texte</option>
                 <option value="background" selected>Fond seul</option>
                 <option value="team">Équipes seules</option>
+                <option value="separate">Fond et équipes séparés (ZIP)</option>
               </select>
             </div>
-            <label class="preview-resolution-label" for="export-format"
-              >Format :</label
-            >
-            <select id="export-format">
-              <option value="png" selected>PNG</option>
-              <option value="svg">SVG</option>
-              <option value="pdf">PDF</option>
-            </select>
-            <label class="preview-resolution-label" for="export-resolution"
-              >Résolution :</label
-            >
-            <select id="export-resolution">
-              <option value="4k">4K (2160p)</option>
-              <option value="1080p" selected>1080p</option>
-              <option value="720p">720p</option>
-              <option value="580p">580p</option>
-            </select>
-            <button id="export-btn" class="btn-primary">📷 Exporter</button>
+            <div class="preview-export-field">
+              <label class="preview-resolution-label" for="export-format">Format</label>
+              <select id="export-format">
+                <option value="png" selected>PNG</option>
+                <option value="svg">SVG</option>
+                <option value="pdf">PDF</option>
+              </select>
+            </div>
+            <div class="preview-export-field">
+              <label class="preview-resolution-label" for="export-resolution">Résolution</label>
+              <select id="export-resolution">
+                <option value="4k">4K (2160p)</option>
+                <option value="1080p" selected>1080p</option>
+                <option value="720p">720p</option>
+                <option value="580p">580p</option>
+              </select>
+            </div>
+            <div class="preview-export-actions">
+              <button id="export-btn" class="btn-primary" type="button">Exporter l’aperçu</button>
+              <button id="export-saved-renders" class="btn-secondary" type="button">
+                Exporter les rendus sauvegardés
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3230,14 +4028,16 @@ MBAPPÉ | 45+2'</textarea
               <div class="sb-ball-box" id="sb-ball-box">
                 <div class="sb-ball" id="sb-ball"></div>
               </div>
-              <div class="sb-logo-divider"></div>
-              <div class="sb-home-color" id="sb-home-color"></div>
-              <div class="sb-team sb-home" id="sb-home">LIV</div>
-              <div class="sb-score" id="sb-home-score">0</div>
-              <div class="sb-sep"><div class="sb-trophy"></div></div>
-              <div class="sb-score" id="sb-away-score">0</div>
-              <div class="sb-team sb-away" id="sb-away">RMA</div>
-              <div class="sb-away-color" id="sb-away-color"></div>
+              <div class="sb-timer" id="sb-timer" aria-hidden="true"></div>
+              <div class="sb-scoreboard">
+                <div class="sb-home-color" id="sb-home-color"></div>
+                <div class="sb-team sb-home" id="sb-home">LIV</div>
+                <div class="sb-score" id="sb-home-score">0</div>
+                <div class="sb-sep"><div class="sb-trophy"></div></div>
+                <div class="sb-score" id="sb-away-score">0</div>
+                <div class="sb-team sb-away" id="sb-away">RMA</div>
+                <div class="sb-away-color" id="sb-away-color"></div>
+              </div>
             </div>
             <div
               class="sb-penalty-score"
@@ -3311,6 +4111,96 @@ MBAPPÉ | 45+2'</textarea
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="preview-container" data-preview="shorts">
+          <div class="shorts-board" id="shorts-board">
+            <section class="shorts-team shorts-home">
+              <div class="shorts-team-logo-wrap">
+                <img
+                  class="shorts-team-logo"
+                  id="shorts-home-logo"
+                  src="./Logos/Logo_Liverpool_FC_2012.png"
+                  alt="Logo du club domicile"
+                />
+                <span class="shorts-logo-fallback" id="shorts-home-fallback">
+                  LIV
+                </span>
+              </div>
+            </section>
+            <div class="shorts-scoreboard-frame">
+              <div
+                class="shorts-score-slot"
+                id="shorts-home-score-display"
+                aria-label="Score domicile"
+              >
+                <span class="shorts-score-value" id="shorts-home-score-value"></span>
+              </div>
+              <div class="shorts-center-stack">
+                <header class="shorts-center">
+                  <div class="shorts-competition-logo-wrap">
+                    <img
+                      class="shorts-competition-logo"
+                      id="shorts-competition-logo"
+                      src="./Logos/ucl_full_logo.png"
+                      alt="Logo de la compétition"
+                    />
+                    <span class="shorts-logo-fallback" id="shorts-competition-fallback">
+                      UCL
+                    </span>
+                  </div>
+                  <div class="shorts-center-text">
+                    <div class="shorts-round" id="shorts-round-display">
+                      ROUND OF 16
+                    </div>
+                    <div class="shorts-season" id="shorts-season-display">
+                      2025/26
+                    </div>
+                  </div>
+                </header>
+                <div
+                  class="shorts-penalty-results"
+                  id="shorts-penalty-results"
+                  aria-label="Résultats des tirs au but"
+                  hidden
+                >
+                  <div class="shorts-penalty-team">
+                    <span
+                      class="sb-penalty-shots"
+                      id="shorts-home-penalty-shots"
+                    ></span>
+                  </div>
+                  <div class="shorts-penalty-center-spacer" aria-hidden="true"></div>
+                  <div class="shorts-penalty-team">
+                    <span
+                      class="sb-penalty-shots"
+                      id="shorts-away-penalty-shots"
+                    ></span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="shorts-score-slot"
+                id="shorts-away-score-display"
+                aria-label="Score extérieur"
+              >
+                <span class="shorts-score-value" id="shorts-away-score-value"></span>
+              </div>
+            </div>
+            <section class="shorts-team shorts-away">
+              <div class="shorts-team-logo-wrap">
+                <img
+                  class="shorts-team-logo"
+                  id="shorts-away-logo"
+                  src="./Logos/Real_Madrid_2026.png"
+                  alt="Logo du club extérieur"
+                />
+                <span class="shorts-logo-fallback" id="shorts-away-fallback">
+                  RMA
+                </span>
+              </div>
+            </section>
           </div>
         </div>
 

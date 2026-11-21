@@ -6,6 +6,113 @@
 const tabs = document.querySelectorAll(".tab");
 const editorSections = document.querySelectorAll(".editor-section");
 const previewContainers = document.querySelectorAll(".preview-container");
+const editorSearch = document.getElementById("editor-search");
+const editorSearchStatus = document.getElementById("editor-search-status");
+const editorSearchResults = document.getElementById("editor-search-results");
+
+function normalizeEditorSearch(text) {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+function updateEditorSearch() {
+  editorSearchResults.replaceChildren();
+  const query = normalizeEditorSearch(editorSearch.value).trim();
+  const editor = document.querySelector(".editor-section.active");
+  editorSearchResults.hidden = true;
+  editorSearchStatus.textContent = "";
+  if (!query || !editor) return;
+
+  const words = query.split(/\s+/);
+  for (const item of editor.querySelectorAll("summary, label, button")) {
+    if (item.closest("[hidden]") || (item.matches("button") && item.closest("label"))) {
+      continue;
+    }
+    const label = item.matches("label")
+      ? item.querySelector(":scope > span") || item
+      : item;
+    const title = label.textContent.replace(/\s+/g, " ").trim();
+    if (!title || !/[\p{L}\p{N}]/u.test(title)) continue;
+
+    const sections = [];
+    for (
+      let details = item.closest("details");
+      details;
+      details = details.parentElement.closest("details")
+    ) {
+      sections.unshift(details);
+    }
+    const location = sections
+      .map((section) => section.querySelector(":scope > summary"))
+      .filter((summary) => summary && summary !== item)
+      .map((summary) => summary.textContent.trim())
+      .join(" › ");
+    const searchable = normalizeEditorSearch(location + " " + title);
+    if (!words.every((word) => searchable.includes(word))) continue;
+
+    const result = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = title;
+    if (location) {
+      const breadcrumb = document.createElement("small");
+      breadcrumb.textContent = location;
+      button.appendChild(breadcrumb);
+    }
+    button.addEventListener("click", () => {
+      sections.forEach((section) => (section.open = true));
+      const control = item.matches("label")
+        ? item.control || item.querySelector("input, select, textarea, button")
+        : item;
+      item.scrollIntoView({ block: "center" });
+      control?.focus({ preventScroll: true });
+    });
+    result.appendChild(button);
+    editorSearchResults.appendChild(result);
+  }
+  const count = editorSearchResults.childElementCount;
+  editorSearchResults.hidden = count === 0;
+  editorSearchStatus.textContent = count
+    ? `${count} résultat${count > 1 ? "s" : ""}`
+    : "Aucun réglage trouvé dans cet onglet.";
+}
+
+editorSearch.addEventListener("input", updateEditorSearch);
+
+function clearPresetSaveStatuses(editor) {
+  editor.querySelectorAll(".save-status").forEach((status) => {
+    status.textContent = "";
+  });
+}
+
+function showPresetSaveStatus(nameInput, name) {
+  nameInput.value = name;
+  nameInput.closest(".save-team-form").querySelector(".save-status").textContent =
+    "Sauvegarde enregistrée.";
+}
+
+for (const editor of editorSections) {
+  const forms = editor.querySelectorAll(".save-team-form");
+  if (!forms.length) continue;
+  for (const form of forms) {
+    const status = document.createElement("p");
+    status.className = "save-status";
+    status.setAttribute("role", "status");
+    form.appendChild(status);
+  }
+  const clearOnEdit = (event) => {
+    if (!event.target.closest(".saved-teams-controls")) {
+      clearPresetSaveStatuses(editor);
+    }
+  };
+  editor.addEventListener("input", clearOnEdit);
+  editor.addEventListener("change", clearOnEdit);
+  editor.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (button && !button.closest(".save-team-form")) {
+      clearPresetSaveStatuses(editor);
+    }
+  });
+}
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -18,10 +125,17 @@ tabs.forEach((tab) => {
     previewContainers.forEach((p) =>
       p.classList.toggle("active", p.dataset.preview === target),
     );
+    updateEditorSearch();
+    if (target === "score") updateScoreBanner();
+    if (target === "shorts") updateShortsPreview();
     document.querySelector(".lineup-export-option").hidden =
       target !== "lineup";
     document.querySelector(".showdown-export-option").hidden =
       target !== "showdown";
+    document.getElementById("export-saved-renders").hidden =
+      target !== "lineup" && target !== "showdown";
+    document.querySelector(".preview-toolbar").hidden =
+      target === "video-thumbnail";
   });
 });
 
@@ -77,6 +191,18 @@ const pGoalscorerFile = document.getElementById("p-goalscorer-file");
 const pGoalscorerClear = document.getElementById("p-goalscorer-clear");
 const pClubLogoFile = document.getElementById("p-club-logo-file");
 const pClubLogoClear = document.getElementById("p-club-logo-clear");
+const pClubLogoShadowsToggle = document.getElementById(
+  "p-club-logo-shadows-toggle",
+);
+const pClubLogoShadowsColor = document.getElementById(
+  "p-club-logo-shadows-color",
+);
+const pClubLogoShadowsIntensity = document.getElementById(
+  "p-club-logo-shadows-intensity",
+);
+const pClubLogoShadowsIntensityValue = document.getElementById(
+  "p-club-logo-shadows-intensity-value",
+);
 const pZoneWidth = document.getElementById("p-zone-width");
 const pZoneWidthNumber = document.getElementById("p-zone-width-number");
 const pZoneWidthValue = document.getElementById("p-zone-width-value");
@@ -195,6 +321,28 @@ function updatePlayerBanner() {
     pClubnameSizeValue.textContent = pClubnameSize.value + "px";
 
   const banner = document.getElementById("player-banner");
+  const shadowIntensity = Number(pClubLogoShadowsIntensity.value) / 100;
+  const shadowRgb =
+    pClubLogoShadowsColor.value === "black" ? "0, 0, 0" : "255, 255, 255";
+  banner.classList.toggle(
+    "show-club-logo-shadows",
+    pClubLogoShadowsToggle.checked,
+  );
+  banner.style.setProperty(
+    "--pb-club-logo-shadow-tight",
+    `rgba(${shadowRgb}, ${shadowIntensity})`,
+  );
+  banner.style.setProperty(
+    "--pb-club-logo-shadow-glow",
+    `rgba(${shadowRgb}, ${0.85 * shadowIntensity})`,
+  );
+  banner.style.setProperty(
+    "--pb-club-logo-shadow-depth",
+    String(0.55 * shadowIntensity),
+  );
+  if (pClubLogoShadowsIntensityValue)
+    pClubLogoShadowsIntensityValue.textContent =
+      pClubLogoShadowsIntensity.value + "%";
   banner.style.color = pColorText.value;
   renderGoalscorerPhoto(goalscorerURL);
   renderClubLogoInline(clubLogoURL);
@@ -218,6 +366,7 @@ function updatePlayerBanner() {
   pLastnameSize,
   pMinuteSize,
   pClubnameSize,
+  pClubLogoShadowsIntensity,
 ].forEach((el) => el.addEventListener("input", updatePlayerBanner));
 pZoneWidth.addEventListener("input", () => {
   pZoneWidthNumber.value = pZoneWidth.value;
@@ -262,6 +411,8 @@ pZoneWidthNumber.addEventListener("change", () => {
   pMinuteWeight,
   pClubnameFont,
   pClubnameWeight,
+  pClubLogoShadowsToggle,
+  pClubLogoShadowsColor,
 ].forEach((el) => el.addEventListener("change", updatePlayerBanner));
 // Store path references to ./Goalscorers/<file> and ./Logos/<file> rather
 // than inline data URLs — keeps saved banners tiny and quota-safe.
@@ -305,6 +456,9 @@ function collectBannerData() {
     clubName: pClubName.value,
     goalscorerURL: goalscorerURL,
     clubLogoURL: clubLogoURL,
+    clubLogoShadowsEnabled: pClubLogoShadowsToggle.checked,
+    clubLogoShadowsColor: pClubLogoShadowsColor.value,
+    clubLogoShadowsIntensity: pClubLogoShadowsIntensity.value,
     zoneWidth: pZoneWidth.value,
     logoColor1: pLogoColor1.value,
     logoColor2: pLogoColor2.value,
@@ -364,6 +518,16 @@ function applyBannerData(d) {
     typeof d.clubLogoURL === "string" && !d.clubLogoURL.startsWith("data:")
       ? d.clubLogoURL
       : null;
+  if (typeof d.clubLogoShadowsEnabled === "boolean")
+    pClubLogoShadowsToggle.checked = d.clubLogoShadowsEnabled;
+  if (
+    d.clubLogoShadowsColor === "black" ||
+    d.clubLogoShadowsColor === "white"
+  ) {
+    pClubLogoShadowsColor.value = d.clubLogoShadowsColor;
+  }
+  if (d.clubLogoShadowsIntensity != null)
+    pClubLogoShadowsIntensity.value = d.clubLogoShadowsIntensity;
   if (d.zoneWidth) {
     pZoneWidth.value = d.zoneWidth;
     pZoneWidthNumber.value = pZoneWidth.value;
@@ -493,16 +657,15 @@ function saveCurrentAsBanner() {
   const existing = list.findIndex((b) => b.name === sName);
   const entry = { name: sName, data: collectBannerData() };
   if (existing >= 0) {
-    if (!confirm(`Une bannière "${sName}" existe déjà. L'écraser ?`)) return;
     list[existing] = entry;
   } else {
     list.push(entry);
   }
   setSavedBanners(list);
-  nameInput.value = "";
   renderSavedBannersList();
   const idx = list.findIndex((b) => b.name === sName);
   document.getElementById("p-saved-select").value = String(idx);
+  showPresetSaveStatus(nameInput, sName);
 }
 function loadSelectedBanner() {
   const sel = document.getElementById("p-saved-select");
@@ -519,7 +682,6 @@ function deleteSelectedBanner() {
   const idx = parseInt(sel.value, 10);
   const list = getSavedBanners();
   if (isNaN(idx) || !list[idx]) return;
-  if (!confirm(`Supprimer la bannière "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   setSavedBanners(list);
   renderSavedBannersList();
@@ -565,6 +727,9 @@ const bannerAutoSaveEls = [
   pClubnameFont,
   pClubnameSize,
   pClubnameWeight,
+  pClubLogoShadowsToggle,
+  pClubLogoShadowsColor,
+  pClubLogoShadowsIntensity,
 ];
 bannerAutoSaveEls.forEach((el) => {
   if (!el) return;
@@ -777,6 +942,15 @@ function collectLineupData() {
     coachLast: document.getElementById("l-coach-last").value,
     colorShirt: document.getElementById("l-color-shirt").value,
     colorGk: document.getElementById("l-color-gk").value,
+    shirtShadowsEnabled: document.getElementById("l-shirt-shadows-toggle")
+      .checked,
+    teamLogoShadowsEnabled: document.getElementById(
+      "l-team-logo-shadows-toggle",
+    ).checked,
+    shirtShadowsColor: document.getElementById("l-shirt-shadows-color").value,
+    shirtShadowsIntensity: document.getElementById(
+      "l-shirt-shadows-intensity",
+    ).value,
     colorNum: document.getElementById("l-color-num").value,
     colorNumGk: document.getElementById("l-color-num-gk").value,
     colorNumberPlate: document.getElementById("l-color-number-plate").value,
@@ -795,8 +969,8 @@ function collectLineupData() {
   };
 }
 
-function applyLineupData(data) {
-  if (data.team) document.getElementById("l-team").value = data.team;
+function applyLineupData(data, persist = true) {
+  if (data.team != null) document.getElementById("l-team").value = data.team;
   document.getElementById("l-footer-round").value =
     data.footerRound || "Quarter Finals";
   document.getElementById("l-footer-leg").value =
@@ -822,6 +996,21 @@ function applyLineupData(data) {
   if (data.colorShirt)
     document.getElementById("l-color-shirt").value = data.colorShirt;
   if (data.colorGk) document.getElementById("l-color-gk").value = data.colorGk;
+  if (typeof data.shirtShadowsEnabled === "boolean")
+    document.getElementById("l-shirt-shadows-toggle").checked =
+      data.shirtShadowsEnabled;
+  if (typeof data.teamLogoShadowsEnabled === "boolean")
+    document.getElementById("l-team-logo-shadows-toggle").checked =
+      data.teamLogoShadowsEnabled;
+  else if (typeof data.shirtShadowsEnabled === "boolean")
+    document.getElementById("l-team-logo-shadows-toggle").checked =
+      data.shirtShadowsEnabled;
+  if (data.shirtShadowsColor === "white" || data.shirtShadowsColor === "black")
+    document.getElementById("l-shirt-shadows-color").value =
+      data.shirtShadowsColor;
+  if (data.shirtShadowsIntensity != null)
+    document.getElementById("l-shirt-shadows-intensity").value =
+      data.shirtShadowsIntensity;
   if (data.colorNum)
     document.getElementById("l-color-num").value = data.colorNum;
   if (data.colorNumGk)
@@ -849,7 +1038,7 @@ function applyLineupData(data) {
     applyTypoData(data.typo);
   }
   if (data.style && typeof applyStyleData === "function") {
-    applyStyleData(data.style);
+    applyStyleData(data.style, persist);
   }
   if (data.bgOpacity != null)
     document.getElementById("l-bg-opacity").value = data.bgOpacity;
@@ -892,6 +1081,10 @@ function resetLineup() {
   document.getElementById("l-coach-last").value = "DESCHAMPS";
   document.getElementById("l-color-shirt").value = "#d40000";
   document.getElementById("l-color-gk").value = "#222222";
+  document.getElementById("l-shirt-shadows-toggle").checked = true;
+  document.getElementById("l-team-logo-shadows-toggle").checked = true;
+  document.getElementById("l-shirt-shadows-color").value = "white";
+  document.getElementById("l-shirt-shadows-intensity").value = "100";
   document.getElementById("l-color-num").value = "#ffffff";
   document.getElementById("l-color-num-gk").value = "#ffffff";
   document.getElementById("l-color-number-plate").value = "#111111";
@@ -954,17 +1147,16 @@ function saveCurrentAsTeam() {
   if (teamData.typo && !teamData.typoRef) delete teamData.typo;
   const entry = { name, data: teamData };
   if (existing >= 0) {
-    if (!confirm(`Une équipe "${name}" existe déjà. L'écraser ?`)) return;
     teams[existing] = entry;
   } else {
     teams.push(entry);
   }
   setSavedTeams(teams);
-  nameInput.value = "";
   renderSavedTeamsList();
   // Select the just-saved entry
   const idx = teams.findIndex((t) => t.name === name);
   document.getElementById("l-saved-team-select").value = String(idx);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadSelectedTeam() {
   const sel = document.getElementById("l-saved-team-select");
@@ -985,7 +1177,6 @@ function deleteSelectedTeam() {
   const idx = parseInt(sel.value, 10);
   const teams = getSavedTeams();
   if (isNaN(idx) || !teams[idx]) return;
-  if (!confirm(`Supprimer "${teams[idx].name}" ?`)) return;
   teams.splice(idx, 1);
   setSavedTeams(teams);
   renderSavedTeamsList();
@@ -1028,16 +1219,15 @@ function saveCurrentAsFormation() {
     positions: starters.map((p) => ({ x: p.x, y: p.y, gk: !!p.gk })),
   };
   if (existing >= 0) {
-    if (!confirm(`Une formation "${name}" existe déjà. L'écraser ?`)) return;
     formations[existing] = entry;
   } else {
     formations.push(entry);
   }
   setSavedFormations(formations);
-  nameInput.value = "";
   renderSavedFormationsList();
   const idx = formations.findIndex((f) => f.name === name);
   document.getElementById("l-saved-formation-select").value = String(idx);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadSelectedFormation() {
   const sel = document.getElementById("l-saved-formation-select");
@@ -1061,7 +1251,6 @@ function deleteSelectedFormation() {
   const idx = parseInt(sel.value, 10);
   const formations = getSavedFormations();
   if (isNaN(idx) || !formations[idx]) return;
-  if (!confirm(`Supprimer la formation "${formations[idx].name}" ?`)) return;
   formations.splice(idx, 1);
   setSavedFormations(formations);
   renderSavedFormationsList();
@@ -1108,61 +1297,61 @@ function collectStyleData() {
     dividerColor2: document.getElementById("l-divider-color-2").value,
   };
 }
-function applyStyleData(data) {
+function applyStyleData(data, persist = true) {
   if (data.colorBg) document.getElementById("l-color-bg").value = data.colorBg;
   if (data.bgOpacity != null)
     document.getElementById("l-bg-opacity").value = data.bgOpacity;
   if (typeof data.bgImageEnabled === "boolean") {
     document.getElementById("l-bg-image-toggle").checked = data.bgImageEnabled;
-    localStorage.setItem(BG_IMAGE_PREF_KEY, data.bgImageEnabled ? "1" : "0");
+    if (persist) localStorage.setItem(BG_IMAGE_PREF_KEY, data.bgImageEnabled ? "1" : "0");
   }
   if (data.bgImageFile != null) {
     document.getElementById("l-bg-image-select").value = data.bgImageFile;
-    localStorage.setItem(BG_IMAGE_FILE_KEY, data.bgImageFile);
+    if (persist) localStorage.setItem(BG_IMAGE_FILE_KEY, data.bgImageFile);
   }
   if (data.bgImageOpacity != null) {
     document.getElementById("l-bg-image-opacity").value = data.bgImageOpacity;
-    localStorage.setItem(BG_IMAGE_OPACITY_KEY, data.bgImageOpacity);
+    if (persist) localStorage.setItem(BG_IMAGE_OPACITY_KEY, data.bgImageOpacity);
   }
   if (typeof data.bgImageFadeEnabled === "boolean") {
     document.getElementById("l-bg-image-fade-toggle").checked =
       data.bgImageFadeEnabled;
-    localStorage.setItem(
+    if (persist) localStorage.setItem(
       BG_IMAGE_FADE_KEY,
       data.bgImageFadeEnabled ? "1" : "0",
     );
   }
   if (data.bgImageFadeDir) {
     document.getElementById("l-bg-image-fade-dir").value = data.bgImageFadeDir;
-    localStorage.setItem(BG_IMAGE_FADE_DIR_KEY, data.bgImageFadeDir);
+    if (persist) localStorage.setItem(BG_IMAGE_FADE_DIR_KEY, data.bgImageFadeDir);
   }
   if (data.bgImageFadeEnd != null) {
     document.getElementById("l-bg-image-fade-end").value = data.bgImageFadeEnd;
-    localStorage.setItem(BG_IMAGE_FADE_END_KEY, data.bgImageFadeEnd);
+    if (persist) localStorage.setItem(BG_IMAGE_FADE_END_KEY, data.bgImageFadeEnd);
   }
   if (typeof data.showStripes === "boolean") {
     document.getElementById("l-pitch-stripes").checked = data.showStripes;
-    localStorage.setItem(STRIPES_PREF_KEY, data.showStripes ? "1" : "0");
+    if (persist) localStorage.setItem(STRIPES_PREF_KEY, data.showStripes ? "1" : "0");
     document
       .getElementById("lb-pitch")
       .classList.toggle("show-stripes", data.showStripes);
   }
   if (typeof data.showDivider === "boolean") {
     document.getElementById("l-divider-toggle").checked = data.showDivider;
-    localStorage.setItem(DIVIDER_PREF_KEY, data.showDivider ? "1" : "0");
+    if (persist) localStorage.setItem(DIVIDER_PREF_KEY, data.showDivider ? "1" : "0");
   }
   if (data.dividerThickness) {
     document.getElementById("l-divider-thickness").value =
       data.dividerThickness;
-    localStorage.setItem(DIVIDER_THICKNESS_KEY, data.dividerThickness);
+    if (persist) localStorage.setItem(DIVIDER_THICKNESS_KEY, data.dividerThickness);
   }
   if (data.dividerColor1) {
     document.getElementById("l-divider-color-1").value = data.dividerColor1;
-    localStorage.setItem(DIVIDER_COLOR1_KEY, data.dividerColor1);
+    if (persist) localStorage.setItem(DIVIDER_COLOR1_KEY, data.dividerColor1);
   }
   if (data.dividerColor2) {
     document.getElementById("l-divider-color-2").value = data.dividerColor2;
-    localStorage.setItem(DIVIDER_COLOR2_KEY, data.dividerColor2);
+    if (persist) localStorage.setItem(DIVIDER_COLOR2_KEY, data.dividerColor2);
   }
   if (typeof applyBgImage === "function") applyBgImage();
   if (typeof applyDivider === "function") applyDivider();
@@ -1179,16 +1368,15 @@ function saveCurrentAsStyle() {
   const existing = styles.findIndex((s) => s.name === name);
   const entry = { name, data: collectStyleData() };
   if (existing >= 0) {
-    if (!confirm(`Un style "${name}" existe déjà. L'écraser ?`)) return;
     styles[existing] = entry;
   } else {
     styles.push(entry);
   }
   setSavedStyles(styles);
-  nameInput.value = "";
   renderSavedStylesList();
   const idx = styles.findIndex((s) => s.name === name);
   document.getElementById("l-saved-style-select").value = String(idx);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadSelectedStyle() {
   const sel = document.getElementById("l-saved-style-select");
@@ -1203,7 +1391,6 @@ function deleteSelectedStyle() {
   const idx = parseInt(sel.value, 10);
   const styles = getSavedStyles();
   if (isNaN(idx) || !styles[idx]) return;
-  if (!confirm(`Supprimer le style "${styles[idx].name}" ?`)) return;
   styles.splice(idx, 1);
   setSavedStyles(styles);
   renderSavedStylesList();
@@ -1275,16 +1462,15 @@ function saveCurrentAsTypo() {
   const existing = list.findIndex((t) => t.name === name);
   const entry = { name, data: collectTypoData() };
   if (existing >= 0) {
-    if (!confirm(`Une typographie "${name}" existe déjà. L'écraser ?`)) return;
     list[existing] = entry;
   } else {
     list.push(entry);
   }
   setSavedTypos(list);
-  nameInput.value = "";
   renderSavedTyposList();
   const idx = list.findIndex((t) => t.name === name);
   document.getElementById("l-saved-typo-select").value = String(idx);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadSelectedTypo() {
   const sel = document.getElementById("l-saved-typo-select");
@@ -1299,7 +1485,6 @@ function deleteSelectedTypo() {
   const idx = parseInt(sel.value, 10);
   const list = getSavedTypos();
   if (isNaN(idx) || !list[idx]) return;
-  if (!confirm(`Supprimer la typographie "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   setSavedTypos(list);
   renderSavedTyposList();
@@ -1309,6 +1494,10 @@ function deleteSelectedTypo() {
 const KIT_FIELDS = [
   "colorShirt",
   "colorGk",
+  "shirtShadowsEnabled",
+  "teamLogoShadowsEnabled",
+  "shirtShadowsColor",
+  "shirtShadowsIntensity",
   "colorNum",
   "colorNumGk",
   "colorNumberPlate",
@@ -1345,6 +1534,15 @@ function collectKitData() {
   return {
     colorShirt: document.getElementById("l-color-shirt").value,
     colorGk: document.getElementById("l-color-gk").value,
+    shirtShadowsEnabled: document.getElementById("l-shirt-shadows-toggle")
+      .checked,
+    teamLogoShadowsEnabled: document.getElementById(
+      "l-team-logo-shadows-toggle",
+    ).checked,
+    shirtShadowsColor: document.getElementById("l-shirt-shadows-color").value,
+    shirtShadowsIntensity: document.getElementById(
+      "l-shirt-shadows-intensity",
+    ).value,
     colorNum: document.getElementById("l-color-num").value,
     colorNumGk: document.getElementById("l-color-num-gk").value,
     colorNumberPlate: document.getElementById("l-color-number-plate").value,
@@ -1360,6 +1558,21 @@ function applyKitData(d) {
   if (d.colorShirt)
     document.getElementById("l-color-shirt").value = d.colorShirt;
   if (d.colorGk) document.getElementById("l-color-gk").value = d.colorGk;
+  if (typeof d.shirtShadowsEnabled === "boolean")
+    document.getElementById("l-shirt-shadows-toggle").checked =
+      d.shirtShadowsEnabled;
+  if (typeof d.teamLogoShadowsEnabled === "boolean")
+    document.getElementById("l-team-logo-shadows-toggle").checked =
+      d.teamLogoShadowsEnabled;
+  else if (typeof d.shirtShadowsEnabled === "boolean")
+    document.getElementById("l-team-logo-shadows-toggle").checked =
+      d.shirtShadowsEnabled;
+  if (d.shirtShadowsColor === "white" || d.shirtShadowsColor === "black")
+    document.getElementById("l-shirt-shadows-color").value =
+      d.shirtShadowsColor;
+  if (d.shirtShadowsIntensity != null)
+    document.getElementById("l-shirt-shadows-intensity").value =
+      d.shirtShadowsIntensity;
   if (d.colorNum) document.getElementById("l-color-num").value = d.colorNum;
   if (d.colorNumGk)
     document.getElementById("l-color-num-gk").value = d.colorNumGk;
@@ -1393,16 +1606,15 @@ function saveCurrentAsKit() {
   const existing = list.findIndex((k) => k.name === name);
   const entry = { name, data: collectKitData() };
   if (existing >= 0) {
-    if (!confirm(`Un kit "${name}" existe déjà. L'écraser ?`)) return;
     list[existing] = entry;
   } else {
     list.push(entry);
   }
   setSavedKits(list);
-  nameInput.value = "";
   renderSavedKitsList();
   const idx = list.findIndex((k) => k.name === name);
   document.getElementById("l-saved-kit-select").value = String(idx);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadSelectedKit() {
   const sel = document.getElementById("l-saved-kit-select");
@@ -1418,7 +1630,6 @@ function deleteSelectedKit() {
   const idx = parseInt(sel.value, 10);
   const list = getSavedKits();
   if (isNaN(idx) || !list[idx]) return;
-  if (!confirm(`Supprimer le kit "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   setSavedKits(list);
   renderSavedKitsList();
@@ -1603,6 +1814,17 @@ const lCoachFirst = document.getElementById("l-coach-first");
 const lCoachLast = document.getElementById("l-coach-last");
 const lColorShirt = document.getElementById("l-color-shirt");
 const lColorGk = document.getElementById("l-color-gk");
+const lShirtShadowsToggle = document.getElementById("l-shirt-shadows-toggle");
+const lTeamLogoShadowsToggle = document.getElementById(
+  "l-team-logo-shadows-toggle",
+);
+const lShirtShadowsColor = document.getElementById("l-shirt-shadows-color");
+const lShirtShadowsIntensity = document.getElementById(
+  "l-shirt-shadows-intensity",
+);
+const lShirtShadowsIntensityValue = document.getElementById(
+  "l-shirt-shadows-intensity-value",
+);
 const lShirtStyle = document.getElementById("l-shirt-style");
 const lColorSleeves = document.getElementById("l-color-sleeves");
 const lColorStripes = document.getElementById("l-color-stripes");
@@ -1804,8 +2026,10 @@ function renderShirtSVG(color, numColor, number, options = {}) {
 
 function makeDraggable(el, playerObj) {
   let dragging = false;
+  let moved = false;
   el.addEventListener("mousedown", (e) => {
     dragging = true;
+    moved = false;
     e.preventDefault();
   });
   document.addEventListener("mousemove", (e) => {
@@ -1814,14 +2038,20 @@ function makeDraggable(el, playerObj) {
     const rect = pitch.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    playerObj.x = Math.max(2, Math.min(98, x));
-    playerObj.y = Math.max(2, Math.min(98, y));
+    const nextX = Math.max(2, Math.min(98, x));
+    const nextY = Math.max(2, Math.min(98, y));
+    moved ||= playerObj.x !== nextX || playerObj.y !== nextY;
+    playerObj.x = nextX;
+    playerObj.y = nextY;
     el.style.left = playerObj.x + "%";
     el.style.top = playerObj.y + "%";
   });
   document.addEventListener("mouseup", () => {
     if (dragging) {
       dragging = false;
+      if (moved) {
+        clearPresetSaveStatuses(document.querySelector('[data-editor="lineup"]'));
+      }
       saveLineup();
     }
   });
@@ -1835,11 +2065,35 @@ function renderTeamLogo() {
 }
 
 function updateLineupCommon() {
-  document
-    .getElementById("lineup-board")
-    .style.setProperty("--lb-text-color", lColorText.value);
-  // Typography per-element
   const board = document.getElementById("lineup-board");
+  document.getElementById("l-number-plate-color-field").hidden =
+    lShirtStyle.value !== "stripes";
+  board.style.setProperty("--lb-text-color", lColorText.value);
+  board.classList.toggle("show-shirt-shadows", lShirtShadowsToggle.checked);
+  board.classList.toggle(
+    "show-team-logo-shadows",
+    lTeamLogoShadowsToggle.checked,
+  );
+  const shirtShadowIntensity =
+    Number(lShirtShadowsIntensity.value) / 100;
+  const shirtShadowRgb =
+    lShirtShadowsColor.value === "black" ? "0, 0, 0" : "255, 255, 255";
+  board.style.setProperty(
+    "--lb-shirt-shadow-tight",
+    `rgba(${shirtShadowRgb}, ${shirtShadowIntensity})`,
+  );
+  board.style.setProperty(
+    "--lb-shirt-shadow-glow",
+    `rgba(${shirtShadowRgb}, ${0.85 * shirtShadowIntensity})`,
+  );
+  board.style.setProperty(
+    "--lb-shirt-shadow-depth",
+    String(0.55 * shirtShadowIntensity),
+  );
+  if (lShirtShadowsIntensityValue)
+    lShirtShadowsIntensityValue.textContent =
+      lShirtShadowsIntensity.value + "%";
+  // Typography per-element
   const teamFont = LB_FONTS[lTeamFont.value] || LB_FONTS.system;
   const teamEl = document.getElementById("lb-team-name");
   teamEl.style.fontFamily = teamFont;
@@ -1910,6 +2164,7 @@ function updateLineupCommon() {
   lCoachLast,
   lColorShirt,
   lColorGk,
+  lShirtShadowsIntensity,
   lColorNum,
   lColorNumGk,
   lColorNumberPlate,
@@ -1928,7 +2183,13 @@ function updateLineupCommon() {
     saveLineup();
   }),
 );
-[lFooterRound, lFooterLeg].forEach((el) =>
+[
+  lFooterRound,
+  lFooterLeg,
+  lShirtShadowsToggle,
+  lTeamLogoShadowsToggle,
+  lShirtShadowsColor,
+].forEach((el) =>
   el.addEventListener("change", () => {
     updateLineupCommon();
     saveLineup();
@@ -2135,8 +2396,8 @@ renderSavedKitsList();
 
 /* ----- Export / Import JSON (équipes + formations) ----- */
 function collectStorageStateByCategory() {
-  const counts = { lineup: 0, banner: 0, score: 0, showdown: 0, prefs: 0 };
-  const byCat = { lineup: {}, banner: {}, score: {}, showdown: {}, prefs: {} };
+  const counts = Object.fromEntries(IMPORT_CATEGORIES.map((cat) => [cat, 0]));
+  const byCat = Object.fromEntries(IMPORT_CATEGORIES.map((cat) => [cat, {}]));
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (!k || !k.startsWith("ucl-")) continue;
@@ -2178,6 +2439,12 @@ function downloadJsonPayload(state, selectedCategories) {
 function exportSavesToJson() {
   const modal = document.getElementById("l-export-modal");
   const { counts, byCat } = collectStorageStateByCategory();
+  const activeTab = document.querySelector(".tab.active");
+  const activeCategory = activeTab?.dataset.tab === "player"
+    ? "banner"
+    : activeTab?.dataset.tab;
+  const activeBtn = document.getElementById("l-export-modal-active-tab");
+  activeBtn.disabled = !counts[activeCategory];
   IMPORT_CATEGORIES.forEach((cat) => {
     const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
     const cb = modal.querySelector(`input[data-cat="${cat}"]`);
@@ -2193,9 +2460,11 @@ function exportSavesToJson() {
   const confirmBtn = document.getElementById("l-export-modal-confirm");
   const toggleBtn = document.getElementById("l-export-modal-toggle-all");
   const cleanup = () => {
+    modal.removeEventListener("close", cleanup);
     cancelBtn.removeEventListener("click", onCancel);
     confirmBtn.removeEventListener("click", onOk);
     toggleBtn.removeEventListener("click", onToggle);
+    activeBtn.removeEventListener("click", onExportActive);
   };
   const onCancel = () => {
     cleanup();
@@ -2223,20 +2492,29 @@ function exportSavesToJson() {
     const allChecked = boxes.every((cb) => cb.checked);
     boxes.forEach((cb) => (cb.checked = !allChecked));
   };
+  const onExportActive = () => {
+    if (!counts[activeCategory]) return;
+    cleanup();
+    modal.close();
+    downloadJsonPayload(byCat[activeCategory], [activeCategory]);
+  };
   cancelBtn.addEventListener("click", onCancel);
   confirmBtn.addEventListener("click", onOk);
   toggleBtn.addEventListener("click", onToggle);
+  activeBtn.addEventListener("click", onExportActive);
+  modal.addEventListener("close", cleanup);
   if (typeof modal.showModal === "function") modal.showModal();
   else modal.setAttribute("open", "");
 }
 
-const IMPORT_CATEGORIES = ["lineup", "banner", "score", "showdown", "prefs"];
+const IMPORT_CATEGORIES = ["lineup", "banner", "score", "shorts", "showdown", "prefs"];
 function categorizeStorageKey(key) {
   if (!key || !key.startsWith("ucl-")) return null;
   if (key.startsWith("ucl-lineup-")) return "lineup";
   if (key.startsWith("ucl-banner-") || key.startsWith("ucl-player-"))
     return "banner";
   if (key.startsWith("ucl-score-")) return "score";
+  if (key.startsWith("ucl-shorts-")) return "shorts";
   if (key.startsWith("ucl-showdown-")) return "showdown";
   return "prefs";
 }
@@ -2476,6 +2754,7 @@ function clearSavesByCategory() {
       lineup: "Lineup",
       banner: "Goal Scoreboard",
       score: "Live Score",
+      shorts: "Shorts",
       showdown: "Showdown",
       prefs: "Préférences",
     };
@@ -2793,15 +3072,38 @@ applyBgImage();
 const sHome = document.getElementById("s-home");
 const sHomeScore = document.getElementById("s-home-score");
 const sHomeColor = document.getElementById("s-home-color");
+const sHomeColor2 = document.getElementById("s-home-color-2");
+const sTimerToggle = document.getElementById("s-timer-toggle");
 const sAway = document.getElementById("s-away");
 const sAwayScore = document.getElementById("s-away-score");
 const sAwayColor = document.getElementById("s-away-color");
+const sAwayColor2 = document.getElementById("s-away-color-2");
 const sBg = document.getElementById("s-bg");
+const sTeamGap = document.getElementById("s-team-gap");
+const sTeamGapValue = document.getElementById("s-team-gap-value");
+const S_TEAM_GAP_KEY = "ucl-score-team-gap-v1";
+sTeamGap.value = localStorage.getItem(S_TEAM_GAP_KEY) ?? sTeamGap.defaultValue;
+const sChevronToggle = document.getElementById("s-chevron-toggle");
+const sChevronSideColor = document.getElementById("s-chevron-side-color");
+const sChevronColor = document.getElementById("s-chevron-color");
+const S_CHEVRON_KEY = "ucl-score-chevron-v1";
+const S_CHEVRON_SIDE_COLOR_KEY = "ucl-score-chevron-side-color-v1";
+const S_CHEVRON_COLOR_KEY = "ucl-score-chevron-color-v1";
+sChevronToggle.checked = localStorage.getItem(S_CHEVRON_KEY) === "1";
+sChevronSideColor.value =
+  localStorage.getItem(S_CHEVRON_SIDE_COLOR_KEY) || sChevronSideColor.defaultValue;
+sChevronColor.value =
+  localStorage.getItem(S_CHEVRON_COLOR_KEY) || sChevronColor.defaultValue;
+const sTimerBg = document.getElementById("s-timer-bg");
+const S_TIMER_BG_KEY = "ucl-score-timer-bg-v1";
+let timerBg = localStorage.getItem(S_TIMER_BG_KEY);
 const sBgOpacity = document.getElementById("s-bg-opacity");
 const sBgOpacityValue = document.getElementById("s-bg-opacity-value");
 const sBallBoxColor = document.getElementById("s-ball-box-color");
 const sBallColor = document.getElementById("s-ball-color");
 const sLeftLogo = document.getElementById("s-left-logo");
+const sLeftLogoSize = document.getElementById("s-left-logo-size");
+const sLeftLogoSizeValue = document.getElementById("s-left-logo-size-value");
 const sBandWidth = document.getElementById("s-band-width");
 const sBandWidthValue = document.getElementById("s-band-width-value");
 const sTrophyLogo = document.getElementById("s-trophy-logo");
@@ -2820,9 +3122,23 @@ const sScoreWeight = document.getElementById("s-score-weight");
 const sAggregateToggle = document.getElementById("s-aggregate-toggle");
 const sAggregateHome = document.getElementById("s-aggregate-home");
 const sAggregateAway = document.getElementById("s-aggregate-away");
+const liveScorePairs = [
+  { match: sHomeScore, aggregate: sAggregateHome },
+  { match: sAwayScore, aggregate: sAggregateAway },
+];
 const sPenaltyToggle = document.getElementById("s-penalty-toggle");
+const sPenaltyColor = document.getElementById("s-penalty-color");
 let sPenaltyHomeShots = [];
 let sPenaltyAwayShots = [];
+const SCORE_PENALTY_SHOTS_PER_ROW = 5;
+const SCORE_PENALTY_SHOT_SIZE = 25.5;
+const SCORE_PENALTY_SHOT_GAP = 3;
+const SCORE_PENALTY_TEAM_PADDING = 10;
+const SCORE_PENALTY_MIN_TEAM_WIDTH = Math.ceil(
+  2 * SCORE_PENALTY_TEAM_PADDING +
+    SCORE_PENALTY_SHOTS_PER_ROW * SCORE_PENALTY_SHOT_SIZE +
+    (SCORE_PENALTY_SHOTS_PER_ROW - 1) * SCORE_PENALTY_SHOT_GAP,
+);
 
 const S_FONTS = {
   condensed: "'Barlow Condensed', 'Archivo Narrow', 'Arial Narrow', sans-serif",
@@ -2835,6 +3151,10 @@ const S_FONTS = {
 };
 
 function updateScoreBanner() {
+  for (const pair of liveScorePairs) pair.previous = Number(pair.match.value);
+  document
+    .getElementById("score-banner")
+    .classList.toggle("show-timer", sTimerToggle.checked);
   document.getElementById("sb-home").textContent = sHome.value;
   document.getElementById("sb-home-score").textContent = sHomeScore.value;
   document.getElementById("sb-away").textContent = sAway.value;
@@ -2849,8 +3169,13 @@ function updateScoreBanner() {
     sPenaltyAwayShots.length === 0;
   document.getElementById("s-penalty-reset").disabled =
     sPenaltyHomeShots.length === 0 && sPenaltyAwayShots.length === 0;
-  document.getElementById("sb-home-color").style.background = sHomeColor.value;
-  document.getElementById("sb-away-color").style.background = sAwayColor.value;
+  document.getElementById("sb-home-color").style.background =
+    `linear-gradient(to bottom, ${sHomeColor.value} 0 50%, ${sHomeColor2.value} 50% 100%)`;
+  document.getElementById("sb-away-color").style.background =
+    `linear-gradient(to bottom, ${sAwayColor.value} 0 50%, ${sAwayColor2.value} 50% 100%)`;
+  document.querySelectorAll(".sb-penalty-team").forEach((el) => {
+    el.style.background = sPenaltyColor.value;
+  });
   document.getElementById("sb-ball-box").style.background = sBallBoxColor.value;
   document.getElementById("sb-ball").style.backgroundColor = sBallColor.value;
   const bandPx = sBandWidth.value + "px";
@@ -2859,6 +3184,11 @@ function updateScoreBanner() {
   if (sBandWidthValue) sBandWidthValue.textContent = sBandWidth.value + "px";
 
   const ballEl = document.getElementById("sb-ball");
+  const leftLogoSize = sLeftLogoSize.value + "px";
+  ballEl.style.width = leftLogoSize;
+  ballEl.style.height = leftLogoSize;
+  if (sLeftLogoSizeValue)
+    sLeftLogoSizeValue.textContent = sLeftLogoSize.value + "px";
   const isBallLogo = sLeftLogo.value === "ucl";
   const leftLogoImage = {
     uefa: 'url("./Logos/UEFA_Logo.png")',
@@ -2916,12 +3246,35 @@ function updateScoreBanner() {
   if (sScoreSizeValue) sScoreSizeValue.textContent = sScoreSize.value + "px";
   const bgAlpha = +sBgOpacity.value / 100;
   const bgRgba = hexToRgba(sBg.value, bgAlpha);
+  const scoreboard = document.querySelector("#score-banner .sb-scoreboard");
+  const teamGap = sTeamGap.value + "px";
+  scoreboard.style.setProperty("--score-team-gap", teamGap);
+  sTeamGapValue.textContent = sTeamGap.value + " px";
+  scoreboard.classList.toggle("show-chevrons", sChevronToggle.checked);
+  scoreboard.style.setProperty("--score-bg-opacity", bgAlpha);
+  scoreboard.style.setProperty("--score-center-bg", bgRgba);
+  scoreboard.style.setProperty("--score-chevron-color", sChevronColor.value);
+  scoreboard.style.setProperty(
+    "--score-side-bg",
+    hexToRgba(sChevronSideColor.value, bgAlpha),
+  );
   if (sBgOpacityValue) sBgOpacityValue.textContent = sBgOpacity.value + "%";
   document
     .querySelectorAll(
       "#score-banner .sb-team, #score-banner .sb-score, #score-banner .sb-sep",
     )
-    .forEach((el) => (el.style.background = bgRgba));
+    .forEach((el) => {
+      el.style.backgroundColor =
+        sChevronToggle.checked && el.classList.contains("sb-team")
+          ? "transparent"
+          : bgRgba;
+    });
+  const timer = document.getElementById("sb-timer");
+  sTimerBg.value = timerBg || sBg.value;
+  timer.style.background = hexToRgba(sTimerBg.value, bgAlpha);
+  timer.style.fontFamily = scoreFont;
+  timer.style.fontSize = sScoreSize.value + "px";
+  timer.style.fontWeight = sScoreWeight.value;
 
   const wrap = document.getElementById("score-banner-wrap");
   const aggregateEl = document.getElementById("sb-aggregate");
@@ -2929,6 +3282,39 @@ function updateScoreBanner() {
     wrap.classList.toggle("show-aggregate", !!sAggregateToggle.checked);
     wrap.classList.toggle("show-penalties", !!sPenaltyToggle.checked);
     aggregateEl.textContent = `( ${sAggregateHome.value} - ${sAggregateAway.value} )`;
+  }
+  if (wrap) {
+    const scoreboardRect = document
+      .querySelector("#score-banner .sb-scoreboard")
+      .getBoundingClientRect();
+    const separatorRect = document
+      .querySelector("#score-banner .sb-sep")
+      .getBoundingClientRect();
+    const homePenaltyWidth = Math.max(
+      SCORE_PENALTY_MIN_TEAM_WIDTH,
+      separatorRect.left - scoreboardRect.left,
+    );
+    const awayPenaltyWidth = Math.max(
+      SCORE_PENALTY_MIN_TEAM_WIDTH,
+      scoreboardRect.right - separatorRect.right,
+    );
+    const penaltyGridWidth =
+      homePenaltyWidth + separatorRect.width + awayPenaltyWidth;
+    const bannerRect = document
+      .getElementById("score-banner")
+      .getBoundingClientRect();
+    const penaltyOffset =
+      scoreboardRect.left -
+      bannerRect.left +
+      (scoreboardRect.width - penaltyGridWidth) / 2;
+    wrap.style.setProperty(
+      "--sb-penalty-grid-columns",
+      `${homePenaltyWidth}px ${separatorRect.width}px ${awayPenaltyWidth}px`,
+    );
+    wrap.style.setProperty("--sb-penalty-grid-width", `${penaltyGridWidth}px`);
+    document
+      .getElementById("sb-penalty-score")
+      .style.setProperty("--sb-penalty-offset", `${penaltyOffset}px`);
   }
 }
 
@@ -2955,15 +3341,16 @@ function addPenaltyShot(shots, scored) {
 
 [
   sHome,
-  sHomeScore,
   sHomeColor,
+  sHomeColor2,
   sAway,
-  sAwayScore,
   sAwayColor,
+  sAwayColor2,
   sBg,
   sBgOpacity,
   sBallBoxColor,
   sBallColor,
+  sLeftLogoSize,
   sBandWidth,
   sTrophyColor,
   sTrophySize,
@@ -2971,7 +3358,19 @@ function addPenaltyShot(shots, scored) {
   sScoreSize,
   sAggregateHome,
   sAggregateAway,
+  sPenaltyColor,
 ].forEach((el) => el.addEventListener("input", updateScoreBanner));
+for (const pair of liveScorePairs) {
+  const updateMatchScore = () => {
+    const difference = Number(pair.match.value) - pair.previous;
+    if (difference) {
+      pair.aggregate.value = Math.max(0, Number(pair.aggregate.value) + difference);
+    }
+    updateScoreBanner();
+  };
+  pair.match.addEventListener("input", updateMatchScore);
+  pair.match.addEventListener("change", updateMatchScore);
+}
 [
   sLeftLogo,
   sTeamFont,
@@ -3014,22 +3413,23 @@ if (sSwapTeams) {
   sSwapTeams.addEventListener("click", () => {
     const pairs = [
       [sHome, sAway],
-      [sHomeScore, sAwayScore],
       [sHomeColor, sAwayColor],
-      [sAggregateHome, sAggregateAway],
+      [sHomeColor2, sAwayColor2],
     ];
     pairs.forEach(([a, b]) => {
       const tmp = a.value;
       a.value = b.value;
       b.value = tmp;
-      a.dispatchEvent(new Event("input", { bubbles: true }));
-      b.dispatchEvent(new Event("input", { bubbles: true }));
     });
+    sAggregateHome.value = Number(sAwayScore.value);
+    sAggregateAway.value = Number(sHomeScore.value);
+    sHomeScore.value = 0;
+    sAwayScore.value = 0;
     [sPenaltyHomeShots, sPenaltyAwayShots] = [
       sPenaltyAwayShots,
       sPenaltyHomeShots,
     ];
-    sAggregateToggle.checked = !sAggregateToggle.checked;
+    sAggregateToggle.checked = true;
     sAggregateToggle.dispatchEvent(new Event("change", { bubbles: true }));
   });
 }
@@ -3043,7 +3443,9 @@ const S_BG_IMAGE_FADE_DIR_KEY = "ucl-score-bg-image-fade-dir-v1";
 const S_BG_IMAGE_FADE_END_KEY = "ucl-score-bg-image-fade-end-v1";
 const S_BALL_BOX_COLOR_KEY = "ucl-score-ball-box-color-v1";
 const S_BALL_COLOR_KEY = "ucl-score-ball-color-v1";
+const S_PENALTY_COLOR_KEY = "ucl-score-penalty-color-v1";
 const S_LEFT_LOGO_KEY = "ucl-score-left-logo-v1";
+const S_LEFT_LOGO_SIZE_KEY = "ucl-score-left-logo-size-v1";
 const S_BG_OPACITY_KEY = "ucl-score-bg-opacity-v1";
 const S_BAND_WIDTH_KEY = "ucl-score-band-width-v1";
 const S_TROPHY_COLOR_KEY = "ucl-score-trophy-color-v1";
@@ -3052,6 +3454,7 @@ const S_TROPHY_SIZE_KEY = "ucl-score-trophy-size-v1";
 const S_TROPHY_LOGO_KEY = "ucl-score-trophy-logo-v1";
 const S_TEAM_TYPO_KEY = "ucl-score-team-typo-v1";
 const S_SCORE_TYPO_KEY = "ucl-score-score-typo-v1";
+const S_TIMER_ENABLED_KEY = "ucl-score-timer-enabled-v1";
 
 const sBgImgToggle = document.getElementById("s-bg-image-toggle");
 const sBgImgSelect = document.getElementById("s-bg-image-select");
@@ -3114,6 +3517,9 @@ if (
 }
 const savedSImgOp = localStorage.getItem(S_BG_IMAGE_OPACITY_KEY);
 if (savedSImgOp != null) sBgImgOpacity.value = savedSImgOp;
+const savedTimerEnabled = localStorage.getItem(S_TIMER_ENABLED_KEY);
+if (savedTimerEnabled != null)
+  sTimerToggle.checked = savedTimerEnabled === "1";
 sBgImgFadeToggle.checked = localStorage.getItem(S_BG_IMAGE_FADE_KEY) === "1";
 const savedSFadeDir = localStorage.getItem(S_BG_IMAGE_FADE_DIR_KEY);
 if (savedSFadeDir) sBgImgFadeDir.value = savedSFadeDir;
@@ -3123,12 +3529,16 @@ const savedBallBoxColor = localStorage.getItem(S_BALL_BOX_COLOR_KEY);
 if (savedBallBoxColor) sBallBoxColor.value = savedBallBoxColor;
 const savedBallColor = localStorage.getItem(S_BALL_COLOR_KEY);
 if (savedBallColor) sBallColor.value = savedBallColor;
+const savedPenaltyColor = localStorage.getItem(S_PENALTY_COLOR_KEY);
+if (savedPenaltyColor) sPenaltyColor.value = savedPenaltyColor;
 const savedLeftLogo = localStorage.getItem(S_LEFT_LOGO_KEY);
 if (
   savedLeftLogo &&
   [...sLeftLogo.options].some((o) => o.value === savedLeftLogo)
 )
   sLeftLogo.value = savedLeftLogo;
+const savedLeftLogoSize = localStorage.getItem(S_LEFT_LOGO_SIZE_KEY);
+if (savedLeftLogoSize != null) sLeftLogoSize.value = savedLeftLogoSize;
 const savedSBgOpacity = localStorage.getItem(S_BG_OPACITY_KEY);
 if (savedSBgOpacity != null) sBgOpacity.value = savedSBgOpacity;
 const savedSBandWidth = localStorage.getItem(S_BAND_WIDTH_KEY);
@@ -3217,6 +3627,9 @@ sBgImgClear.addEventListener("click", () => {
 sBallBoxColor.addEventListener("input", () => {
   localStorage.setItem(S_BALL_BOX_COLOR_KEY, sBallBoxColor.value);
 });
+sPenaltyColor.addEventListener("input", () => {
+  localStorage.setItem(S_PENALTY_COLOR_KEY, sPenaltyColor.value);
+});
 sBallColor.addEventListener("input", () => {
   localStorage.setItem(S_BALL_COLOR_KEY, sBallColor.value);
   updateScoreBanner();
@@ -3225,8 +3638,39 @@ sLeftLogo.addEventListener("change", () => {
   localStorage.setItem(S_LEFT_LOGO_KEY, sLeftLogo.value);
   updateScoreBanner();
 });
+sLeftLogoSize.addEventListener("input", () => {
+  localStorage.setItem(S_LEFT_LOGO_SIZE_KEY, sLeftLogoSize.value);
+});
+sTimerToggle.addEventListener("change", () => {
+  localStorage.setItem(
+    S_TIMER_ENABLED_KEY,
+    sTimerToggle.checked ? "1" : "0",
+  );
+  updateScoreBanner();
+});
 sBgOpacity.addEventListener("input", () => {
   localStorage.setItem(S_BG_OPACITY_KEY, sBgOpacity.value);
+});
+sTeamGap.addEventListener("input", () => {
+  localStorage.setItem(S_TEAM_GAP_KEY, sTeamGap.value);
+  updateScoreBanner();
+});
+sChevronToggle.addEventListener("change", () => {
+  localStorage.setItem(S_CHEVRON_KEY, sChevronToggle.checked ? "1" : "0");
+  updateScoreBanner();
+});
+sChevronSideColor.addEventListener("input", () => {
+  localStorage.setItem(S_CHEVRON_SIDE_COLOR_KEY, sChevronSideColor.value);
+  updateScoreBanner();
+});
+sChevronColor.addEventListener("input", () => {
+  localStorage.setItem(S_CHEVRON_COLOR_KEY, sChevronColor.value);
+  updateScoreBanner();
+});
+sTimerBg.addEventListener("input", () => {
+  timerBg = sTimerBg.value;
+  localStorage.setItem(S_TIMER_BG_KEY, timerBg);
+  updateScoreBanner();
 });
 sBandWidth.addEventListener("input", () => {
   localStorage.setItem(S_BAND_WIDTH_KEY, sBandWidth.value);
@@ -3283,23 +3727,37 @@ function saveScoreTypo() {
 
 /* ----- Score banner save/load ----- */
 const S_SAVED_KEY = "ucl-score-saves-v1";
+const sSaveName = document.getElementById("s-save-name");
 
 function collectScoreData() {
   return {
     home: sHome.value,
     homeScore: sHomeScore.value,
+    aggregateEnabled: sAggregateToggle.checked,
+    aggregateHome: sAggregateHome.value,
+    aggregateAway: sAggregateAway.value,
     homeColor: sHomeColor.value,
+    homeColor2: sHomeColor2.value,
+    timerEnabled: sTimerToggle.checked,
+    timerBg,
     penaltyEnabled: sPenaltyToggle.checked,
+    penaltyColor: sPenaltyColor.value,
     penaltyHomeShots: [...sPenaltyHomeShots],
     penaltyAwayShots: [...sPenaltyAwayShots],
     away: sAway.value,
     awayScore: sAwayScore.value,
     awayColor: sAwayColor.value,
+    awayColor2: sAwayColor2.value,
     bg: sBg.value,
+    chevronsEnabled: sChevronToggle.checked,
+    chevronSideColor: sChevronSideColor.value,
+    chevronColor: sChevronColor.value,
+    teamGap: sTeamGap.value,
     bgOpacity: sBgOpacity.value,
     ballBoxColor: sBallBoxColor.value,
     ballColor: sBallColor.value,
     leftLogo: sLeftLogo.value,
+    leftLogoSize: sLeftLogoSize.value,
     bandWidth: sBandWidth.value,
     trophyColor: sTrophyColor.value,
     trophyWhite: sTrophyWhiteToggle.checked,
@@ -3332,7 +3790,16 @@ function applyScoreData(d) {
   if (d.home != null) sHome.value = d.home;
   if (d.homeScore != null) sHomeScore.value = d.homeScore;
   if (d.homeColor) sHomeColor.value = d.homeColor;
+  sHomeColor2.value = d.homeColor2 || sHomeColor.value;
+  if (typeof d.timerEnabled === "boolean") {
+    sTimerToggle.checked = d.timerEnabled;
+    localStorage.setItem(S_TIMER_ENABLED_KEY, d.timerEnabled ? "1" : "0");
+  }
   sPenaltyToggle.checked = d.penaltyEnabled === true;
+  if (d.penaltyColor) {
+    sPenaltyColor.value = d.penaltyColor;
+    localStorage.setItem(S_PENALTY_COLOR_KEY, d.penaltyColor);
+  }
   sPenaltyHomeShots = Array.isArray(d.penaltyHomeShots)
     ? d.penaltyHomeShots.filter((shot) => typeof shot === "boolean")
     : [];
@@ -3341,14 +3808,37 @@ function applyScoreData(d) {
     : [];
   if (d.away != null) sAway.value = d.away;
   if (d.awayScore != null) sAwayScore.value = d.awayScore;
+  sAggregateToggle.checked = d.aggregateEnabled === true;
+  sAggregateHome.value = d.aggregateHome ?? Number(sHomeScore.value);
+  sAggregateAway.value = d.aggregateAway ?? Number(sAwayScore.value);
   if (d.awayColor) sAwayColor.value = d.awayColor;
+  sAwayColor2.value = d.awayColor2 || sAwayColor.value;
   if (d.bg) sBg.value = d.bg;
+  sTeamGap.value = d.teamGap ?? sTeamGap.defaultValue;
+  localStorage.setItem(S_TEAM_GAP_KEY, sTeamGap.value);
+  sChevronToggle.checked = d.chevronsEnabled === true;
+  localStorage.setItem(S_CHEVRON_KEY, sChevronToggle.checked ? "1" : "0");
+  sChevronSideColor.value = /^#[\da-f]{6}$/i.test(d.chevronSideColor)
+    ? d.chevronSideColor
+    : sChevronSideColor.defaultValue;
+  localStorage.setItem(S_CHEVRON_SIDE_COLOR_KEY, sChevronSideColor.value);
+  sChevronColor.value = /^#[\da-f]{6}$/i.test(d.chevronColor)
+    ? d.chevronColor
+    : sChevronColor.defaultValue;
+  localStorage.setItem(S_CHEVRON_COLOR_KEY, sChevronColor.value);
+  timerBg = /^#[\da-f]{6}$/i.test(d.timerBg) ? d.timerBg : null;
+  if (timerBg) localStorage.setItem(S_TIMER_BG_KEY, timerBg);
+  else localStorage.removeItem(S_TIMER_BG_KEY);
   if (d.bgOpacity != null) sBgOpacity.value = d.bgOpacity;
   if (d.ballBoxColor) sBallBoxColor.value = d.ballBoxColor;
   if (d.ballColor) sBallColor.value = d.ballColor;
   if (d.leftLogo && [...sLeftLogo.options].some((o) => o.value === d.leftLogo)) {
     sLeftLogo.value = d.leftLogo;
     localStorage.setItem(S_LEFT_LOGO_KEY, d.leftLogo);
+  }
+  if (d.leftLogoSize != null) {
+    sLeftLogoSize.value = d.leftLogoSize;
+    localStorage.setItem(S_LEFT_LOGO_SIZE_KEY, d.leftLogoSize);
   }
   if (d.bandWidth != null) sBandWidth.value = d.bandWidth;
   if (d.trophyColor) sTrophyColor.value = d.trophyColor;
@@ -3417,8 +3907,7 @@ function renderSavedScoresList() {
 }
 
 function saveCurrentScore() {
-  const nameInput = document.getElementById("s-save-name");
-  const name = nameInput.value.trim();
+  const name = sSaveName.value.trim();
   if (!name) {
     alert("Donne un nom à la sauvegarde.");
     return;
@@ -3427,14 +3916,14 @@ function saveCurrentScore() {
   const idx = list.findIndex((x) => x.name === name);
   const entry = { name, data: collectScoreData() };
   if (idx >= 0) {
-    if (!confirm(`Une sauvegarde "${name}" existe déjà. L'écraser ?`)) return;
     list[idx] = entry;
   } else {
     list.push(entry);
   }
   setSavedScores(list);
   renderSavedScoresList();
-  nameInput.value = "";
+  document.getElementById("s-saved-select").value = String(idx >= 0 ? idx : list.length - 1);
+  showPresetSaveStatus(sSaveName, name);
 }
 
 function loadCurrentScore() {
@@ -3444,6 +3933,7 @@ function loadCurrentScore() {
   const list = getSavedScores();
   if (!list[idx]) return;
   applyScoreData(list[idx].data);
+  sSaveName.value = list[idx].name;
 }
 
 function deleteCurrentScore() {
@@ -3452,7 +3942,6 @@ function deleteCurrentScore() {
   if (isNaN(idx)) return;
   const list = getSavedScores();
   if (!list[idx]) return;
-  if (!confirm(`Supprimer "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   setSavedScores(list);
   renderSavedScoresList();
@@ -3522,22 +4011,6 @@ const DEFAULT_UCL_SVG = `
 </svg>`;
 
 let centralLogoURL = null;
-
-// Try to auto-load ./ucl-logo.png from the project folder. If found, use it
-// as the default central logo (user can override by uploading another image).
-(function tryLoadLocalUclLogo() {
-  const img = new Image();
-  img.onload = () => {
-    if (centralLogoURL === null) {
-      centralLogoURL = "./ucl-logo.png";
-      if (typeof renderBracket === "function") renderBracket();
-    }
-  };
-  img.onerror = () => {
-    /* file not present — keep SVG fallback */
-  };
-  img.src = "./ucl-logo.png";
-})();
 
 let bracketTeams = JSON.parse(JSON.stringify(defaultBracketTeams));
 
@@ -3688,6 +4161,866 @@ renderBracketEditor();
 renderBracket();
 
 /* ============================================================
+   SHORTS LIVE SCORE
+   ============================================================ */
+const SHORTS_STORAGE_KEY = "ucl-shorts-score-v1";
+const SHORTS_PRESETS_KEY = "ucl-shorts-presets-v1";
+const shortsSeason = document.getElementById("shorts-season");
+const shortsRound = document.getElementById("shorts-round");
+const shortsLogoSize = document.getElementById("shorts-logo-size");
+const shortsLogoGap = document.getElementById("shorts-logo-gap");
+const shortsCenterWidth = document.getElementById("shorts-center-width");
+const shortsCenterVertical = document.getElementById("shorts-center-vertical");
+const shortsScoreWidth = document.getElementById("shorts-score-width");
+const shortsCompetitionLogoSize = document.getElementById(
+  "shorts-competition-logo-size",
+);
+const shortsCompetitionLogoVertical = document.getElementById(
+  "shorts-competition-logo-vertical",
+);
+const shortsMetaFont = document.getElementById("shorts-meta-font");
+const shortsMetaFontSize = document.getElementById("shorts-meta-font-size");
+const shortsCenterBackground = document.getElementById("shorts-center-bg");
+const shortsCompetitionBackground = document.getElementById(
+  "shorts-competition-bg",
+);
+const shortsBorderStart = document.getElementById("shorts-border-start");
+const shortsBorderEnd = document.getElementById("shorts-border-end");
+const shortsBorderWidth = document.getElementById("shorts-border-width");
+const shortsCompetitionBorderStart = document.getElementById(
+  "shorts-competition-border-start",
+);
+const shortsCompetitionBorderEnd = document.getElementById(
+  "shorts-competition-border-end",
+);
+const shortsCompetitionBorderWidth = document.getElementById(
+  "shorts-competition-border-width",
+);
+const shortsHomeScore = document.getElementById("shorts-home-score");
+const shortsAwayScore = document.getElementById("shorts-away-score");
+const shortsCompetitionLogoFile = document.getElementById(
+  "shorts-competition-logo-file",
+);
+const shortsCompetitionLogoSelect = document.getElementById(
+  "shorts-competition-logo-select",
+);
+const shortsCompetitionLogoWhite = document.getElementById(
+  "shorts-competition-logo-white",
+);
+const shortsHomeLogoFile = document.getElementById("shorts-home-logo-file");
+const shortsAwayLogoFile = document.getElementById("shorts-away-logo-file");
+const shortsPenaltyToggle = document.getElementById("shorts-penalty-toggle");
+const shortsPenaltyColor = document.getElementById("shorts-penalty-color");
+const shortsPenaltyWidth = document.getElementById("shorts-penalty-width");
+let shortsPenaltyHomeShots = [];
+let shortsPenaltyAwayShots = [];
+const shortsSavedSelect = document.getElementById("shorts-saved-select");
+const shortsSaveName = document.getElementById("shorts-save-name");
+let shortsCompetitionLogoURL = "./Logos/ucl_full_logo.png";
+let shortsHomeLogoURL = "./Logos/Logo_Liverpool_FC_2012.png";
+let shortsAwayLogoURL = "./Logos/Real_Madrid_2026.png";
+const SHORTS_META_FONTS = {
+  montserrat: "'Montserrat', Arial, sans-serif",
+  system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+};
+const SHORTS_PENALTY_GAP = 8;
+const SHORTS_PENALTY_SHOT_SIZE = 25.5;
+const SHORTS_PENALTY_SHOT_GAP = 3;
+const SHORTS_PENALTY_PADDING = 6;
+const SHORTS_PENALTY_WIDTH_VERSION = 3;
+const SHORTS_PENALTY_LEGACY_WIDTH_VERSION = 2;
+const SHORTS_PENALTY_SHOTS_PER_ROW = 5;
+const SHORTS_PENALTY_MIN_WIDTH =
+  2 * SHORTS_PENALTY_PADDING +
+  SHORTS_PENALTY_SHOTS_PER_ROW * SHORTS_PENALTY_SHOT_SIZE +
+  (SHORTS_PENALTY_SHOTS_PER_ROW - 1) * SHORTS_PENALTY_SHOT_GAP;
+
+function updateShortsBoardHeight(
+  board,
+  logoSize,
+  competitionLogoFrameSize,
+  centerHeight,
+  logoVerticalPosition,
+  centerVerticalPosition,
+  penaltyRowHeight,
+) {
+  const boardWidth = board.clientWidth;
+  if (!boardWidth) return;
+
+  const boardStyle = getComputedStyle(board);
+  const horizontalPadding =
+    parseFloat(boardStyle.paddingLeft) + parseFloat(boardStyle.paddingRight);
+  const verticalPadding =
+    parseFloat(boardStyle.paddingTop) + parseFloat(boardStyle.paddingBottom);
+  const contentWidth = boardWidth - horizontalPadding;
+  const logoHeight = (logoSize / 1440) * contentWidth;
+  const badgeTopOffset =
+    competitionLogoFrameSize / 2 - 4 - logoVerticalPosition;
+  const badgeSafeHeight =
+    centerHeight +
+    2 * Math.abs(centerVerticalPosition) +
+    2 * Math.max(0, badgeTopOffset);
+  const penaltySpace = penaltyRowHeight ? penaltyRowHeight + 4 : 0;
+  board.style.height = `${Math.max(
+    boardWidth / 4.5,
+    logoHeight + penaltySpace + verticalPadding,
+    badgeSafeHeight + penaltySpace,
+  )}px`;
+}
+
+function setShortsLogo(image, fallback, url, alt, fallbackText) {
+  fallback.textContent = fallbackText;
+  image.alt = alt;
+  image.hidden = !url;
+  fallback.hidden = Boolean(url);
+  image.onerror = () => {
+    image.hidden = true;
+    fallback.hidden = false;
+  };
+  if (url) image.src = url;
+  else image.removeAttribute("src");
+}
+
+function syncShortsCompetitionLogoSelect() {
+  const selectedLogo = shortsCompetitionLogoURL || "";
+  [...shortsCompetitionLogoSelect.options]
+    .filter(
+      (option) =>
+        option.dataset.customLogo === "true" &&
+        option.value !== selectedLogo,
+    )
+    .forEach((option) => option.remove());
+
+  if (
+    selectedLogo &&
+    ![...shortsCompetitionLogoSelect.options].some(
+      (option) => option.value === selectedLogo,
+    )
+  ) {
+    const option = document.createElement("option");
+    option.value = selectedLogo;
+    option.textContent = `Personnalisé — ${selectedLogo.split(/[\\/]/).pop()}`;
+    option.dataset.customLogo = "true";
+    shortsCompetitionLogoSelect.append(option);
+  }
+  shortsCompetitionLogoSelect.value = selectedLogo;
+}
+
+function updateShortsPreview() {
+  const logoSize = Number(shortsLogoSize.value);
+  const board = document.getElementById("shorts-board");
+  const boardStyle = getComputedStyle(board);
+  const boardContentWidth =
+    board.clientWidth -
+    parseFloat(boardStyle.paddingLeft) -
+    parseFloat(boardStyle.paddingRight);
+  const centerWidth = Math.max(
+    120,
+    (Number(shortsCenterWidth.value) / 1440) * boardContentWidth,
+  );
+  const centerVerticalPosition = Number(shortsCenterVertical.value);
+  const competitionLogoSize = Number(shortsCompetitionLogoSize.value);
+  const competitionLogoFrameSize = competitionLogoSize + 16;
+  const scoreWidth = Number(shortsScoreWidth.value);
+  const requestedLogoWidth = (logoSize / 1440) * boardContentWidth;
+  const logoGapWidth =
+    (Number(shortsLogoGap.value) / 1440) * boardContentWidth;
+  const minimumCenterWidth = Math.max(120, competitionLogoFrameSize);
+  const minimumScoreWidth = 40;
+  const requestedMiddleWidth = centerWidth + 2 * scoreWidth;
+  const availableMiddleWidth = Math.max(
+    0,
+    boardContentWidth -
+      2 * (requestedLogoWidth + logoGapWidth + 14),
+  );
+  const minimumMiddleWidth =
+    minimumCenterWidth + 2 * minimumScoreWidth;
+  const middleScale = Math.min(
+    1,
+    Math.max(
+      minimumMiddleWidth / requestedMiddleWidth,
+      availableMiddleWidth / requestedMiddleWidth,
+    ),
+  );
+  const actualCenterWidth = Math.max(
+    minimumCenterWidth,
+    centerWidth * middleScale,
+  );
+  const actualScoreWidth = Math.max(
+    minimumScoreWidth,
+    scoreWidth * middleScale,
+  );
+  const requestedPenaltyWidth = Number(shortsPenaltyWidth.value);
+  const maximumPenaltyWidth = Math.max(
+    SHORTS_PENALTY_MIN_WIDTH,
+    actualScoreWidth + actualCenterWidth / 2,
+  );
+  const actualPenaltyWidth = Math.min(
+    requestedPenaltyWidth,
+    maximumPenaltyWidth,
+  );
+  const sideTrackWidth =
+    (boardContentWidth - actualCenterWidth - 2 * actualScoreWidth) / 2;
+  const actualLogoWidth = Math.max(
+    0,
+    Math.min(
+      requestedLogoWidth,
+      sideTrackWidth - 14 - logoGapWidth,
+    ),
+  );
+  const actualLogoSliderSize = boardContentWidth
+    ? (actualLogoWidth / boardContentWidth) * 1440
+    : logoSize;
+  const penaltyResults = document.getElementById("shorts-penalty-results");
+  const penaltyResultsEnabled = shortsPenaltyToggle.checked;
+  penaltyResults.hidden = !penaltyResultsEnabled;
+  renderPenaltyShots("shorts-home-penalty-shots", shortsPenaltyHomeShots);
+  renderPenaltyShots("shorts-away-penalty-shots", shortsPenaltyAwayShots);
+  const maxPenaltyShotsPerRow = Math.min(
+    SHORTS_PENALTY_SHOTS_PER_ROW,
+    Math.max(
+      1,
+      Math.floor(
+        (actualPenaltyWidth - 2 * SHORTS_PENALTY_PADDING +
+          SHORTS_PENALTY_SHOT_GAP) /
+          (SHORTS_PENALTY_SHOT_SIZE + SHORTS_PENALTY_SHOT_GAP),
+      ),
+    ),
+  );
+  const penaltyRows = Math.max(
+    1,
+    Math.ceil(
+      Math.max(
+        shortsPenaltyHomeShots.length,
+        shortsPenaltyAwayShots.length,
+      ) /
+        maxPenaltyShotsPerRow,
+    ),
+  );
+  const penaltyRowHeight = penaltyResultsEnabled
+    ? Math.ceil(
+        2 * SHORTS_PENALTY_PADDING +
+          penaltyRows * SHORTS_PENALTY_SHOT_SIZE +
+          (penaltyRows - 1) * SHORTS_PENALTY_SHOT_GAP,
+      )
+    : 0;
+  const competitionLogoOffset = competitionLogoFrameSize / 2 - 4;
+  const logoVerticalPosition = Number(shortsCompetitionLogoVertical.value);
+  const centerTopPadding = Math.max(
+    38,
+    competitionLogoFrameSize / 2 + 8 + logoVerticalPosition,
+  );
+  const metaFontScale = Math.min(
+    1,
+    actualCenterWidth / 240,
+    actualScoreWidth / 90,
+  );
+  const metaFontSize = Number(shortsMetaFontSize.value);
+  const roundFontSize = Math.max(10, metaFontSize * metaFontScale);
+  const seasonFontSize = Math.max(
+    10,
+    metaFontSize * (19 / 23) * metaFontScale,
+  );
+  const centerTextHeight = roundFontSize * 1.05 + seasonFontSize + 5;
+  const centerHeight = Math.max(
+    90,
+    centerTopPadding + centerTextHeight + 12,
+  );
+  board.style.setProperty(
+    "--shorts-club-logo-size",
+    `${actualLogoWidth}px`,
+  );
+  board.style.setProperty(
+    "--shorts-logo-gap",
+    `${logoGapWidth}px`,
+  );
+  board.style.setProperty(
+    "--shorts-center-width",
+    `${actualCenterWidth}px`,
+  );
+  board.style.setProperty(
+    "--shorts-center-vertical",
+    `${centerVerticalPosition}px`,
+  );
+  board.style.setProperty(
+    "--shorts-score-width",
+    `${actualScoreWidth}px`,
+  );
+  board.style.setProperty(
+    "--shorts-competition-logo-frame-size",
+    `${competitionLogoFrameSize}px`,
+  );
+  board.style.setProperty(
+    "--shorts-competition-logo-offset",
+    `${-competitionLogoOffset + logoVerticalPosition}px`,
+  );
+  board.style.setProperty(
+    "--shorts-center-top-padding",
+    `${centerTopPadding}px`,
+  );
+  board.style.setProperty("--shorts-center-height", `${centerHeight}px`);
+  board.style.setProperty(
+    "--shorts-penalty-width",
+    `${actualPenaltyWidth}px`,
+  );
+  board.style.setProperty(
+    "--shorts-penalty-max-width",
+    `${maximumPenaltyWidth}px`,
+  );
+  board.style.setProperty(
+    "--shorts-penalty-gap",
+    `${SHORTS_PENALTY_GAP}px`,
+  );
+  board.style.setProperty(
+    "--shorts-round-font-size",
+    `${roundFontSize.toFixed(1)}px`,
+  );
+  board.style.setProperty(
+    "--shorts-season-font-size",
+    `${seasonFontSize.toFixed(1)}px`,
+  );
+  board.style.setProperty("--shorts-center-bg", shortsCenterBackground.value);
+  board.style.setProperty("--shorts-penalty-bg", shortsPenaltyColor.value);
+  board.style.setProperty(
+    "--shorts-competition-bg",
+    shortsCompetitionBackground.value,
+  );
+  board.style.setProperty("--shorts-border-start", shortsBorderStart.value);
+  board.style.setProperty("--shorts-border-end", shortsBorderEnd.value);
+  board.style.setProperty(
+    "--shorts-border-width",
+    `${shortsBorderWidth.value}px`,
+  );
+  board.style.setProperty(
+    "--shorts-competition-border-start",
+    shortsCompetitionBorderStart.value,
+  );
+  board.style.setProperty(
+    "--shorts-competition-border-end",
+    shortsCompetitionBorderEnd.value,
+  );
+  board.style.setProperty(
+    "--shorts-competition-border-width",
+    `${shortsCompetitionBorderWidth.value}px`,
+  );
+  board.style.setProperty(
+    "--shorts-meta-font",
+    SHORTS_META_FONTS[shortsMetaFont.value],
+  );
+  document.getElementById("shorts-center-width-value").textContent =
+    actualCenterWidth < centerWidth
+      ? `${shortsCenterWidth.value} px (réduit à ${Math.round(actualCenterWidth)} px)`
+      : `${shortsCenterWidth.value} px`;
+  document.getElementById("shorts-center-vertical-value").textContent =
+    `${centerVerticalPosition} px`;
+  document.getElementById("shorts-score-width-value").textContent =
+    actualScoreWidth < scoreWidth
+      ? `${shortsScoreWidth.value} px (réduit à ${Math.round(actualScoreWidth)} px)`
+      : `${shortsScoreWidth.value} px`;
+  document.getElementById("shorts-meta-font-size-value").textContent =
+    `${shortsMetaFontSize.value} px`;
+  document.getElementById("shorts-penalty-width-value").textContent =
+    actualPenaltyWidth < requestedPenaltyWidth
+      ? `${shortsPenaltyWidth.value} px (limité à ${Math.round(actualPenaltyWidth)} px)`
+      : `${shortsPenaltyWidth.value} px`;
+  document.getElementById("shorts-competition-logo-size-value").textContent =
+    `${competitionLogoSize} px`;
+  document.getElementById("shorts-border-width-value").textContent =
+    `${shortsBorderWidth.value} px`;
+  document.getElementById(
+    "shorts-competition-border-width-value",
+  ).textContent = `${shortsCompetitionBorderWidth.value} px`;
+  document.getElementById(
+    "shorts-competition-logo-vertical-value",
+  ).textContent = `${logoVerticalPosition} px`;
+  updateShortsBoardHeight(
+    board,
+    actualLogoSliderSize,
+    competitionLogoFrameSize,
+    centerHeight,
+    logoVerticalPosition,
+    centerVerticalPosition,
+    penaltyRowHeight,
+  );
+  document.getElementById("shorts-logo-size-value").textContent =
+    actualLogoSliderSize < logoSize - 1
+      ? `${logoSize} px (réduit à ${Math.round(actualLogoSliderSize)} px)`
+      : `${logoSize} px`;
+  document.getElementById("shorts-logo-gap-value").textContent =
+    `${shortsLogoGap.value} px`;
+  document.getElementById("shorts-season-display").textContent =
+    shortsSeason.value;
+  document.getElementById("shorts-round-display").textContent =
+    shortsRound.value;
+  document.getElementById("shorts-penalty-home-undo").disabled =
+    shortsPenaltyHomeShots.length === 0;
+  document.getElementById("shorts-penalty-away-undo").disabled =
+    shortsPenaltyAwayShots.length === 0;
+  document.getElementById("shorts-penalty-reset").disabled =
+    shortsPenaltyHomeShots.length === 0 && shortsPenaltyAwayShots.length === 0;
+
+  setShortsLogo(
+    document.getElementById("shorts-competition-logo"),
+    document.getElementById("shorts-competition-fallback"),
+    shortsCompetitionLogoURL,
+    "Logo de la compétition",
+    "UCL",
+  );
+  const competitionLogo = document.getElementById("shorts-competition-logo");
+  competitionLogo.classList.toggle(
+    "is-white",
+    shortsCompetitionLogoWhite.checked,
+  );
+  syncShortsCompetitionLogoSelect();
+  setShortsLogo(
+    document.getElementById("shorts-home-logo"),
+    document.getElementById("shorts-home-fallback"),
+    shortsHomeLogoURL,
+    "Logo du club domicile",
+    "LIV",
+  );
+  setShortsLogo(
+    document.getElementById("shorts-away-logo"),
+    document.getElementById("shorts-away-fallback"),
+    shortsAwayLogoURL,
+    "Logo du club extérieur",
+    "RMA",
+  );
+
+  [
+    [shortsHomeScore, "shorts-home-score-display"],
+    [shortsAwayScore, "shorts-away-score-display"],
+  ].forEach(([input, displayId]) => {
+    const display = document.getElementById(displayId);
+    display.querySelector(".shorts-score-value").textContent = input.value;
+    display.classList.toggle("is-empty", input.value === "");
+  });
+}
+
+function getShortsSettings() {
+  return {
+    season: shortsSeason.value,
+    round: shortsRound.value,
+    logoSize: Number(shortsLogoSize.value),
+    logoGap: Number(shortsLogoGap.value),
+    centerWidth: Number(shortsCenterWidth.value),
+    centerVertical: Number(shortsCenterVertical.value),
+    scoreWidth: Number(shortsScoreWidth.value),
+    competitionLogoSize: Number(shortsCompetitionLogoSize.value),
+    competitionLogoVertical: Number(shortsCompetitionLogoVertical.value),
+    metaFont: shortsMetaFont.value,
+    metaFontSize: Number(shortsMetaFontSize.value),
+    competitionLogoWhite: shortsCompetitionLogoWhite.checked,
+    penaltyEnabled: shortsPenaltyToggle.checked,
+    penaltyColor: shortsPenaltyColor.value,
+    penaltyWidth: Number(shortsPenaltyWidth.value),
+    penaltyWidthVersion: SHORTS_PENALTY_WIDTH_VERSION,
+    penaltyHomeShots: [...shortsPenaltyHomeShots],
+    penaltyAwayShots: [...shortsPenaltyAwayShots],
+    centerBackground: shortsCenterBackground.value,
+    competitionBackground: shortsCompetitionBackground.value,
+    borderStart: shortsBorderStart.value,
+    borderEnd: shortsBorderEnd.value,
+    borderWidth: Number(shortsBorderWidth.value),
+    competitionBorderStart: shortsCompetitionBorderStart.value,
+    competitionBorderEnd: shortsCompetitionBorderEnd.value,
+    competitionBorderWidth: Number(shortsCompetitionBorderWidth.value),
+    homeScore: shortsHomeScore.value,
+    awayScore: shortsAwayScore.value,
+    competitionLogo: shortsCompetitionLogoURL,
+    homeLogo: shortsHomeLogoURL,
+    awayLogo: shortsAwayLogoURL,
+  };
+}
+
+function saveShortsSettings() {
+  try {
+    localStorage.setItem(
+      SHORTS_STORAGE_KEY,
+      JSON.stringify(getShortsSettings()),
+    );
+  } catch (error) {
+    console.error("Impossible d'enregistrer les réglages Shorts.", error);
+  }
+}
+
+function applyShortsSettings(savedShorts) {
+  if (!savedShorts || typeof savedShorts !== "object") return;
+  let migratedPenaltyWidth = false;
+  if (typeof savedShorts.season === "string")
+    shortsSeason.value = savedShorts.season;
+  if (typeof savedShorts.round === "string")
+    shortsRound.value = savedShorts.round;
+
+  [
+    ["logoSize", shortsLogoSize, 180, 800],
+    ["logoGap", shortsLogoGap, 0, 200],
+    ["centerWidth", shortsCenterWidth, 120, 340],
+    ["centerVertical", shortsCenterVertical, -80, 80],
+    ["scoreWidth", shortsScoreWidth, 70, 160],
+    ["metaFontSize", shortsMetaFontSize, 10, 40],
+    ["competitionLogoSize", shortsCompetitionLogoSize, 40, 192],
+    ["competitionLogoVertical", shortsCompetitionLogoVertical, -100, 40],
+    ["borderWidth", shortsBorderWidth, 1, 8],
+    ["competitionBorderWidth", shortsCompetitionBorderWidth, 1, 8],
+  ].forEach(([key, input, min, max]) => {
+    const value = Number(savedShorts[key]);
+    if (
+      savedShorts[key] != null &&
+      Number.isFinite(value) &&
+      value >= min &&
+      value <= max
+    )
+      input.value = value;
+  });
+
+  const savedPenaltyWidth =
+    savedShorts.penaltyWidth != null
+      ? Number(savedShorts.penaltyWidth)
+      : Number(savedShorts.scoreWidth);
+  if (Number.isFinite(savedPenaltyWidth) && savedPenaltyWidth > 0) {
+    const storedPenaltyWidthVersion = Number(
+      savedShorts.penaltyWidthVersion,
+    );
+    const isLegacyPenaltyWidth =
+      !Number.isFinite(storedPenaltyWidthVersion) ||
+      storedPenaltyWidthVersion < SHORTS_PENALTY_LEGACY_WIDTH_VERSION;
+    const width = isLegacyPenaltyWidth
+      ? Math.round((savedPenaltyWidth * 1.5) / 5) * 5
+      : Math.round(savedPenaltyWidth / 5) * 5;
+    shortsPenaltyWidth.value = Math.min(360, Math.max(155, width));
+    migratedPenaltyWidth = isLegacyPenaltyWidth;
+  }
+
+  if (
+    typeof savedShorts.metaFont === "string" &&
+    Object.prototype.hasOwnProperty.call(
+      SHORTS_META_FONTS,
+      savedShorts.metaFont,
+    )
+  )
+    shortsMetaFont.value = savedShorts.metaFont;
+  if (typeof savedShorts.competitionLogoWhite === "boolean")
+    shortsCompetitionLogoWhite.checked = savedShorts.competitionLogoWhite;
+  if (typeof savedShorts.penaltyEnabled === "boolean")
+    shortsPenaltyToggle.checked = savedShorts.penaltyEnabled;
+  if (
+    typeof savedShorts.penaltyColor === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.penaltyColor)
+  )
+    shortsPenaltyColor.value = savedShorts.penaltyColor;
+  if (Array.isArray(savedShorts.penaltyHomeShots))
+    shortsPenaltyHomeShots = savedShorts.penaltyHomeShots.filter(
+      (shot) => typeof shot === "boolean",
+    );
+  if (Array.isArray(savedShorts.penaltyAwayShots))
+    shortsPenaltyAwayShots = savedShorts.penaltyAwayShots.filter(
+      (shot) => typeof shot === "boolean",
+    );
+  if (
+    typeof savedShorts.centerBackground === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.centerBackground)
+  )
+    shortsCenterBackground.value = savedShorts.centerBackground;
+  if (
+    typeof savedShorts.competitionBackground === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.competitionBackground)
+  )
+    shortsCompetitionBackground.value = savedShorts.competitionBackground;
+  if (
+    typeof savedShorts.borderStart === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.borderStart)
+  )
+    shortsBorderStart.value = savedShorts.borderStart;
+  if (
+    typeof savedShorts.borderEnd === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.borderEnd)
+  )
+    shortsBorderEnd.value = savedShorts.borderEnd;
+  if (
+    typeof savedShorts.competitionBorderStart === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.competitionBorderStart)
+  )
+    shortsCompetitionBorderStart.value = savedShorts.competitionBorderStart;
+  if (
+    typeof savedShorts.competitionBorderEnd === "string" &&
+    /^#[0-9a-f]{6}$/i.test(savedShorts.competitionBorderEnd)
+  )
+    shortsCompetitionBorderEnd.value = savedShorts.competitionBorderEnd;
+  if (typeof savedShorts.homeScore === "string")
+    shortsHomeScore.value = savedShorts.homeScore;
+  if (typeof savedShorts.awayScore === "string")
+    shortsAwayScore.value = savedShorts.awayScore;
+  if (Object.prototype.hasOwnProperty.call(savedShorts, "competitionLogo"))
+    shortsCompetitionLogoURL =
+      typeof savedShorts.competitionLogo === "string"
+        ? savedShorts.competitionLogo
+        : null;
+  if (typeof savedShorts.homeLogo === "string")
+    shortsHomeLogoURL = savedShorts.homeLogo;
+  if (typeof savedShorts.awayLogo === "string")
+    shortsAwayLogoURL = savedShorts.awayLogo;
+
+  shortsCompetitionLogoFile.value = "";
+  shortsHomeLogoFile.value = "";
+  shortsAwayLogoFile.value = "";
+  updateShortsPreview();
+  if (migratedPenaltyWidth) saveShortsSettings();
+}
+
+try {
+  const savedShorts = JSON.parse(
+    localStorage.getItem(SHORTS_STORAGE_KEY) || "null",
+  );
+  if (savedShorts && typeof savedShorts === "object")
+    applyShortsSettings(savedShorts);
+} catch (error) {
+  console.warn("Les réglages Shorts enregistrés sont illisibles.", error);
+}
+
+function getShortsPresets() {
+  const saved = localStorage.getItem(SHORTS_PRESETS_KEY);
+  if (!saved) return [];
+  const presets = JSON.parse(saved);
+  if (!Array.isArray(presets))
+    throw new TypeError("Le format des sauvegardes Shorts est invalide.");
+  return presets.filter(
+    (preset) =>
+      preset &&
+      typeof preset.name === "string" &&
+      preset.settings &&
+      typeof preset.settings === "object",
+  );
+}
+
+function renderShortsPresets(selectedIndex = "") {
+  const presets = getShortsPresets();
+  shortsSavedSelect.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choisir une sauvegarde…";
+  shortsSavedSelect.append(placeholder);
+
+  presets.forEach((preset, index) => {
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = preset.name;
+    shortsSavedSelect.append(option);
+  });
+  shortsSavedSelect.value = selectedIndex;
+}
+
+function saveShortsPreset() {
+  const name = shortsSaveName.value.trim();
+  if (!name) {
+    alert("Saisis un nom pour cette sauvegarde.");
+    shortsSaveName.focus();
+    return;
+  }
+
+  try {
+    const presets = getShortsPresets();
+    const existingIndex = presets.findIndex((preset) => preset.name === name);
+    const preset = { name, settings: getShortsSettings() };
+    const selectedIndex =
+      existingIndex >= 0 ? existingIndex : presets.length;
+    if (existingIndex >= 0) presets[existingIndex] = preset;
+    else presets.push(preset);
+
+    localStorage.setItem(SHORTS_PRESETS_KEY, JSON.stringify(presets));
+    renderShortsPresets(String(selectedIndex));
+    showPresetSaveStatus(shortsSaveName, name);
+  } catch (error) {
+    console.error("Impossible d'enregistrer cette sauvegarde Shorts.", error);
+    alert("La sauvegarde Shorts n'a pas pu être enregistrée.");
+  }
+}
+
+function loadShortsPreset() {
+  const index = Number.parseInt(shortsSavedSelect.value, 10);
+  if (!Number.isInteger(index)) return;
+
+  try {
+    const preset = getShortsPresets()[index];
+    if (!preset) return;
+    applyShortsSettings(preset.settings);
+    saveShortsSettings();
+    shortsSaveName.value = preset.name;
+  } catch (error) {
+    console.error("Impossible de charger cette sauvegarde Shorts.", error);
+    alert("La sauvegarde Shorts n'a pas pu être chargée.");
+  }
+}
+
+function deleteShortsPreset() {
+  const index = Number.parseInt(shortsSavedSelect.value, 10);
+  if (!Number.isInteger(index)) return;
+
+  try {
+    const presets = getShortsPresets();
+    const preset = presets[index];
+    if (!preset) return;
+    presets.splice(index, 1);
+    localStorage.setItem(SHORTS_PRESETS_KEY, JSON.stringify(presets));
+    renderShortsPresets();
+    shortsSaveName.value = "";
+  } catch (error) {
+    console.error("Impossible de supprimer cette sauvegarde Shorts.", error);
+    alert("La sauvegarde Shorts n'a pas pu être supprimée.");
+  }
+}
+
+try {
+  renderShortsPresets();
+} catch (error) {
+  console.error("Impossible de lire les sauvegardes Shorts.", error);
+}
+
+document.getElementById("shorts-save").addEventListener("click", saveShortsPreset);
+document.getElementById("shorts-load").addEventListener("click", loadShortsPreset);
+document
+  .getElementById("shorts-delete")
+  .addEventListener("click", deleteShortsPreset);
+shortsSavedSelect.addEventListener("change", () => {
+  const index = Number.parseInt(shortsSavedSelect.value, 10);
+  if (!Number.isInteger(index)) return;
+  try {
+    const preset = getShortsPresets()[index];
+    if (preset) shortsSaveName.value = preset.name;
+  } catch (error) {
+    console.error("Impossible de lire les sauvegardes Shorts.", error);
+  }
+});
+
+[
+  shortsSeason,
+  shortsRound,
+  shortsLogoSize,
+  shortsLogoGap,
+  shortsCenterWidth,
+  shortsCenterVertical,
+  shortsScoreWidth,
+  shortsCompetitionLogoSize,
+  shortsCompetitionLogoVertical,
+  shortsMetaFont,
+  shortsMetaFontSize,
+  shortsCenterBackground,
+  shortsCompetitionBackground,
+  shortsBorderStart,
+  shortsBorderEnd,
+  shortsBorderWidth,
+  shortsCompetitionBorderStart,
+  shortsCompetitionBorderEnd,
+  shortsCompetitionBorderWidth,
+  shortsHomeScore,
+  shortsAwayScore,
+  shortsPenaltyToggle,
+  shortsPenaltyColor,
+  shortsPenaltyWidth,
+].forEach((input) => {
+  input.addEventListener("input", () => {
+    updateShortsPreview();
+    saveShortsSettings();
+  });
+  input.addEventListener("change", () => {
+    updateShortsPreview();
+    saveShortsSettings();
+  });
+});
+
+shortsCompetitionLogoWhite.addEventListener("change", () => {
+  updateShortsPreview();
+  saveShortsSettings();
+});
+
+function recordShortsPenaltyShot(team, scored) {
+  const shots =
+    team === "home" ? shortsPenaltyHomeShots : shortsPenaltyAwayShots;
+  shots.push(scored);
+  updateShortsPreview();
+  saveShortsSettings();
+}
+
+[
+  ["shorts-penalty-home-goal", "home", true],
+  ["shorts-penalty-home-miss", "home", false],
+  ["shorts-penalty-away-goal", "away", true],
+  ["shorts-penalty-away-miss", "away", false],
+].forEach(([buttonId, team, scored]) => {
+  document.getElementById(buttonId).addEventListener("click", () => {
+    recordShortsPenaltyShot(team, scored);
+  });
+});
+
+[
+  ["shorts-penalty-home-undo", "home"],
+  ["shorts-penalty-away-undo", "away"],
+].forEach(([buttonId, team]) => {
+  document.getElementById(buttonId).addEventListener("click", () => {
+    const shots =
+      team === "home" ? shortsPenaltyHomeShots : shortsPenaltyAwayShots;
+    shots.pop();
+    updateShortsPreview();
+    saveShortsSettings();
+  });
+});
+
+document
+  .getElementById("shorts-penalty-reset")
+  .addEventListener("click", () => {
+    shortsPenaltyHomeShots = [];
+    shortsPenaltyAwayShots = [];
+    updateShortsPreview();
+    saveShortsSettings();
+  });
+
+shortsCompetitionLogoSelect.addEventListener("change", () => {
+  shortsCompetitionLogoURL = shortsCompetitionLogoSelect.value || null;
+  shortsCompetitionLogoFile.value = "";
+  updateShortsPreview();
+  saveShortsSettings();
+});
+
+[
+  [shortsCompetitionLogoFile, "competition"],
+  [shortsHomeLogoFile, "home"],
+  [shortsAwayLogoFile, "away"],
+].forEach(([input, team]) => {
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+    const path = `./Logos/${file.name}`;
+    if (team === "competition") shortsCompetitionLogoURL = path;
+    else if (team === "home") shortsHomeLogoURL = path;
+    else shortsAwayLogoURL = path;
+    updateShortsPreview();
+    saveShortsSettings();
+  });
+});
+
+[
+  ["shorts-competition-logo-clear", shortsCompetitionLogoFile, "competition"],
+  ["shorts-home-logo-clear", shortsHomeLogoFile, "home"],
+  ["shorts-away-logo-clear", shortsAwayLogoFile, "away"],
+].forEach(([buttonId, input, team]) => {
+  document.getElementById(buttonId).addEventListener("click", () => {
+    if (team === "competition") shortsCompetitionLogoURL = null;
+    else if (team === "home") shortsHomeLogoURL = null;
+    else shortsAwayLogoURL = null;
+    input.value = "";
+    updateShortsPreview();
+    saveShortsSettings();
+  });
+});
+
+updateShortsPreview();
+
+const shortsBoard = document.getElementById("shorts-board");
+new ResizeObserver(() => updateShortsPreview()).observe(
+  shortsBoard.parentElement,
+);
+
+/* ============================================================
    5) SHOWDOWN PANEL
    ============================================================ */
 const SD_FONTS = {
@@ -3716,6 +5049,7 @@ const sdLeg = document.getElementById("sd-leg");
 const sdPlace = document.getElementById("sd-place");
 const sdDate = document.getElementById("sd-date");
 const sdReferee = document.getElementById("sd-referee");
+const sdRefereeCountry = document.getElementById("sd-referee-country");
 const sdBgColor1 = document.getElementById("sd-bg-color-1");
 const sdBgColor2 = document.getElementById("sd-bg-color-2");
 const sdBgDir = document.getElementById("sd-bg-direction");
@@ -3730,6 +5064,10 @@ const sdNameFont = document.getElementById("sd-name-font");
 const sdNameSize = document.getElementById("sd-name-size");
 const sdNameSizeValue = document.getElementById("sd-name-size-value");
 const sdNameWeight = document.getElementById("sd-name-weight");
+const sdLogoShadowsToggle = document.getElementById("sd-logo-shadows-toggle");
+const sdLogo1ShadowsColor = document.getElementById("sd-logo-1-shadows-color");
+const sdLogo2ShadowsColor = document.getElementById("sd-logo-2-shadows-color");
+const sdTextShadowsToggle = document.getElementById("sd-text-shadows-toggle");
 const sdCenterLogoToggle = document.getElementById("sd-center-logo-toggle");
 const sdCenterLogoSize = document.getElementById("sd-center-logo-size");
 const sdCenterLogoSizeValue = document.getElementById(
@@ -3817,9 +5155,24 @@ function updateShowdown() {
     : round;
   document.getElementById("sd-meta-place").textContent = sdPlace.value;
   document.getElementById("sd-meta-date").textContent = sdDate.value;
-  document.getElementById("sd-meta-referee").textContent = sdReferee.value;
+  const refereeName = sdReferee.value.trim();
+  const refereeCountry = sdRefereeCountry.value.trim().toUpperCase();
+  document.getElementById("sd-meta-referee").textContent =
+    refereeName && refereeCountry ? `${refereeName} (${refereeCountry})` : refereeName;
 
   const board = document.getElementById("showdown-board");
+  board.classList.toggle("show-logo-shadows", sdLogoShadowsToggle.checked);
+  board.classList.toggle("show-text-shadows", sdTextShadowsToggle.checked);
+  [
+    ["sd-logo-1", sdLogo1ShadowsColor],
+    ["sd-logo-2", sdLogo2ShadowsColor],
+  ].forEach(([id, colorSelect]) => {
+    const logoBox = document.getElementById(id);
+    logoBox.style.setProperty(
+      "--sd-logo-shadow-color",
+      colorSelect.value === "black" ? "#000" : "#fff",
+    );
+  });
   const bgAlpha = +sdBgOpacity.value / 100;
   const bgC1 = hexToRgba(sdBgColor1.value, bgAlpha);
   const bgC2 = hexToRgba(sdBgColor2.value, bgAlpha);
@@ -3963,6 +5316,7 @@ function collectShowdownData() {
     place: sdPlace.value,
     date: sdDate.value,
     referee: sdReferee.value,
+    refereeCountry: sdRefereeCountry.value,
     bg: collectShowdownBgData(),
     typo: collectShowdownTypoData(),
     colorText: sdColorText.value,
@@ -4019,6 +5373,10 @@ function collectShowdownBgData() {
     dir: sdBgDir.value,
     opacity: sdBgOpacity.value,
     colorText: sdColorText.value,
+    logoShadowsEnabled: sdLogoShadowsToggle.checked,
+    logo1ShadowsColor: sdLogo1ShadowsColor.value,
+    logo2ShadowsColor: sdLogo2ShadowsColor.value,
+    textShadowsEnabled: sdTextShadowsToggle.checked,
     imageEnabled: sdBgImgToggle.checked,
     imageFile: sdBgImgSelect.value,
     imageOpacity: sdBgImgOpacity.value,
@@ -4046,43 +5404,69 @@ function collectShowdownTypoData() {
   };
 }
 
-function applyShowdownBgData(d) {
+function applyShowdownBgData(d, persist = true) {
   if (!d) return;
   if (d.color1) sdBgColor1.value = d.color1;
   if (d.color2) sdBgColor2.value = d.color2;
   if (d.dir) sdBgDir.value = d.dir;
   if (d.opacity != null) sdBgOpacity.value = d.opacity;
   if (d.colorText) sdColorText.value = d.colorText;
+  const hasLogoShadowsSetting = typeof d.logoShadowsEnabled === "boolean";
+  const hasTextShadowsSetting = typeof d.textShadowsEnabled === "boolean";
+  if (hasLogoShadowsSetting)
+    sdLogoShadowsToggle.checked = d.logoShadowsEnabled;
+  if (hasTextShadowsSetting)
+    sdTextShadowsToggle.checked = d.textShadowsEnabled;
+  const hasLogo1ShadowsColor =
+    d.logo1ShadowsColor === "black" || d.logo1ShadowsColor === "white";
+  const hasLogo2ShadowsColor =
+    d.logo2ShadowsColor === "black" || d.logo2ShadowsColor === "white";
+  if (hasLogo1ShadowsColor)
+    sdLogo1ShadowsColor.value = d.logo1ShadowsColor;
+  if (hasLogo2ShadowsColor)
+    sdLogo2ShadowsColor.value = d.logo2ShadowsColor;
+  if (d.logoShadowsColor === "black" || d.logoShadowsColor === "white") {
+    if (!hasLogo1ShadowsColor)
+      sdLogo1ShadowsColor.value = d.logoShadowsColor;
+    if (!hasLogo2ShadowsColor)
+      sdLogo2ShadowsColor.value = d.logoShadowsColor;
+  }
+  if (typeof d.shadesEnabled === "boolean") {
+    if (!hasLogoShadowsSetting)
+      sdLogoShadowsToggle.checked = d.shadesEnabled;
+    if (!hasTextShadowsSetting)
+      sdTextShadowsToggle.checked = d.shadesEnabled;
+  }
   if (typeof d.imageEnabled === "boolean") {
     sdBgImgToggle.checked = d.imageEnabled;
-    localStorage.setItem(SD_BG_IMAGE_PREF_KEY, d.imageEnabled ? "1" : "0");
+    if (persist) localStorage.setItem(SD_BG_IMAGE_PREF_KEY, d.imageEnabled ? "1" : "0");
   }
   if (d.imageFile != null) {
     if ([...sdBgImgSelect.options].some((o) => o.value === d.imageFile)) {
       sdBgImgSelect.value = d.imageFile;
-      localStorage.setItem(SD_BG_IMAGE_FILE_KEY, d.imageFile);
+      if (persist) localStorage.setItem(SD_BG_IMAGE_FILE_KEY, d.imageFile);
     }
   }
   if (d.imageOpacity != null) {
     sdBgImgOpacity.value = d.imageOpacity;
-    localStorage.setItem(SD_BG_IMAGE_OPACITY_KEY, d.imageOpacity);
+    if (persist) localStorage.setItem(SD_BG_IMAGE_OPACITY_KEY, d.imageOpacity);
   }
   if (typeof d.imageFadeEnabled === "boolean") {
     sdBgImgFadeToggle.checked = d.imageFadeEnabled;
-    localStorage.setItem(SD_BG_IMAGE_FADE_KEY, d.imageFadeEnabled ? "1" : "0");
+    if (persist) localStorage.setItem(SD_BG_IMAGE_FADE_KEY, d.imageFadeEnabled ? "1" : "0");
   }
   if (d.imageFadeDir) {
     sdBgImgFadeDir.value = d.imageFadeDir;
-    localStorage.setItem(SD_BG_IMAGE_FADE_DIR_KEY, d.imageFadeDir);
+    if (persist) localStorage.setItem(SD_BG_IMAGE_FADE_DIR_KEY, d.imageFadeDir);
   }
   if (d.imageFadeEnd != null) {
     sdBgImgFadeEnd.value = d.imageFadeEnd;
-    localStorage.setItem(SD_BG_IMAGE_FADE_END_KEY, d.imageFadeEnd);
+    if (persist) localStorage.setItem(SD_BG_IMAGE_FADE_END_KEY, d.imageFadeEnd);
   }
   applySdBgImage();
 }
 
-function applyShowdownTypoData(d) {
+function applyShowdownTypoData(d, applyLegacyShades = true) {
   if (!d) return;
   if (d.matchFont) sdMatchFont.value = d.matchFont;
   if (d.matchSize) sdMatchSize.value = d.matchSize;
@@ -4090,6 +5474,10 @@ function applyShowdownTypoData(d) {
   if (d.nameFont) sdNameFont.value = d.nameFont;
   if (d.nameSize) sdNameSize.value = d.nameSize;
   if (d.nameWeight) sdNameWeight.value = d.nameWeight;
+  if (applyLegacyShades && typeof d.logoHaloEnabled === "boolean") {
+    sdLogoShadowsToggle.checked = d.logoHaloEnabled;
+    sdTextShadowsToggle.checked = d.logoHaloEnabled;
+  }
   if (typeof d.centerLogoEnabled === "boolean")
     sdCenterLogoToggle.checked = d.centerLogoEnabled;
   if (d.centerLogoSize != null) sdCenterLogoSize.value = d.centerLogoSize;
@@ -4100,19 +5488,25 @@ function applyShowdownTypoData(d) {
   if (d.metaWeight) sdMetaWeight.value = d.metaWeight;
 }
 
-function applyShowdownData(d) {
+function applyShowdownData(d, persist = true) {
   if (!d) return;
   if (d.name1 != null) sdName1Input.value = d.name1;
   if (d.name2 != null) sdName2Input.value = d.name2;
   sdLogo1URL = d.logo1URL || null;
   sdLogo2URL = d.logo2URL || null;
-  if (d.round) sdRound.value = d.round;
+  if (d.round != null) sdRound.value = d.round;
   if (d.leg != null) sdLeg.value = d.leg;
   if (d.place != null) sdPlace.value = d.place;
   if (d.date != null) sdDate.value = d.date;
   if (d.referee != null) sdReferee.value = d.referee;
-  applyShowdownBgData(d.bg);
-  applyShowdownTypoData(d.typo);
+  sdRefereeCountry.value = d.refereeCountry ?? "";
+  applyShowdownBgData(d.bg, persist);
+  const bgHasShadowsSettings =
+    d.bg &&
+    (typeof d.bg.logoShadowsEnabled === "boolean" ||
+      typeof d.bg.textShadowsEnabled === "boolean" ||
+      typeof d.bg.shadesEnabled === "boolean");
+  applyShowdownTypoData(d.typo, !bgHasShadowsSettings);
   applyShowdownResultData(d.result);
   if (d.colorText) sdColorText.value = d.colorText;
 }
@@ -4238,7 +5632,6 @@ function saveCurrentShowdown() {
   let i = list.findIndex((s) => s.name === name);
   const entry = { name, data: compressShowdownData(collectShowdownData()) };
   if (i >= 0) {
-    if (!confirm(`Showdown "${name}" existe. Écraser ?`)) return;
     list[i] = entry;
   } else list.push(entry);
   try {
@@ -4267,11 +5660,11 @@ function saveCurrentShowdown() {
       throw err;
     }
   }
-  nameInput.value = "";
   sdShowdownCRUD.render();
   document.getElementById("sd-saved-select").value = String(
     list.findIndex((s) => s.name === name),
   );
+  showPresetSaveStatus(nameInput, name);
 }
 function loadCurrentShowdown() {
   const idx = parseInt(document.getElementById("sd-saved-select").value, 10);
@@ -4288,7 +5681,6 @@ function deleteCurrentShowdown() {
   const idx = parseInt(document.getElementById("sd-saved-select").value, 10);
   const list = sdShowdownCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
-  if (!confirm(`Supprimer "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   sdShowdownCRUD.set(list);
   sdShowdownCRUD.render();
@@ -4305,12 +5697,12 @@ function saveCurrentSdTypo() {
   const i = list.findIndex((s) => s.name === name);
   const entry = { name, data: collectShowdownTypoData() };
   if (i >= 0) {
-    if (!confirm(`Typographie "${name}" existe. Écraser ?`)) return;
     list[i] = entry;
   } else list.push(entry);
   sdTypoCRUD.set(list);
-  nameInput.value = "";
   sdTypoCRUD.render();
+  document.getElementById("sd-saved-typo-select").value = String(i >= 0 ? i : list.length - 1);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadCurrentSdTypo() {
   const idx = parseInt(
@@ -4331,7 +5723,6 @@ function deleteCurrentSdTypo() {
   );
   const list = sdTypoCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
-  if (!confirm(`Supprimer "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   sdTypoCRUD.set(list);
   sdTypoCRUD.render();
@@ -4348,12 +5739,12 @@ function saveCurrentSdBg() {
   const i = list.findIndex((s) => s.name === name);
   const entry = { name, data: collectShowdownBgData() };
   if (i >= 0) {
-    if (!confirm(`Fond "${name}" existe. Écraser ?`)) return;
     list[i] = entry;
   } else list.push(entry);
   sdBgCRUD.set(list);
-  nameInput.value = "";
   sdBgCRUD.render();
+  document.getElementById("sd-saved-bg-select").value = String(i >= 0 ? i : list.length - 1);
+  showPresetSaveStatus(nameInput, name);
 }
 function loadCurrentSdBg() {
   const idx = parseInt(document.getElementById("sd-saved-bg-select").value, 10);
@@ -4368,7 +5759,6 @@ function deleteCurrentSdBg() {
   const idx = parseInt(document.getElementById("sd-saved-bg-select").value, 10);
   const list = sdBgCRUD.get();
   if (isNaN(idx) || !list[idx]) return;
-  if (!confirm(`Supprimer "${list[idx].name}" ?`)) return;
   list.splice(idx, 1);
   sdBgCRUD.set(list);
   sdBgCRUD.render();
@@ -4408,6 +5798,7 @@ const sdInputEls = [
   sdPlace,
   sdDate,
   sdReferee,
+  sdRefereeCountry,
   sdBgColor1,
   sdBgColor2,
   sdBgOpacity,
@@ -4433,6 +5824,10 @@ const sdChangeEls = [
   sdRound,
   sdLeg,
   sdBgDir,
+  sdLogoShadowsToggle,
+  sdLogo1ShadowsColor,
+  sdLogo2ShadowsColor,
+  sdTextShadowsToggle,
   sdCenterLogoToggle,
   sdMatchFont,
   sdMatchWeight,
@@ -4791,12 +6186,12 @@ function buildGraphicExportBaseName(activeContainer, resolution) {
       if (hs !== "" && as !== "") parts.push(`${hs}-${as}`);
       break;
     }
-    case "bracket": {
-      const title = slugForExport(val("br-tournament-title"));
-      const venue = slugForExport(val("br-venue-title"));
-      parts.push("bracket");
-      if (title) parts.push(title);
-      if (venue) parts.push(venue);
+    case "shorts": {
+      const season = slugForExport(val("shorts-season"));
+      const round = slugForExport(val("shorts-round"));
+      parts.push("shorts");
+      if (season) parts.push(season);
+      if (round) parts.push(round);
       break;
     }
     case "showdown": {
@@ -4825,109 +6220,202 @@ function buildGraphicExportBaseName(activeContainer, resolution) {
   return parts.filter(Boolean).join("-") || "ucl-graphic";
 }
 
-document.getElementById("export-btn").addEventListener("click", async () => {
-  const active = document.querySelector(".preview-container.active");
-  if (!active) return;
+async function renderGraphicExport(target, format, options) {
+  if (format === "svg") {
+    const dataUrl = await window.htmlToImage.toSvg(target, options);
+    return (await fetch(dataUrl)).blob();
+  }
+
+  const canvas = await window.htmlToImage.toCanvas(target, options);
+  if (format === "pdf") {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: canvas.width >= canvas.height ? "landscape" : "portrait",
+      unit: "px",
+      format: [canvas.width, canvas.height],
+      hotfixes: ["px_scaling"],
+    });
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width, canvas.height);
+    return pdf.output("blob");
+  }
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Impossible de générer le PNG."));
+    }, "image/png");
+  });
+}
+
+function downloadGraphicExport(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = url;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function loadGraphicExportLibraries(format, archive) {
+  await loadExternalScript(
+    "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js",
+    "htmlToImage",
+  );
+  if (format === "pdf") {
+    await loadExternalScript(
+      "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
+      "jspdf",
+    );
+  }
+  if (archive) {
+    await loadExternalScript(
+      "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
+      "JSZip",
+    );
+  }
+}
+
+function supportsGraphicLayers(preview) {
+  return preview === "lineup" || preview === "showdown";
+}
+
+async function renderGraphicComposition(active, settings, baseName, modes, archive) {
+  const { format, resolution } = settings;
   const target = active.firstElementChild;
-  const compositionMode =
-    active.dataset.preview === "lineup" ||
-    active.dataset.preview === "showdown"
-      ? document.getElementById(
-          `${active.dataset.preview}-export-mode`,
-        ).value
-      : "both";
-  const format = document.getElementById("export-format").value;
-  const resolution = document.getElementById("export-resolution").value;
+  const preview = active.dataset.preview;
   const targetHeight = EXPORT_RESOLUTION_HEIGHT[resolution] || 1080;
   const targetWidth = EXPORT_RESOLUTION_WIDTH[resolution] || 1920;
   const rect = target.getBoundingClientRect();
   const aspect = rect.width / rect.height;
-  const scale =
-    aspect > 3 ? targetWidth / rect.width : targetHeight / rect.height;
-  const modeSuffix =
-    compositionMode === "background"
-      ? "-fond"
-      : compositionMode === "team"
-        ? "-equipe"
-        : "";
-  const baseName =
-    buildGraphicExportBaseName(active, resolution) + modeSuffix;
+  const scale = preview === "shorts"
+    ? targetHeight / rect.width
+    : aspect > 3
+      ? targetWidth / rect.width
+      : targetHeight / rect.height;
+  const options = {
+    width: rect.width * scale,
+    height: rect.height * scale,
+    pixelRatio: scale,
+    backgroundColor: null,
+    style: {
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
+      width: rect.width + "px",
+      height: rect.height + "px",
+    },
+  };
   const restored = [];
-
   try {
-    if (
-      active.dataset.preview === "lineup" ||
-      active.dataset.preview === "showdown"
-    ) {
-      target.dataset.exportMode = compositionMode;
-    }
     restored.push(...(await preInlineBgImages(target)));
-    await loadExternalScript(
-      "https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js",
-      "htmlToImage",
+    for (const mode of modes) {
+      if (supportsGraphicLayers(preview)) target.dataset.exportMode = mode;
+      const suffix = mode === "background" ? "-fond" : mode === "team" ? "-equipe" : "";
+      const filename = `${baseName}${suffix}.${format}`;
+      const blob = await renderGraphicExport(target, format, options);
+      if (archive) archive.file(filename, blob);
+      else downloadGraphicExport(blob, filename);
+    }
+  } finally {
+    for (const { el, original } of restored) el.style.backgroundImage = original;
+    delete target.dataset.exportMode;
+  }
+}
+
+function graphicExportSettings() {
+  return {
+    format: document.getElementById("export-format").value,
+    resolution: document.getElementById("export-resolution").value,
+  };
+}
+
+const exportButton = document.getElementById("export-btn");
+const exportSavedRenders = document.getElementById("export-saved-renders");
+const graphicLayerModes = ["background", "team"];
+
+exportButton.addEventListener("click", async () => {
+  const active = document.querySelector(".preview-container.active");
+  if (!active) return;
+  const preview = active.dataset.preview;
+  const mode = supportsGraphicLayers(preview)
+    ? document.getElementById(`${preview}-export-mode`).value
+    : "both";
+  const settings = graphicExportSettings();
+  const baseName = buildGraphicExportBaseName(active, settings.resolution);
+  const separate = mode === "separate";
+  exportButton.disabled = exportSavedRenders.disabled = true;
+  try {
+    await loadGraphicExportLibraries(settings.format, separate);
+    const archive = separate ? new window.JSZip() : null;
+    await renderGraphicComposition(
+      active, settings, baseName, separate ? graphicLayerModes : [mode], archive,
     );
-    const renderOptions = {
-      width: rect.width * scale,
-      height: rect.height * scale,
-      pixelRatio: scale,
-      backgroundColor: null,
-      style: {
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
-        width: rect.width + "px",
-        height: rect.height + "px",
-      },
-    };
-
-    if (format === "svg") {
-      const dataUrl = await window.htmlToImage.toSvg(target, renderOptions);
-      const link = document.createElement("a");
-      link.download = `${baseName}.svg`;
-      link.href = dataUrl;
-      link.click();
-      return;
+    if (archive) {
+      const blob = await archive.generateAsync({ type: "blob" });
+      downloadGraphicExport(blob, `${baseName}-calques.zip`);
     }
-
-    const canvas = await window.htmlToImage.toCanvas(target, renderOptions);
-
-    if (format === "pdf") {
-      await loadExternalScript(
-        "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js",
-        "jspdf",
-      );
-      const { jsPDF } = window.jspdf;
-      const orientation =
-        canvas.width >= canvas.height ? "landscape" : "portrait";
-      const pdf = new jsPDF({
-        orientation,
-        unit: "px",
-        format: [canvas.width, canvas.height],
-        hotfixes: ["px_scaling"],
-      });
-      pdf.addImage(
-        canvas.toDataURL("image/png"),
-        "PNG",
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-      pdf.save(`${baseName}.pdf`);
-      return;
-    }
-
-    // Default: PNG
-    const link = document.createElement("a");
-    link.download = `${baseName}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
   } catch (err) {
     alert("Export échoué : " + err.message);
   } finally {
-    restored.forEach(({ el, original }) => {
-      el.style.backgroundImage = original;
-    });
-    delete target.dataset.exportMode;
+    exportButton.disabled = exportSavedRenders.disabled = false;
+  }
+});
+
+exportSavedRenders.addEventListener("click", async () => {
+  const active = document.querySelector(".preview-container.active");
+  const preview = active?.dataset.preview;
+  if (!supportsGraphicLayers(preview)) return;
+
+  const isLineup = preview === "lineup";
+  const saved = isLineup ? getSavedTeams() : sdShowdownCRUD.get();
+  const presets = Array.isArray(saved) ? saved.filter((preset) => preset?.data) : [];
+  if (presets.length === 0) {
+    alert("Aucune sauvegarde complète à exporter dans cet onglet.");
+    return;
+  }
+
+  const snapshot = isLineup
+    ? { ...collectLineupData(), style: collectStyleData() }
+    : collectShowdownData();
+  const expand = isLineup ? expandLineupData : expandShowdownData;
+  const apply = isLineup ? applyLineupData : applyShowdownData;
+  const update = isLineup ? updateLineupCommon : updateShowdown;
+  const settings = graphicExportSettings();
+  const header = document.querySelector(".app-header");
+  const editor = document.querySelector(".editor-panel");
+  const originalLabel = exportSavedRenders.textContent;
+  const digits = String(presets.length).length;
+  exportButton.disabled = exportSavedRenders.disabled = true;
+  header.inert = editor.inert = true;
+
+  try {
+    exportSavedRenders.textContent = "Préparation de l’export…";
+    await loadGraphicExportLibraries(settings.format, true);
+    const archive = new window.JSZip();
+    for (const [index, preset] of presets.entries()) {
+      const position = index + 1;
+      exportSavedRenders.textContent = `Export ${position}/${presets.length}…`;
+      apply(snapshot, false);
+      apply(expand(JSON.parse(JSON.stringify(preset.data))), false);
+      update();
+      const order = String(position).padStart(digits, "0");
+      const name = slugForExport(preset.name) || "sauvegarde";
+      await renderGraphicComposition(
+        active, settings, `${order}-${name}`, graphicLayerModes, archive,
+      );
+    }
+    const blob = await archive.generateAsync({ type: "blob" });
+    downloadGraphicExport(blob, `${preview}-rendus-${settings.resolution}.zip`);
+  } catch (err) {
+    alert("Export des rendus échoué : " + err.message);
+  } finally {
+    try {
+      apply(snapshot, false);
+      update();
+    } finally {
+      header.inert = editor.inert = false;
+      exportSavedRenders.textContent = originalLabel;
+      exportButton.disabled = exportSavedRenders.disabled = false;
+    }
   }
 });
 

@@ -1,0 +1,6 @@
+# Livrer uniquement les fichiers de l'application et les règles Git.
+/*
+!/.gitignore
+!/index.html
+!/script.js
+!/style.css

@@ -20,10 +20,11 @@
           <div class="tab-group">
             <button class="tab active" data-tab="lineup" lang="en" aria-current="true">Lineup</button>
             <button class="tab" data-tab="showdown" lang="en">Showdown</button>
-            <button class="tab" data-tab="score" lang="en">Live Score</button>
             <button class="tab" data-tab="player" lang="en">Goalscorer</button>
-            <button class="tab" data-tab="shorts" lang="en">Short Live Score</button>
+            <button class="tab" data-tab="score" lang="en">Live Score</button>
+            <button class="tab" data-tab="shorts" lang="en">Live Score Short</button>
             <button class="tab" data-tab="video-thumbnail" lang="en">Thumbnail</button>
+            <button class="tab" data-tab="short-thumbnail" lang="en">Thumbnail Short</button>
           </div>
           <div class="tab-group">
             <button class="tab" data-tab="library" lang="en">Library</button>
@@ -42,76 +43,11 @@
       </div>
     </header>
 
-    <dialog id="l-clear-modal" class="import-modal">
-      <form method="dialog" class="import-modal-form">
-        <h3>Supprimer les sauvegardes locales</h3>
-        <p class="import-modal-desc">
-          Sélectionne les sections à effacer. Cette action est définitive et
-          rechargera la page.
-        </p>
-        <div class="import-categories">
-          <label class="import-category">
-            <input type="checkbox" data-cat="lineup" />
-            <span class="import-cat-label">Lineup</span>
-            <span class="import-cat-count" data-cat-count="lineup">0</span>
-          </label>
-          <label class="import-category">
-            <input type="checkbox" data-cat="showdown" />
-            <span class="import-cat-label">Showdown</span>
-            <span class="import-cat-count" data-cat-count="showdown">0</span>
-          </label>
-          <label class="import-category">
-            <input type="checkbox" data-cat="score" />
-            <span class="import-cat-label">Live Score</span>
-            <span class="import-cat-count" data-cat-count="score">0</span>
-          </label>
-          <label class="import-category">
-            <input type="checkbox" data-cat="banner" />
-            <span class="import-cat-label">Goal Scoreboard</span>
-            <span class="import-cat-count" data-cat-count="banner">0</span>
-          </label>
-          <label class="import-category">
-            <input type="checkbox" data-cat="shorts" />
-            <span class="import-cat-label">Shorts</span>
-            <span class="import-cat-count" data-cat-count="shorts">0</span>
-          </label>
-          <label class="import-category">
-            <input type="checkbox" data-cat="prefs" />
-            <span class="import-cat-label">Préférences (ordre, couleurs)</span>
-            <span class="import-cat-count" data-cat-count="prefs">0</span>
-          </label>
-        </div>
-        <div class="import-modal-actions">
-          <button
-            type="button"
-            class="import-modal-btn-secondary"
-            id="l-clear-modal-toggle-all"
-          >
-            Tout cocher / décocher
-          </button>
-          <div class="import-modal-actions-right">
-            <button
-              type="button"
-              class="import-modal-btn-secondary"
-              id="l-clear-modal-cancel"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              class="import-modal-btn-danger"
-              id="l-clear-modal-confirm"
-            >
-              Supprimer
-            </button>
-          </div>
-        </div>
-      </form>
-    </dialog>
-
     <main class="workspace">
       <!-- ============ EDITOR PANEL (LEFT) ============ -->
       <aside class="editor-panel">
+        <button class="panel-toggle" id="editor-panel-toggle" type="button" aria-controls="editor-panel-body" aria-expanded="true" aria-label="Panneau de réglages" title="Panneau de réglages"><span aria-hidden="true"></span></button>
+        <div class="editor-panel-body" id="editor-panel-body">
         <div class="editor-panel-content">
         <div class="editor-search" role="search">
           <label class="field">
@@ -125,6 +61,7 @@
         <section class="editor-section" data-editor="player">
           <h2>Bannière joueur</h2>
 
+          <h3 class="editor-panel-heading">Contenu du bandeau</h3>
           <details class="collapsible">
             <summary>Buteur et club</summary>
             <div class="collapsible-body">
@@ -198,6 +135,7 @@
             </div>
           </details>
 
+          <h3 class="editor-panel-heading">Apparence</h3>
           <details class="collapsible">
             <summary>Habillage du bandeau</summary>
             <div class="collapsible-body">
@@ -639,7 +577,7 @@
             </div>
           </details>
 
-          <details class="collapsible">
+          <details class="collapsible" hidden>
             <summary>Sauvegardes</summary>
             <div class="collapsible-body">
               <div class="saved-teams-controls">
@@ -673,6 +611,7 @@
         <section class="editor-section active" data-editor="lineup">
           <h2>Composition d'équipe</h2>
 
+          <h3 class="editor-panel-heading">Visuel du match</h3>
           <details class="collapsible">
             <summary>Équipe et match</summary>
             <div class="collapsible-body">
@@ -765,46 +704,48 @@
           </details>
 
           <details class="collapsible">
+            <summary>Coller la liste des joueurs</summary>
+            <div class="collapsible-body">
+              <p class="paste-comp-help">
+                Colle un joueur par ligne (numéro puis nom) ou alterne numéro et nom sur deux lignes. Les
+                marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
+                <code>(C)</code> ou un <code>C</code> collé au numéro =
+                capitaine sont reconnus puis retirés du nom.
+              </p>
+              <label class="field">
+                <span>Composition</span>
+                <textarea
+                  id="l-paste-comp"
+                  rows="12"
+                  placeholder="1C Alonso (GK)&#10;2 Marquitos&#10;3 Santamaría"
+                ></textarea>
+              </label>
+              <div class="paste-comp-actions">
+                <button
+                  class="btn-primary"
+                  id="l-paste-comp-apply"
+                  type="button"
+                >
+                  Remplir les joueurs
+                </button>
+                <span
+                  id="l-paste-comp-status"
+                  role="status"
+                  class="paste-comp-status"
+                ></span>
+              </div>
+            </div>
+          </details>
+
+          <details class="collapsible">
             <summary>Joueurs et placement</summary>
             <div class="collapsible-body">
-              <details class="collapsible collapsible-nested">
-                <summary>Coller la liste des joueurs</summary>
-                <div class="collapsible-body">
-                  <p class="paste-comp-help">
-                    Colle la liste (numéro puis nom, une info par ligne). Les
-                    marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
-                    <code>(C)</code> ou un <code>C</code> collé au numéro =
-                    capitaine sont reconnus puis retirés du nom.
-                  </p>
-                  <label class="field">
-                    <span>Composition</span>
-                    <textarea
-                      id="l-paste-comp"
-                      rows="12"
-                      placeholder="1C&#10;Alonso (GA) (C)&#10;2&#10;Marquitos&#10;3&#10;Santamaría&#10;…"
-                    ></textarea>
-                  </label>
-                  <div class="paste-comp-actions">
-                    <button
-                      class="btn-primary"
-                      id="l-paste-comp-apply"
-                      type="button"
-                    >
-                      Remplir les joueurs
-                    </button>
-                    <span
-                      id="l-paste-comp-status"
-                      class="paste-comp-status"
-                    ></span>
-                  </div>
-                </div>
-              </details>
-
               <label class="checkbox-field">
                 <input type="checkbox" id="l-show-grid" />
                 <span>Afficher la grille d'alignement</span>
               </label>
 
+              <p class="paste-comp-help">Clique sur ⇄ à côté de deux joueurs pour échanger leurs numéros et leurs noms.</p>
               <div id="l-starters" class="player-list"></div>
               <div class="storage-info">
                 <span>💾 Sauvegarde automatique activée</span>
@@ -1350,10 +1291,11 @@
             </div>
           </details>
 
+          <h3 class="editor-panel-heading">Styles et formations enregistrés</h3>
           <details class="collapsible">
-            <summary>Sauvegardes</summary>
+            <summary>Styles globaux</summary>
             <div class="collapsible-body">
-              <details class="collapsible collapsible-nested">
+              <details class="collapsible collapsible-nested" hidden>
                 <summary>Équipes</summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
@@ -1525,142 +1467,90 @@
         <section class="editor-section" data-editor="score">
           <h2>Bandeau score live</h2>
 
-          <details class="collapsible">
+          <h3 class="editor-panel-heading">Contenu du bandeau</h3>
+          <details class="collapsible" open>
             <summary>Équipes et score</summary>
             <div class="collapsible-body">
-              <details class="collapsible collapsible-nested">
-                <summary>Équipe domicile</summary>
-                <div class="collapsible-body">
-                  <div class="row">
-                    <label class="field">
-                      <span>Code (3 lettres)</span>
-                      <input
-                        type="text"
-                        id="s-home"
-                        value="LIV"
-                        maxlength="4"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Score</span>
-                      <div class="number-stepper">
-                        <button
-                          type="button"
-                          class="stepper-btn"
-                          data-step="-1"
-                          data-target="s-home-score"
-                          aria-label="Diminuer"
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          id="s-home-score"
-                          value="0"
-                          min="0"
-                        />
-                        <button
-                          type="button"
-                          class="stepper-btn"
-                          data-step="1"
-                          data-target="s-home-score"
-                          aria-label="Augmenter"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </label>
-                    <label class="field">
-                      <span>Couleur haute</span>
-                      <input type="color" id="s-home-color" value="#c00000" />
-                    </label>
-                    <label class="field">
-                      <span>Couleur basse</span>
-                      <input
-                        type="color"
-                        id="s-home-color-2"
-                        value="#c00000"
-                      />
-                    </label>
+              <div class="row">
+                <label class="field">
+                  <span>Équipe domicile</span>
+                  <input
+                    type="text"
+                    id="s-home"
+                    value="LIV"
+                    maxlength="4"
+                  />
+                </label>
+                <label class="field">
+                  <span>Score domicile</span>
+                  <div class="number-stepper">
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="s-home-score"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      id="s-home-score"
+                      value="0"
+                      min="0"
+                    />
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="s-home-score"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
-                </div>
-              </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Équipe extérieure</summary>
-                <div class="collapsible-body">
-                  <div class="row">
-                    <label class="field">
-                      <span>Code (3 lettres)</span>
-                      <input
-                        type="text"
-                        id="s-away"
-                        value="RMA"
-                        maxlength="4"
-                      />
-                    </label>
-                    <label class="field">
-                      <span>Score</span>
-                      <div class="number-stepper">
-                        <button
-                          type="button"
-                          class="stepper-btn"
-                          data-step="-1"
-                          data-target="s-away-score"
-                          aria-label="Diminuer"
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          id="s-away-score"
-                          value="0"
-                          min="0"
-                        />
-                        <button
-                          type="button"
-                          class="stepper-btn"
-                          data-step="1"
-                          data-target="s-away-score"
-                          aria-label="Augmenter"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </label>
-                    <label class="field">
-                      <span>Couleur haute</span>
-                      <input type="color" id="s-away-color" value="#1a3a8a" />
-                    </label>
-                    <label class="field">
-                      <span>Couleur basse</span>
-                      <input
-                        type="color"
-                        id="s-away-color-2"
-                        value="#1a3a8a"
-                      />
-                    </label>
+                </label>
+              </div>
+              <div class="row">
+                <label class="field">
+                  <span>Équipe extérieure</span>
+                  <input
+                    type="text"
+                    id="s-away"
+                    value="RMA"
+                    maxlength="4"
+                  />
+                </label>
+                <label class="field">
+                  <span>Score extérieur</span>
+                  <div class="number-stepper">
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="-1"
+                      data-target="s-away-score"
+                      aria-label="Diminuer"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      id="s-away-score"
+                      value="0"
+                      min="0"
+                    />
+                    <button
+                      type="button"
+                      class="stepper-btn"
+                      data-step="1"
+                      data-target="s-away-score"
+                      aria-label="Augmenter"
+                    >
+                      +
+                    </button>
                   </div>
-                </div>
-              </details>
-
-              <label class="field">
-                <span
-                  >Largeur des bandeaux d'équipe
-                  <span id="s-band-width-value">6px</span></span
-                >
-                <input
-                  type="range"
-                  id="s-band-width"
-                  min="0"
-                  max="30"
-                  value="6"
-                />
-              </label>
-              <label class="field">
-                <span>Espacement avec le score <span id="s-team-gap-value">6 px</span></span>
-                <input type="range" id="s-team-gap" min="0" max="30" value="6" />
-              </label>
+                </label>
+              </div>
               <button
                 class="btn-secondary"
                 id="s-swap-teams"
@@ -1756,10 +1646,6 @@
                     Ajoute chaque tir au fur et à mesure. Le cumul est calculé
                     automatiquement.
                   </p>
-                  <label class="field">
-                    <span>Couleur du fond des cases</span>
-                    <input type="color" id="s-penalty-color" value="#0a1a4a" />
-                  </label>
                   <div class="row">
                     <div class="penalty-team-controls">
                       <strong id="s-penalty-home-label">LIV</strong>
@@ -1826,9 +1712,70 @@
             </div>
           </details>
 
+          <h3 class="editor-panel-heading">Apparence</h3>
           <details class="collapsible">
             <summary>Habillage du bandeau</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Bandes d’équipe</summary>
+                <div class="collapsible-body">
+                  <div class="row">
+                    <label class="field">
+                      <span>Domicile, couleur haute</span>
+                      <input type="color" id="s-home-color" value="#c00000" />
+                    </label>
+                    <label class="field">
+                      <span>Domicile, couleur basse</span>
+                      <input
+                        type="color"
+                        id="s-home-color-2"
+                        value="#c00000"
+                      />
+                    </label>
+                  </div>
+                  <div class="row">
+                    <label class="field">
+                      <span>Extérieur, couleur haute</span>
+                      <input type="color" id="s-away-color" value="#1a3a8a" />
+                    </label>
+                    <label class="field">
+                      <span>Extérieur, couleur basse</span>
+                      <input
+                        type="color"
+                        id="s-away-color-2"
+                        value="#1a3a8a"
+                      />
+                    </label>
+                  </div>
+                  <label class="field">
+                    <span
+                      >Largeur des bandeaux d'équipe
+                      <span id="s-band-width-value">6px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="s-band-width"
+                      min="0"
+                      max="30"
+                      value="6"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>Espacement avec le score <span id="s-team-gap-value">6 px</span></span>
+                    <input type="range" id="s-team-gap" min="0" max="30" value="6" />
+                  </label>
+                </div>
+              </details>
+              <details class="collapsible collapsible-nested">
+                <summary>Style des tirs au but</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Couleur du fond des cases</span>
+                    <input type="color" id="s-penalty-color" value="#0a1a4a" />
+                  </label>
+                </div>
+              </details>
+
               <details class="collapsible collapsible-nested">
                 <summary>Fond du score et chevrons</summary>
                 <div class="collapsible-body">
@@ -2139,7 +2086,7 @@
             </div>
           </details>
 
-          <details class="collapsible">
+          <details class="collapsible" hidden>
             <summary>Sauvegardes</summary>
             <div class="collapsible-body">
               <div class="saved-teams-controls">
@@ -2173,6 +2120,7 @@
         <section class="editor-section" data-editor="bracket">
           <h2>Tableau de tournoi</h2>
 
+          <h3 class="editor-panel-heading">Détails du tournoi</h3>
           <label class="field">
             <span>Titre du tournoi</span>
             <input type="text" id="b-title" value="CHAMPIONS LEAGUE 2023/24" />
@@ -2183,6 +2131,10 @@
             <input type="text" id="b-final" value="LONDON 24" />
           </label>
 
+          <h3 class="editor-panel-heading">8 équipes (quart de finale)</h3>
+          <div id="b-teams" class="player-list"></div>
+
+          <h3 class="editor-panel-heading">Apparence</h3>
           <label class="field">
             <span>Logo central (PNG officiel)</span>
             <input type="file" id="b-logo-file" accept="image/*" />
@@ -2191,9 +2143,6 @@
             Réinitialiser le logo
           </button>
 
-          <h3>8 équipes (quart de finale)</h3>
-          <div id="b-teams" class="player-list"></div>
-
           <label class="field">
             <span>Couleur fond</span>
             <input type="color" id="b-bg" value="#0a1228" />
@@ -2201,13 +2150,45 @@
         </section>
 
         <section class="editor-section" data-editor="shorts">
-          <h2 lang="en">Short Live Score</h2>
-          <p class="tn-info">
-            Bandeau horizontal à placer en haut du Short. Pour les logos,
-            choisis les fichiers dans
-            <code>./Logos/</code>.
-            Les tirs au but se règlent indépendamment dans leur section dédiée.
-          </p>
+          <h2 lang="en">Live Score Short</h2>
+
+          <h3 class="editor-panel-heading">Contenu du bandeau</h3>
+          <details class="collapsible" open>
+            <summary>Score du match</summary>
+            <div class="collapsible-body">
+              <p class="tn-info">Laisse le score vide pour afficher un espace blanc.</p>
+              <div class="row">
+                <label class="field">
+                  <span>Score domicile</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="shorts-home-score" aria-label="Diminuer">−</button>
+                    <input
+                      type="number"
+                      id="shorts-home-score"
+                      min="0"
+                      inputmode="numeric"
+                      placeholder=" "
+                    />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="shorts-home-score" aria-label="Augmenter">+</button>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Score extérieur</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="shorts-away-score" aria-label="Diminuer">−</button>
+                    <input
+                      type="number"
+                      id="shorts-away-score"
+                      min="0"
+                      inputmode="numeric"
+                      placeholder=" "
+                    />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="shorts-away-score" aria-label="Augmenter">+</button>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </details>
 
           <details class="collapsible" open>
             <summary>Équipes et match</summary>
@@ -2251,20 +2232,6 @@
                   >
                     Retirer le logo
                   </button>
-                  <label class="field">
-                    <span>Score (laisser vide pour un espace blanc)</span>
-                    <div class="number-stepper">
-                      <button type="button" class="stepper-btn" data-step="-1" data-target="shorts-home-score" aria-label="Diminuer">−</button>
-                      <input
-                        type="number"
-                        id="shorts-home-score"
-                        min="0"
-                        inputmode="numeric"
-                        placeholder=" "
-                      />
-                      <button type="button" class="stepper-btn" data-step="1" data-target="shorts-home-score" aria-label="Augmenter">+</button>
-                    </div>
-                  </label>
                 </div>
               </details>
 
@@ -2286,20 +2253,6 @@
                   >
                     Retirer le logo
                   </button>
-                  <label class="field">
-                    <span>Score (laisser vide pour un espace blanc)</span>
-                    <div class="number-stepper">
-                      <button type="button" class="stepper-btn" data-step="-1" data-target="shorts-away-score" aria-label="Diminuer">−</button>
-                      <input
-                        type="number"
-                        id="shorts-away-score"
-                        min="0"
-                        inputmode="numeric"
-                        placeholder=" "
-                      />
-                      <button type="button" class="stepper-btn" data-step="1" data-target="shorts-away-score" aria-label="Augmenter">+</button>
-                    </div>
-                  </label>
                 </div>
               </details>
             </div>
@@ -2314,32 +2267,6 @@
               </label>
               <p class="tn-info">
                 Saisis les tentatives indépendamment de l’onglet Live Score.
-              </p>
-              <label class="field">
-                <span>Couleur de fond des cases</span>
-                <input
-                  type="color"
-                  id="shorts-penalty-color"
-                  value="#0a1a4a"
-                />
-              </label>
-              <label class="field">
-                <span
-                  >Largeur des fonds des tirs
-                  <span id="shorts-penalty-width-value">135 px</span></span
-                >
-                <input
-                  type="range"
-                  id="shorts-penalty-width"
-                  min="155"
-                  max="360"
-                  step="5"
-                  value="155"
-                />
-              </label>
-              <p class="tn-info">
-                La largeur minimale permet d’afficher cinq tirs sur une ligne.
-                À partir du sixième, ils passent à la ligne suivante.
               </p>
               <div class="row">
                 <div class="penalty-team-controls">
@@ -2405,9 +2332,42 @@
             </div>
           </details>
 
+          <h3 class="editor-panel-heading">Apparence</h3>
           <details class="collapsible">
             <summary>Habillage du bandeau</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Style des tirs au but</summary>
+                <div class="collapsible-body">
+                  <label class="field">
+                    <span>Couleur de fond des cases</span>
+                    <input
+                      type="color"
+                      id="shorts-penalty-color"
+                      value="#0a1a4a"
+                    />
+                  </label>
+                  <label class="field">
+                    <span
+                      >Largeur des fonds des tirs
+                      <span id="shorts-penalty-width-value">135 px</span></span
+                    >
+                    <input
+                      type="range"
+                      id="shorts-penalty-width"
+                      min="155"
+                      max="360"
+                      step="5"
+                      value="155"
+                    />
+                  </label>
+                  <p class="tn-info">
+                    La largeur minimale permet d’afficher cinq tirs sur une ligne.
+                    À partir du sixième, ils passent à la ligne suivante.
+                  </p>
+                </div>
+              </details>
+
               <details class="collapsible collapsible-nested">
                 <summary>Dimensions du bloc central</summary>
                 <div class="collapsible-body">
@@ -2686,7 +2646,7 @@
             </div>
           </details>
 
-          <details class="collapsible">
+          <details class="collapsible" hidden>
             <summary>Sauvegardes</summary>
             <div class="collapsible-body">
               <div class="saved-teams-controls">
@@ -2720,6 +2680,7 @@
         <section class="editor-section" data-editor="showdown">
           <h2>Showdown (panel match)</h2>
 
+          <h3 class="editor-panel-heading">Visuel du match</h3>
           <details class="collapsible">
             <summary>Équipes et match</summary>
             <div class="collapsible-body">
@@ -2829,10 +2790,10 @@
             </div>
           </details>
 
-          <details class="collapsible">
+          <details class="collapsible" open>
             <summary>Score et buteurs</summary>
             <div class="collapsible-body">
-              <details class="collapsible collapsible-nested">
+              <details class="collapsible collapsible-nested" open>
                 <summary>Score du match</summary>
                 <div class="collapsible-body">
                   <label class="checkbox-field">
@@ -3019,6 +2980,7 @@ MBAPPÉ | 45+2'</textarea
             </div>
           </details>
 
+          <h3 class="editor-panel-heading">Apparence</h3>
           <details class="collapsible">
             <summary>Habillage</summary>
             <div class="collapsible-body">
@@ -3503,10 +3465,11 @@ MBAPPÉ | 45+2'</textarea
             </div>
           </details>
 
+          <h3 class="editor-panel-heading">Styles enregistrés</h3>
           <details class="collapsible">
-            <summary>Sauvegardes</summary>
+            <summary>Styles globaux</summary>
             <div class="collapsible-body">
-              <details class="collapsible collapsible-nested">
+              <details class="collapsible collapsible-nested" hidden>
                 <summary>Showdown complet</summary>
                 <div class="collapsible-body">
                   <div class="saved-teams-controls">
@@ -3600,8 +3563,10 @@ MBAPPÉ | 45+2'</textarea
           </details>
         </section>
 
-        <section class="editor-section" data-editor="video-thumbnail">
+        <section class="editor-section" data-editor="video-thumbnail" data-thumbnail-editor data-fixed-section-order>
           <h2>Miniature vidéo</h2>
+
+          <h3 class="editor-panel-heading">Contenu de la miniature</h3>
           <details class="collapsible" open>
             <summary>Composants de la miniature</summary>
             <div class="collapsible-body" id="vt-assets">
@@ -3614,10 +3579,28 @@ MBAPPÉ | 45+2'</textarea
                 <span>Joueur de gauche</span>
                 <input type="file" data-vt-layer="leftPlayer" accept="image/*" />
               </label>
+              <label class="checkbox-field">
+                <input type="checkbox" data-vt-remove-background="leftPlayer" />
+                <span>Retirer le fond</span>
+              </label>
+              <p class="vt-cutout-status" id="vt-left-cutout-status" role="status"></p>
+              <label class="checkbox-field">
+                <input type="checkbox" data-vt-mirror="leftPlayer" />
+                <span>Miroir gauche-droite</span>
+              </label>
               <button class="btn-secondary library-media-button" type="button" data-library-media="leftPlayer">Depuis la bibliothèque</button>
               <label class="field">
                 <span>Joueur de droite</span>
                 <input type="file" data-vt-layer="rightPlayer" accept="image/*" />
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" data-vt-remove-background="rightPlayer" />
+                <span>Retirer le fond</span>
+              </label>
+              <p class="vt-cutout-status" id="vt-right-cutout-status" role="status"></p>
+              <label class="checkbox-field">
+                <input type="checkbox" data-vt-mirror="rightPlayer" />
+                <span>Miroir gauche-droite</span>
               </label>
               <button class="btn-secondary library-media-button" type="button" data-library-media="rightPlayer">Depuis la bibliothèque</button>
               <label class="field">
@@ -3655,6 +3638,51 @@ MBAPPÉ | 45+2'</textarea
                   <input type="text" id="vt-year" value="1985" maxlength="12" />
                 </label>
               </div>
+            </div>
+          </details>
+          <h3 class="editor-panel-heading">Apparence</h3>
+          <details class="collapsible">
+            <summary>Ajuster le placement</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Élément à ajuster</span>
+                <select id="vt-layout-layer">
+                  <option value="leftPlayer" selected>Joueur de gauche</option>
+                  <option value="rightPlayer">Joueur de droite</option>
+                  <option value="leftClub">Logo du club de gauche</option>
+                  <option value="rightClub">Logo du club de droite</option>
+                  <option value="competition">Logo de la compétition</option>
+                  <option value="title">Titre</option>
+                  <option value="year">Année</option>
+                </select>
+              </label>
+              <div class="row">
+                <label class="field">
+                  <span>Décalage X (%)</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-layout-x" aria-label="Diminuer">−</button>
+                    <input type="number" id="vt-layout-x" min="-100" max="100" step="any" value="0" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-layout-x" aria-label="Augmenter">+</button>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Décalage Y (%)</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-layout-y" aria-label="Diminuer">−</button>
+                    <input type="number" id="vt-layout-y" min="-100" max="100" step="any" value="0" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-layout-y" aria-label="Augmenter">+</button>
+                  </div>
+                </label>
+                <label class="field">
+                  <span>Échelle (%)</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-layout-scale" aria-label="Diminuer">−</button>
+                    <input type="number" id="vt-layout-scale" min="10" max="300" step="any" value="100" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-layout-scale" aria-label="Augmenter">+</button>
+                  </div>
+                </label>
+              </div>
+              <button type="button" class="btn-secondary" id="vt-reset-layout">Rétablir le placement</button>
             </div>
           </details>
           <details class="collapsible">
@@ -3782,50 +3810,7 @@ MBAPPÉ | 45+2'</textarea
             </div>
           </details>
           <details class="collapsible">
-            <summary>Ajuster le placement</summary>
-            <div class="collapsible-body">
-              <label class="field">
-                <span>Élément à ajuster</span>
-                <select id="vt-layout-layer">
-                  <option value="background">Image de fond</option>
-                  <option value="leftPlayer" selected>Joueur de gauche</option>
-                  <option value="rightPlayer">Joueur de droite</option>
-                  <option value="leftClub">Logo du club de gauche</option>
-                  <option value="rightClub">Logo du club de droite</option>
-                  <option value="competition">Logo de la compétition</option>
-                </select>
-              </label>
-              <div class="row">
-                <label class="field">
-                  <span>Décalage X (%)</span>
-                  <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-layout-x" aria-label="Diminuer">−</button>
-                    <input type="number" id="vt-layout-x" min="-100" max="100" value="0" />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-layout-x" aria-label="Augmenter">+</button>
-                  </div>
-                </label>
-                <label class="field">
-                  <span>Décalage Y (%)</span>
-                  <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-layout-y" aria-label="Diminuer">−</button>
-                    <input type="number" id="vt-layout-y" min="-100" max="100" value="0" />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-layout-y" aria-label="Augmenter">+</button>
-                  </div>
-                </label>
-                <label class="field">
-                  <span>Échelle (%)</span>
-                  <div class="number-stepper">
-                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-layout-scale" aria-label="Diminuer">−</button>
-                    <input type="number" id="vt-layout-scale" min="10" max="300" value="100" />
-                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-layout-scale" aria-label="Augmenter">+</button>
-                  </div>
-                </label>
-              </div>
-              <button type="button" class="btn-secondary" id="vt-reset-layout">Rétablir le placement</button>
-            </div>
-          </details>
-          <details class="collapsible">
-            <summary>Ombres et éclairage</summary>
+            <summary>Joueurs - Ombres et éclairage</summary>
             <div class="collapsible-body">
               <label class="field">
                 <span>Ombre sur les joueurs <output for="vt-player-surface" id="vt-player-surface-value">0 %</output></span>
@@ -3853,6 +3838,53 @@ MBAPPÉ | 45+2'</textarea
                 <span>Couleur de l’ombre des joueurs</span>
                 <input type="color" id="vt-player-shadow-color" value="#142555" />
               </label>
+            </div>
+          </details>
+          <details class="collapsible">
+            <summary>Logo compétition - Ombres et éclairage</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Ombre sur le logo de compétition <output for="vt-competition-surface" id="vt-competition-surface-value">0 %</output></span>
+                <div class="range-with-number">
+                  <input type="range" id="vt-competition-surface" min="0" max="100" value="0" />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-competition-surface-number" aria-label="Diminuer">−</button>
+                    <input type="number" id="vt-competition-surface-number" min="0" max="100" value="0" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-competition-surface-number" aria-label="Augmenter">+</button>
+                  </div>
+                </div>
+              </label>
+              <label class="field">
+                <span>Opacité du halo derrière le logo <output for="vt-competition-shadow" id="vt-competition-shadow-value">75 %</output></span>
+                <div class="range-with-number">
+                  <input type="range" id="vt-competition-shadow" min="0" max="100" value="75" />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-competition-shadow-number" aria-label="Diminuer">−</button>
+                    <input type="number" id="vt-competition-shadow-number" min="0" max="100" value="75" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-competition-shadow-number" aria-label="Augmenter">+</button>
+                  </div>
+                </div>
+              </label>
+              <label class="field">
+                <span>Couleur du halo derrière le logo</span>
+                <input type="color" id="vt-competition-shadow-color" value="#000000" />
+              </label>
+              <label class="field">
+                <span>Taille du halo <output for="vt-competition-halo-size" id="vt-competition-halo-size-value">100 %</output></span>
+                <div class="range-with-number">
+                  <input type="range" id="vt-competition-halo-size" min="25" max="250" value="100" />
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="vt-competition-halo-size-number" aria-label="Diminuer">−</button>
+                    <input type="number" id="vt-competition-halo-size-number" min="25" max="250" value="100" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="vt-competition-halo-size-number" aria-label="Augmenter">+</button>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </details>
+          <details class="collapsible">
+            <summary>Logos de club - Ombres et éclairage</summary>
+            <div class="collapsible-body">
               <label class="field">
                 <span>Ombre sur les écussons <output for="vt-club-surface" id="vt-club-surface-value">0 %</output></span>
                 <div class="range-with-number">
@@ -3867,10 +3899,10 @@ MBAPPÉ | 45+2'</textarea
               <label class="field">
                 <span>Ombre derrière les écussons <output for="vt-club-shadow" id="vt-club-shadow-value">93 %</output></span>
                 <div class="range-with-number">
-                  <input type="range" id="vt-club-shadow" min="0" max="100" value="93" />
+                  <input type="range" id="vt-club-shadow" min="0" max="200" value="93" />
                   <div class="number-stepper">
                     <button type="button" class="stepper-btn" data-step="-1" data-target="vt-club-shadow-number" aria-label="Diminuer">−</button>
-                    <input type="number" id="vt-club-shadow-number" min="0" max="100" value="93" />
+                    <input type="number" id="vt-club-shadow-number" min="0" max="200" value="93" />
                     <button type="button" class="stepper-btn" data-step="1" data-target="vt-club-shadow-number" aria-label="Augmenter">+</button>
                   </div>
                 </div>
@@ -3887,7 +3919,7 @@ MBAPPÉ | 45+2'</textarea
               </div>
             </div>
           </details>
-          <details class="collapsible">
+          <details class="collapsible" hidden>
             <summary>Miniatures sauvegardées</summary>
             <div class="collapsible-body">
               <div class="saved-teams-controls">
@@ -3906,18 +3938,13 @@ MBAPPÉ | 45+2'</textarea
                 </button>
               </div>
               <form class="save-team-form" id="vt-save-composition">
-                <input
-                  type="text"
-                  id="vt-composition-name"
-                  placeholder="Nom de la sauvegarde…"
-                  maxlength="80"
-                  required
-                />
+                <input type="hidden" id="vt-composition-name" />
                 <button class="btn-primary" type="submit">💾 Enregistrer</button>
                 <p class="save-status" id="vt-save-status" role="status"></p>
               </form>
             </div>
           </details>
+          <h3 class="editor-panel-heading">Styles enregistrés</h3>
           <details class="collapsible">
             <summary>Styles de miniature</summary>
             <div class="collapsible-body">
@@ -3950,21 +3977,11 @@ MBAPPÉ | 45+2'</textarea
             </div>
           </details>
         </section>
-        <section class="editor-section library-sidebar" data-editor="library">
-          <h2 id="library-sidebar-title">Organisation</h2>
-          <section class="library-drop-panel" id="library-drop-panel" hidden aria-labelledby="library-drop-heading">
-            <h3 id="library-drop-heading">Déposer dans…</h3>
-            <ul id="library-drop-targets"></ul>
-          </section>
-          <label class="library-switch">
-            <span>Archives</span>
-            <input type="checkbox" role="switch" id="library-archives" />
-          </label>
-        </section>
         </div>
         <div class="editor-save-footer" id="editor-save-footer">
           <button class="btn-primary" id="editor-quick-save" type="button" aria-haspopup="dialog">Enregistrer</button>
           <p class="save-status" id="editor-quick-save-status" role="status"></p>
+        </div>
         </div>
       </aside>
 
@@ -4391,8 +4408,17 @@ MBAPPÉ | 45+2'</textarea
           </div>
         </div>
 
-        <div class="preview-container" data-preview="video-thumbnail" lang="en">
-          <canvas id="video-thumbnail-board" width="1600" height="900" role="img" aria-label="Video thumbnail"></canvas>
+        <div class="preview-container thumbnail-preview" data-preview="video-thumbnail">
+          <div class="thumbnail-viewport" id="vt-preview-viewport">
+            <div class="thumbnail-stage">
+              <canvas class="thumbnail-board" id="video-thumbnail-board" width="1600" height="900" role="img" tabindex="0" aria-label="Aperçu de la miniature" aria-describedby="vt-preview-help"></canvas>
+            </div>
+          </div>
+          <div class="thumbnail-preview-tools">
+            <p id="vt-preview-help" class="vt-preview-help">Ctrl + molette pour redimensionner la sélection ou zoomer sans sélection.</p>
+            <output id="vt-preview-zoom" aria-label="Zoom de l’aperçu" hidden></output>
+            <button class="btn-secondary" id="vt-preview-reset" type="button" aria-label="Réinitialiser le zoom à 100 %">100 %</button>
+          </div>
         </div>
 
         <div class="preview-container library-view" data-preview="library">
@@ -4400,33 +4426,43 @@ MBAPPÉ | 45+2'</textarea
             <h2>Bibliothèque</h2>
             <div class="library-file-actions">
               <button class="btn-header" id="local-library-connect" type="button">Dossier de sauvegarde</button>
-              <button class="btn-header" id="library-refresh" type="button">Actualiser</button>
               <button class="btn-header" id="l-import-json-btn" type="button">📥 Import</button>
               <button class="btn-header" id="l-export-json" type="button">📤 Export</button>
-              <button class="btn-header btn-header-danger" id="l-clear-json-btn" type="button">Effacer les copies du navigateur</button>
               <input type="file" id="l-import-json-file" accept="application/json,.json" hidden />
-              <button class="btn-header" id="library-close-project" type="button" hidden>Fermer le match actif</button>
             </div>
           </div>
           <p id="local-library-status" class="local-library-status" role="status" hidden></p>
           <div class="library-view-bar">
             <div class="library-subtabs" role="tablist" aria-label="Vues de la bibliothèque">
               <button id="library-view-campaigns" type="button" role="tab" aria-selected="true" aria-controls="library-subview" data-library-view="campaigns">Campagnes</button>
-              <button id="library-view-styles" type="button" role="tab" aria-selected="false" aria-controls="library-subview" data-library-view="styles" tabindex="-1">Styles globaux</button>
+              <button id="library-view-styles" type="button" role="tab" aria-selected="false" aria-controls="library-subview" data-library-view="styles" tabindex="-1">Styles</button>
             </div>
             <div class="library-create-actions">
               <button class="btn-header" id="library-new-campaign" type="button" aria-haspopup="dialog">Nouvelle campagne</button>
+              <label class="library-switch">
+                <span>Archives</span>
+                <input type="checkbox" role="switch" id="library-archives" />
+              </label>
               <button class="btn-header" id="library-new-match" type="button" aria-haspopup="dialog">Nouveau match</button>
               <button class="btn-header" id="library-collapse-all" type="button">Tout replier</button>
               <button class="btn-header" id="library-expand-all" type="button">Tout déplier</button>
+              <button class="btn-header" id="library-close-project" type="button" hidden>Fermer le match actif</button>
             </div>
           </div>
+          <section class="library-drop-panel" id="library-drop-panel" hidden aria-labelledby="library-drop-heading">
+            <h3 id="library-drop-heading">Déposer dans…</h3>
+            <ul id="library-drop-targets"></ul>
+          </section>
           <div id="library-subview" role="tabpanel" aria-labelledby="library-view-campaigns">
             <p id="library-results-status" role="status"></p>
             <ul class="library-results" id="library-results"></ul>
           </div>
         </div>
       </section>
+      <aside class="library-dock" aria-label="Bibliothèque">
+        <button class="panel-toggle" id="library-dock-toggle" type="button" aria-controls="library-dock" aria-expanded="false" aria-label="Bibliothèque" title="Bibliothèque"><span aria-hidden="true"></span></button>
+        <div class="library-dock-body" id="library-dock" inert></div>
+      </aside>
     </main>
 
     <dialog id="editor-quick-save-dialog" class="import-modal library-centered-dialog" aria-labelledby="editor-quick-save-heading">
@@ -4554,8 +4590,8 @@ MBAPPÉ | 45+2'</textarea
         </div>
       </form>
     </dialog>
-    <script src="translations.js"></script>
     <script src="video-thumbnail.js"></script>
+    <script src="translations.js"></script>
     <script src="script.js"></script>
     <script src="local-library.js"></script>
   </body>

@@ -3,12 +3,25 @@
    ============================================================ */
 
 /* ============ TAB SWITCHING ============ */
+const thumbnailEditors = new Map([
+  ["video-thumbnail", createThumbnailEditor("video-thumbnail")],
+  ["short-thumbnail", createThumbnailEditor("short-thumbnail", true)],
+]);
 const tabs = document.querySelectorAll(".tab");
 const editorSections = document.querySelectorAll(".editor-section");
 const previewContainers = document.querySelectorAll(".preview-container");
 const editorSearch = document.getElementById("editor-search");
 const editorSearchStatus = document.getElementById("editor-search-status");
 const editorSearchResults = document.getElementById("editor-search-results");
+const editorPanelBody = document.getElementById("editor-panel-body");
+const editorPanelToggle = document.getElementById("editor-panel-toggle");
+const editorWorkspace = editorPanelToggle.closest(".workspace");
+
+editorPanelToggle.addEventListener("click", () => {
+  const collapsed = editorWorkspace.classList.toggle("editor-collapsed");
+  editorPanelBody.inert = collapsed;
+  editorPanelToggle.setAttribute("aria-expanded", String(!collapsed));
+});
 
 function normalizeEditorSearch(text) {
   return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -85,12 +98,12 @@ function clearPresetSaveStatuses(editor) {
   });
 }
 
-function showPresetSaveStatus(nameInput, name) {
+function showPresetSaveStatus(nameInput, name, details = {}) {
   nameInput.value = name;
   const status = nameInput.closest(".save-team-form").querySelector(".save-status");
   status.dataset.interfaceMessage = "Sauvegarde enregistrée.";
   status.textContent = translate(status.dataset.interfaceMessage);
-  document.dispatchEvent(new CustomEvent("ucl-presets-changed", { detail: { inputId: nameInput.id, name } }));
+  document.dispatchEvent(new CustomEvent("ucl-presets-changed", { detail: { inputId: nameInput.id, name, ...details } }));
 }
 
 for (const editor of editorSections) {
@@ -130,6 +143,7 @@ const quickSaveControls = new Map([
   ["player", "#p-save"],
   ["shorts", "#shorts-save"],
   ["video-thumbnail", '#vt-save-composition button[type="submit"]'],
+  ["short-thumbnail", '#short-vt-save-composition button[type="submit"]'],
 ].map(([key, selector]) => {
   const button = document.querySelector(selector);
   const form = button.closest(".save-team-form");
@@ -141,6 +155,8 @@ function updateQuickSave() {
   const control = quickSaveControls.get(key);
   quickSaveFooter.hidden = !control;
   quickSaveButton.disabled = !!control?.button.disabled;
+  if (thumbnailEditors.has(key)) quickSaveButton.removeAttribute("aria-haspopup");
+  else quickSaveButton.setAttribute("aria-haspopup", "dialog");
   quickSaveStatus.textContent = control?.status.textContent ?? "";
 }
 
@@ -156,7 +172,7 @@ quickSaveButton.addEventListener("click", () => {
   const key = document.querySelector(".tab.active")?.dataset.tab;
   const control = quickSaveControls.get(key);
   if (!control || control.button.disabled) return;
-  if (key === "lineup" || key === "showdown") {
+  if (key === "lineup" || key === "showdown" || thumbnailEditors.has(key)) {
     control.button.click();
     return;
   }
@@ -214,7 +230,7 @@ tabs.forEach((tab) => {
     document.querySelector(".editor-search").hidden = target === "library";
     updateQuickSave();
     document.getElementById("export-format-field").hidden =
-      target === "video-thumbnail";
+      thumbnailEditors.has(target);
   });
 });
 
@@ -247,7 +263,7 @@ document.addEventListener("pointerdown", (event) => {
   if (!event.isPrimary || event.button !== 0) return;
   stopStepperPress(event);
   repeatedStepper = undefined;
-  const button = event.target.closest('[data-editor="video-thumbnail"] .stepper-btn');
+  const button = event.target.closest('[data-thumbnail-editor] .stepper-btn');
   if (!button || button.disabled) return;
   const press = { pointerId: event.pointerId };
   stepperPress = press;
@@ -1903,18 +1919,55 @@ function expandLineupData(data) {
 function renderStartersEditor() {
   const list = document.getElementById("l-starters");
   list.innerHTML = "";
+  let selectedSwapButton = null;
+  const swapLabel = translate("Échanger ce joueur");
   starters.forEach((p, i) => {
     const row = document.createElement("div");
     row.className = "player-row";
     row.innerHTML = `
       <input type="number" value="${p.num}" min="0" max="99" data-i="${i}" data-field="num" />
-      <input type="text" value="${p.name}" data-i="${i}" data-field="name" />
+      <input type="text" data-i="${i}" data-field="name" />
       <label class="captain-cell" title="${translate("Capitaine")}">
         <input type="checkbox" data-i="${i}" data-field="captain" ${p.captain ? "checked" : ""} />
         <span>C</span>
       </label>
       <span class="role-tag">${p.gk ? translate("GK") : "#" + (i + 1)}</span>
+      <button type="button" class="btn-secondary player-swap" aria-pressed="false">⇄</button>
     `;
+    const nameInput = row.querySelector('[data-field="name"]');
+    nameInput.value = p.name;
+    const swapButton = row.querySelector(".player-swap");
+    swapButton.dataset.i = i;
+    swapButton.title = swapLabel;
+    function updateSwapLabel(name) {
+      swapButton.setAttribute("aria-label", name ? `${swapLabel} (${name})` : swapLabel);
+    }
+    updateSwapLabel(p.name);
+    nameInput.addEventListener("input", (event) => {
+      updateSwapLabel(event.target.value);
+    });
+    swapButton.addEventListener("click", () => {
+      const previousButton = selectedSwapButton;
+      selectedSwapButton = null;
+      if (previousButton) previousButton.setAttribute("aria-pressed", "false");
+      if (previousButton === swapButton) return;
+      if (!previousButton) {
+        selectedSwapButton = swapButton;
+        swapButton.setAttribute("aria-pressed", "true");
+        return;
+      }
+
+      const other = starters[Number(previousButton.dataset.i)];
+      const { num, name } = other;
+      other.num = p.num;
+      other.name = p.name;
+      p.num = num;
+      p.name = name;
+      renderStartersEditor();
+      list.querySelector(`.player-swap[data-i="${i}"]`).focus();
+      renderPitch();
+      saveLineup();
+    });
     list.appendChild(row);
   });
   list.querySelectorAll("input").forEach((inp) => {
@@ -2041,7 +2094,8 @@ function renderPitch() {
       : "";
     el.innerHTML = `
       ${renderShirtSVG(shirtColor, numColor, p.num, styleOpts)}
-      <div class="lb-player-name">${p.name}${captainBadge}</div>
+      ${captainBadge}
+      <div class="lb-player-name">${p.name}</div>
     `;
     pitch.appendChild(el);
     makeDraggable(el, p);
@@ -2343,7 +2397,8 @@ document.getElementById("l-reset").addEventListener("click", () => {
 });
 
 /* ----- Coller une composition entière ----- */
-// Lignes alternées : un numéro puis un nom. Marqueurs reconnus :
+// Le numéro peut précéder le nom sur la même ligne ou sur sa propre ligne.
+// Marqueurs reconnus :
 //   (GA)/(GK)/(G)/gardien -> gardien de but
 //   (C) ou un "C" collé au numéro (ex: "1C") -> capitaine
 // Les positions (x/y) des emplacements existants sont conservées ; seuls le
@@ -2356,23 +2411,27 @@ function parseLineupComposition(text) {
   const entries = [];
   let pendingNum = null;
   let pendingCaptain = false;
-  const numRe = /^(\d{1,2})\s*(c?)$/i; // "9", "10", "1C"
+  const numRe = /^(\d{1,2})\s*(c)?$/i;
+  const numberedPlayerRe = /^(\d{1,2})(c)?(?:\s*[-–—.;]\s*|\s+)(.+)$/i;
   for (const line of lines) {
-    const m = line.match(numRe);
-    if (m) {
-      // Ligne « numéro » : le dernier numéro avant un nom l'emporte.
-      pendingNum = parseInt(m[1], 10);
-      if (m[2]) pendingCaptain = true;
+    const numberOnly = line.match(numRe);
+    if (numberOnly) {
+      pendingNum = Number(numberOnly[1]);
+      pendingCaptain = Boolean(numberOnly[2]);
       continue;
     }
-    // Ligne « nom » : détecter puis retirer les marqueurs entre parenthèses.
-    let gk = /\((?:ga|gk|g|gardien)\)/i.test(line);
-    let captain = pendingCaptain || /\(c\)/i.test(line);
-    const name = line
+    const numberedPlayer = line.match(numberedPlayerRe);
+    const playerText = numberedPlayer ? numberedPlayer[3] : line;
+    const num = numberedPlayer ? Number(numberedPlayer[1]) : pendingNum;
+    const gk = /\((?:ga|gk|g|gardien)\)/i.test(playerText);
+    const captain =
+      (numberedPlayer ? Boolean(numberedPlayer[2]) : pendingCaptain) ||
+      /\(c\)/i.test(playerText);
+    const name = playerText
       .replace(/\([^)]*\)/g, "")
       .replace(/\s{2,}/g, " ")
       .trim();
-    entries.push({ num: pendingNum, name, gk, captain });
+    entries.push({ num, name, gk, captain });
     pendingNum = null;
     pendingCaptain = false;
   }
@@ -2529,114 +2588,6 @@ renderSavedKitsList();
     saveLineup();
   }),
 );
-
-/* ----- Export / Import JSON (équipes + formations) ----- */
-function collectStorageStateByCategory() {
-  const counts = Object.fromEntries(IMPORT_CATEGORIES.map((cat) => [cat, 0]));
-  const byCat = Object.fromEntries(IMPORT_CATEGORIES.map((cat) => [cat, {}]));
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (!k || !k.startsWith("ucl-")) continue;
-    const cat = categorizeStorageKey(k);
-    if (!cat) continue;
-    byCat[cat][k] = localStorage.getItem(k);
-    counts[cat]++;
-  }
-  return { counts, byCat };
-}
-
-const IMPORT_CATEGORIES = ["lineup", "banner", "score", "shorts", "showdown", "prefs"];
-function categorizeStorageKey(key) {
-  if (!key || !key.startsWith("ucl-")) return null;
-  if (key.startsWith("ucl-lineup-")) return "lineup";
-  if (key.startsWith("ucl-banner-") || key.startsWith("ucl-player-"))
-    return "banner";
-  if (key.startsWith("ucl-score-")) return "score";
-  if (key.startsWith("ucl-shorts-")) return "shorts";
-  if (key.startsWith("ucl-showdown-")) return "showdown";
-  return "prefs";
-}
-
-function clearSavesByCategory() {
-  const modal = document.getElementById("l-clear-modal");
-  const { counts } = collectStorageStateByCategory();
-  IMPORT_CATEGORIES.forEach((cat) => {
-    const countEl = modal.querySelector(`[data-cat-count="${cat}"]`);
-    const cb = modal.querySelector(`input[data-cat="${cat}"]`);
-    const wrap = cb ? cb.closest(".import-category") : null;
-    if (countEl) countEl.textContent = counts[cat];
-    if (cb) {
-      cb.checked = false;
-      cb.disabled = counts[cat] === 0;
-    }
-    if (wrap) wrap.classList.toggle("import-category-empty", counts[cat] === 0);
-  });
-  const cancelBtn = document.getElementById("l-clear-modal-cancel");
-  const confirmBtn = document.getElementById("l-clear-modal-confirm");
-  const toggleBtn = document.getElementById("l-clear-modal-toggle-all");
-  const cleanup = () => {
-    cancelBtn.removeEventListener("click", onCancel);
-    confirmBtn.removeEventListener("click", onOk);
-    toggleBtn.removeEventListener("click", onToggle);
-  };
-  const onCancel = () => {
-    cleanup();
-    modal.close();
-  };
-  const onOk = () => {
-    const selected = new Set(
-      IMPORT_CATEGORIES.filter((cat) => {
-        const cb = modal.querySelector(`input[data-cat="${cat}"]`);
-        return cb && cb.checked && !cb.disabled;
-      }),
-    );
-    if (selected.size === 0) {
-      alert(translate("Sélectionne au moins une section à supprimer."));
-      return;
-    }
-    const labels = {
-      lineup: "Lineup",
-      banner: "Goal Scoreboard",
-      score: "Live Score",
-      shorts: "Shorts",
-      showdown: "Showdown",
-      prefs: "Préférences",
-    };
-    const names = [...selected].map((c) => translate(labels[c])).join(", ");
-    if (
-      !confirm(
-        translate("Supprimer toutes les sauvegardes locales de : {names} ?", { names }) + "\n\n" +
-          translate("Cette action est irréversible. La page sera rechargée."),
-      )
-    )
-      return;
-    cleanup();
-    modal.close();
-    const toRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && selected.has(categorizeStorageKey(k))) toRemove.push(k);
-    }
-    toRemove.forEach((k) => localStorage.removeItem(k));
-    location.reload();
-  };
-  const onToggle = () => {
-    const boxes = IMPORT_CATEGORIES.map((cat) =>
-      modal.querySelector(`input[data-cat="${cat}"]`),
-    ).filter((cb) => cb && !cb.disabled);
-    const allChecked = boxes.every((cb) => cb.checked);
-    boxes.forEach((cb) => (cb.checked = !allChecked));
-  };
-  cancelBtn.addEventListener("click", onCancel);
-  confirmBtn.addEventListener("click", onOk);
-  toggleBtn.addEventListener("click", onToggle);
-  if (typeof modal.showModal === "function") modal.showModal();
-  else modal.setAttribute("open", "");
-}
-
-document
-  .getElementById("l-clear-json-btn")
-  .addEventListener("click", clearSavesByCategory);
 
 /* Toggle grille d'alignement */
 const GRID_PREF_KEY = "ucl-lineup-grid-v1";
@@ -6064,6 +6015,10 @@ function buildGraphicExportBaseName(activeContainer, resolution) {
       parts.push("video-thumbnail", slugForExport(val("vt-title")), slugForExport(val("vt-year")));
       break;
     }
+    case "short-thumbnail": {
+      parts.push("short-thumbnail", slugForExport(val("short-vt-title")), slugForExport(val("short-vt-year")));
+      break;
+    }
     default:
       parts.push("ucl-graphic");
   }
@@ -6199,8 +6154,9 @@ exportButton.addEventListener("click", async () => {
   const separate = mode === "separate";
   exportButton.disabled = exportSavedRenders.disabled = true;
   try {
-    if (preview === "video-thumbnail") {
-      const canvas = await videoThumbnail.renderExport(EXPORT_RESOLUTION_HEIGHT[settings.resolution] || 1080);
+    const thumbnailEditor = thumbnailEditors.get(preview);
+    if (thumbnailEditor) {
+      const canvas = await thumbnailEditor.renderExport(EXPORT_RESOLUTION_HEIGHT[settings.resolution] || 1080);
       const blob = await encodeGraphicPng(canvas);
       downloadGraphicExport(blob, `${baseName}.png`);
       return;
@@ -6377,12 +6333,12 @@ exportSavedRenders.addEventListener("click", async () => {
     const all = readOrders();
     for (const ident of Object.keys(all)) {
       const container = findContainerByIdent(ident);
-      if (!container) continue;
+      if (!container || container.closest("[data-fixed-section-order]")) continue;
       const ids = all[ident];
       if (!Array.isArray(ids)) continue;
       for (const id of ids) {
         const el = findById(id);
-        if (el && el !== container && !el.contains(container)) {
+        if (el && el !== container && !el.contains(container) && !el.closest("[data-fixed-section-order]")) {
           container.appendChild(el);
         }
       }
@@ -6429,7 +6385,7 @@ exportSavedRenders.addEventListener("click", async () => {
   function getDropZone(e) {
     if (!dragSrc) return null;
     const target = e.target.closest(".collapsible");
-    if (!target || target === dragSrc) return null;
+    if (!target || target === dragSrc || target.closest("[data-fixed-section-order]")) return null;
     if (dragSrc.contains(target)) return null;
     const summary = target.querySelector(":scope > summary");
     let position;
@@ -6486,6 +6442,7 @@ exportSavedRenders.addEventListener("click", async () => {
   }
 
   function setupCollapsible(details) {
+    if (details.closest("[data-fixed-section-order]")) return;
     const summary = details.querySelector(":scope > summary");
     if (!summary) return;
     summary.setAttribute("draggable", "true");

@@ -12,6 +12,7 @@ Live Score|Live score|Score en direct
 Shorts|Short-form score|Score format court
 Showdown|Match graphic|Affiche de match
 Miniature vidéo|Video thumbnail
+Miniature Short (9:16)|Short thumbnail (9:16)
 Exporter toutes les données locales (sauvegardes, préférences, ordre des sections) en JSON|Export local saves, preferences and section order as JSON
 📤 Export|📤 Export|📤 Exporter
 Importer un fichier JSON de sauvegardes|Import a JSON backup file
@@ -133,8 +134,25 @@ Replay|Replay|Match rejoué
 Extra (année, lieu…)|Additional details (year, venue…)|Complément (année, lieu…)
 ex: 1956|e.g. 1956|Ex. 1956
 Joueurs et placement|Players and positioning
+Visuel du match|Match graphic
+Styles et formations enregistrés|Saved styles and formations
+Contenu du bandeau|Banner content
+Apparence|Appearance
+Détails du tournoi|Tournament details
+Contenu de la miniature|Thumbnail content
+Aperçu de la miniature|Thumbnail preview
+Ctrl + molette pour redimensionner la sélection ou zoomer sans sélection.|Ctrl + scroll to resize the selection or zoom when nothing is selected.
+Zoom de l’aperçu|Preview zoom
+Réinitialiser le zoom à 100 %|Reset zoom to 100%
+Miroir gauche-droite|Mirror left to right
+Retirer le fond|Remove background
+Chargement du modèle de détourage…|Loading the background removal model…
+Détourage de la photo…|Removing the photo background…
+Impossible de détourer cette photo. Essaie une autre image.|Could not remove this photo’s background. Try another image.
+Impossible de charger le détourage. Vérifie ta connexion, puis réessaie.|Could not load background removal. Check your connection, then try again.
+Styles enregistrés|Saved styles
 Coller la liste des joueurs|Paste the player list
-Colle la liste (numéro puis nom, une info par ligne). Les marqueurs|Paste the list (number, then name, one item per line). The markers
+Colle un joueur par ligne (numéro puis nom) ou alterne numéro et nom sur deux lignes. Les marqueurs|Paste one player per line (number followed by name), or alternate numbers and names on separate lines. The markers
 = gardien et|= goalkeeper and
 ou un|or a
 collé au numéro = capitaine sont reconnus puis retirés du nom.|next to the number = captain are recognized and removed from the name.
@@ -221,6 +239,14 @@ Espacement avec le score|Gap around the score
 Inverser les équipes, reporter le résultat à l’agrégé et remettre le score du match à zéro|Swap teams, carry the result into the aggregate and reset the match score
 ⇄ Inverser domicile / extérieur|⇄ Swap home and away
 Scores complémentaires|Additional scores
+Bandes d’équipe|Team stripes
+Score domicile|Home score
+Score extérieur|Away score
+Domicile, couleur haute|Home top color
+Domicile, couleur basse|Home bottom color
+Extérieur, couleur haute|Away top color
+Extérieur, couleur basse|Away bottom color
+Style des tirs au but|Penalty shootout styling
 Score agrégé|Aggregate score|Score cumulé
 Afficher le score agrégé à droite|Show the aggregate score on the right|Afficher le score cumulé à droite
 Domicile|Home
@@ -264,8 +290,7 @@ Lieu et année finale|Final venue and year|Lieu et année de la finale
 Logo central (PNG officiel)|Center logo (official PNG)
 Réinitialiser le logo|Reset logo
 Couleur fond|Background color|Couleur du fond
-Bandeau horizontal à placer en haut du Short. Pour les logos, choisis les fichiers dans|Place this horizontal banner at the top of the short video. For logos, choose files from|Bandeau horizontal à placer en haut de la vidéo courte. Pour les logos, choisis les fichiers dans
-. Les tirs au but se règlent indépendamment dans leur section dédiée.|. Use the penalty shootout section to set penalties separately.
+Panneau de réglages|Settings panel
 Équipes et match|Teams and match
 Tour et saison|Round and season
 Saison / année|Season / year
@@ -274,6 +299,7 @@ Demi-finales|Semi-finals
 Finale|Final
 Logo de l'équipe|Team logo
 Score (laisser vide pour un espace blanc)|Score (leave empty for a blank space)
+Laisse le score vide pour afficher un espace blanc.|Leave the score empty to display a blank space.
 Tirs au but|Penalty shootout
 Afficher les tirs au but dans le bandeau Shorts|Show penalties in the short-form banner|Afficher les tirs au but dans le bandeau de la vidéo courte
 Saisis les tentatives indépendamment de l’onglet Live Score.|Enter penalty attempts separately from the Live score tab.|Saisis les tentatives indépendamment de l’onglet Score en direct.
@@ -430,6 +456,8 @@ Importer {teams} équipe(s), {formations} formation(s), {styles} style(s), {bann
 Les entrées avec le même nom seront écrasées par celles du fichier.|Entries with the same name will be replaced by the ones from the file.
 Import terminé : {teams} équipe(s), {formations} formation(s), {styles} style(s), {banners} bandeau(x), {typos} typographie(s), {graphics} affiche(s), {graphicTypos} typographie(s) d’affiche et {backgrounds} fond(s) d’affiche.|Import complete: {teams} team(s), {formations} formation(s), {styles} style(s), {banners} banner(s), {typos} typography preset(s), {graphics} match graphic(s), {graphicTypos} match typography preset(s) and {backgrounds} match background(s).
 Capitaine|Captain
+Échanger ce joueur|Swap this player
+Clique sur ⇄ à côté de deux joueurs pour échanger leurs numéros et leurs noms.|Click ⇄ next to two players to swap their numbers and names.
 GK|GK|GA
 QF1 — Haut Gauche|QF1 — Top left|Quart 1 — Haut gauche
 QF2 — Bas Gauche|QF2 — Bottom left|Quart 2 — Bas gauche
@@ -488,6 +516,14 @@ Rétablir le placement|Reset placement
 Impossible d’ouvrir l’image {file}.|Could not open the image {file}.
 Patiente jusqu’à la fin du chargement des images.|Wait for the images to finish loading.
 Ombres et éclairage|Shadows and lighting
+Joueurs - Ombres et éclairage|Player - Shadow & Lighting
+Logo compétition - Ombres et éclairage|Competition Logo - Shadow & Lighting
+Logos de club - Ombres et éclairage|Club Logo - Shadow & Lighting
+Ombre sur le logo de compétition|Shading on the competition logo
+Opacité du halo derrière le logo|Halo opacity behind the logo
+Couleur du halo derrière le logo|Halo color behind the logo
+Taille du halo|Halo size
+Intensité du halo de contour|Contour halo strength
 Ombre sur les joueurs|Shading on players
 Ombre derrière les joueurs|Shadows behind players
 Ombre sur les écussons|Shading on club logos
@@ -532,7 +568,6 @@ Classer la sélection|File selected items
 Match|Match
 Type de visuel|Graphic type
 Vues de la bibliothèque|Library views
-Actualiser|Refresh
 Tout replier|Collapse all
 Tout déplier|Expand all
 Toutes les campagnes|All campaigns
@@ -566,6 +601,7 @@ Aucune sauvegarde dans cette vue.|No saved items in this view.
 Impossible de lire ou d’écrire dans la bibliothèque.|Could not read or write to the library.
 Impossible d’ouvrir cette sauvegarde.|Could not open this saved item.
 Style de miniature|Thumbnail style
+Style de miniature Short|Short thumbnail style
 Fond d’affiche|Showdown background|Fond de Showdown
 Typographie d’affiche|Showdown typography|Typographie de Showdown
 Préréglages|Presets
@@ -583,7 +619,6 @@ Nouveau match|New match
 Équipe adverse|Opponent
 Créer et activer le match|Create and activate match
 Match de destination|Destination match
-Effacer les copies du navigateur|Clear browser copies
 Fermer le match actif|Close active match
 Importer des sauvegardes|Import saved items
 Importer {count} sauvegarde(s) ?|Import {count} saved item(s)?

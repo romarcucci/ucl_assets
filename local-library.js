@@ -33,9 +33,10 @@
       updateShowdown();
       saveShowdown();
     }],
-    shorts: [SHORTS_PRESETS_KEY, "Short Live Score", "shorts", "shorts-save-name", (entry) =>
+    shorts: [SHORTS_PRESETS_KEY, "Live Score Short", "shorts", "shorts-save-name", (entry) =>
       applyShortsSettings(structuredClone(entry.settings)), true],
     thumbnail: [null, "Miniature vidéo", "video-thumbnail", "vt-composition-name"],
+    shortThumbnail: [null, "Miniature Short (9:16)", "short-thumbnail", "short-vt-composition-name"],
     kit: [SAVED_KITS_KEY, "Tenue", "lineup", "l-save-kit-name", (entry) => applyKitData(entry.data), true],
     formation: [SAVED_FORMATIONS_KEY, "Formation", "lineup", "l-save-formation-name", applySavedFormation, true],
     style: [SAVED_STYLES_KEY, "Style de fond", "lineup", "l-save-style-name", (entry) => applyStyleData(entry.data), true],
@@ -51,11 +52,14 @@
       saveShowdown();
     }, true],
     competition: [null, "Style de miniature", "video-thumbnail", "vt-competition-name", null, true],
+    shortCompetition: [null, "Style de miniature Short", "short-thumbnail", "short-vt-competition-name", null, true],
   };
-  const editorKinds = new Set(["lineup", "banner", "score", "showdown", "shorts", "thumbnail"]);
+  const thumbnailKinds = new Map([["video-thumbnail", "thumbnail"], ["short-thumbnail", "shortThumbnail"]]);
+  const thumbnailLabels = { thumbnail: "Thumbnail 16:9", shortThumbnail: "Thumbnail 9:16" };
+  const editorKinds = new Set(["lineup", "banner", "score", "showdown", "shorts", ...thumbnailKinds.values()]);
   const globalStyleIcons = {
     banner: "⚑", score: "◫", shorts: "▯", kit: "👕", formation: "⠿",
-    style: "▧", typography: "Aa", showdownTypography: "Tt", showdownBackground: "◩", competition: "▣",
+    style: "▧", typography: "Aa", showdownTypography: "Tt", showdownBackground: "◩", competition: "▣", shortCompetition: "▯",
   };
 
   function globalStyleIcon(kind) {
@@ -78,6 +82,7 @@
     background: "Fonds", leftPlayer: "Joueurs", rightPlayer: "Joueurs",
     leftClub: "Logos", rightClub: "Logos", competition: "Logos",
   };
+  const videoAssetFields = [["file", "media"], ["cutoutFile", "cutoutMedia"]];
   const denied = "Réautorise le dossier de sauvegarde pour reprendre la copie automatique.";
   const failed = "Impossible de lire ou d’écrire dans la bibliothèque.";
   const disconnected = "Connecte le dossier de sauvegarde pour afficher la bibliothèque.";
@@ -89,6 +94,9 @@
   let projects = new Map();
   let records = new Map();
   let activeProjectId = "";
+  const thumbnailProjects = new Map();
+  const loadingThumbnails = new Set();
+  let openingThumbnailFromLibrary = false;
   const expandedBranches = new Map();
   const selected = new Set();
 
@@ -302,27 +310,29 @@
   async function storeVideoAssets(entry) {
     const data = structuredClone(entry.data);
     for (const [layer, details] of Object.entries(data.layers)) {
-      const file = details.file;
-      if (!file) continue;
-      const group = mediaGroups[layer];
-      const id = await digest(await file.arrayBuffer());
-      const filename = id + "-" + readableName(file.name);
-      const directory = await folder(connection.directory, ["Médias", group], true);
-      try {
-        await directory.getFileHandle(filename);
-      } catch (error) {
-        if (error.name !== "NotFoundError") throw error;
-        await writeFile(directory, filename, file);
+      for (const [fileField, mediaField] of videoAssetFields) {
+        const file = details[fileField];
+        if (!file) continue;
+        const group = mediaGroups[layer];
+        const id = await digest(await file.arrayBuffer());
+        const filename = id + "-" + readableName(file.name);
+        const directory = await folder(connection.directory, ["Médias", group], true);
+        try {
+          await directory.getFileHandle(filename);
+        } catch (error) {
+          if (error.name !== "NotFoundError") throw error;
+          await writeFile(directory, filename, file);
+        }
+        delete details[fileField];
+        details[mediaField] = { group, filename, name: file.name, type: file.type };
       }
-      delete details.file;
-      details.media = { group, filename, name: file.name, type: file.type };
     }
     return { name: entry.name, data };
   }
 
   function browserEntries(kind) {
-    const key = catalog[kind][0];
-    if (!key) return videoThumbnail.listLibraryPresets(kind === "competition");
+    const [key, , tab, , , globalStyle] = catalog[kind];
+    if (!key) return thumbnailEditors.get(tab).listLibraryPresets(globalStyle);
     try {
       const entries = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(entries) ? entries : [];
@@ -587,6 +597,7 @@
     ["l-saved-team-select", "lineup"],
     ["sd-saved-select", "showdown"],
     ["vt-saved-compositions", "thumbnail"],
+    ["short-vt-saved-compositions", "shortThumbnail"],
   ]);
 
   function refreshMatchLoadMenu(select) {
@@ -753,11 +764,14 @@
   });
 
   window.matchPresetMenus = {
+    get activeProjectId() {
+      return activeProjectId;
+    },
     refresh: refreshMatchLoadMenu,
     nameSave: nameMatchSave,
     load(select) {
       const item = selectedMatchSave(select);
-      return item ? openItem(item, false) : null;
+      return item ? openItem(item, { navigate: false }) : null;
     },
     remove(select) {
       const item = selectedMatchSave(select);
@@ -782,7 +796,6 @@
   function render() {
     const styles = currentView === "styles";
     archiveControl.hidden = styles;
-    $("library-sidebar-title").textContent = translate(styles ? "Styles globaux" : "Organisation");
     const archived = archives.checked;
     const active = projects.get(activeProjectId);
     const orderedCampaigns = [...campaigns.values()].sort(compareCampaigns);
@@ -809,7 +822,7 @@
       Boolean(catalog[item.kind][5]) === styles && (styles || isProjectArchived(projects.get(item.projectId)) === archived));
     items.sort(styles ? (a, b) => compareLibraryNames(a.name, b.name) :
       (a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "") || a.name.localeCompare(b.name));
-    if (styles) results.replaceChildren(...kindBranches("__global", items, true));
+    if (styles) results.replaceChildren(...kindBranches("__global", items, { byName: true }));
     else {
       renderTree(items, orderedCampaigns);
     }
@@ -875,18 +888,23 @@
     return item;
   }
 
-  function kindBranches(parentId, items, byName = false) {
+  function kindBranches(parentId, items, { byName = false, groupedByLeg = false } = {}) {
     const groups = new Map();
     for (const item of items) {
-      if (!groups.has(item.kind)) groups.set(item.kind, []);
-      groups.get(item.kind).push(item);
+      const kind = Object.hasOwn(thumbnailLabels, item.kind) ? "thumbnail" : item.kind;
+      if (!groups.has(kind)) groups.set(kind, []);
+      groups.get(kind).push(item);
     }
-    const names = { lineup: "Lineups", showdown: "Showdowns" };
+    const names = { lineup: "Lineups", showdown: "Showdowns", thumbnail: "Thumbnail" };
     const orderedGroups = [...groups].sort(([a], [b]) => byName ? compareLibraryNames(kindLabel(a), kindLabel(b)) :
       Number(b === "lineup") - Number(a === "lineup"));
     return orderedGroups.map(([kind, list]) => {
       const id = parentId + "/" + kind;
-      const children = graphicPresetKinds.has(kind) ? legBranches(id, list) : list.map((item) => renderItem(item));
+      if (graphicPresetKinds.has(kind)) list.sort(compareGraphicPresets);
+      if (kind === "thumbnail") {
+        list.sort((a, b) => Number(a.kind === "shortThumbnail") - Number(b.kind === "shortThumbnail"));
+      }
+      const children = list.map((item) => renderItem(item, groupedByLeg));
       return branch(id, names[kind] ?? kindLabel(kind), children, { type: "kind", kind });
     });
   }
@@ -894,18 +912,19 @@
   function legBranches(parentId, items) {
     const byLeg = new Map(presetLegs.map((leg) => [leg, []]));
     const withoutLeg = [];
-    for (const item of items.sort(compareGraphicPresets)) {
-      const leg = presetNaming(item).leg;
+    for (const item of items) {
+      const leg = graphicPresetKinds.has(item.kind) ? presetNaming(item).leg : "";
       (byLeg.get(leg) ?? withoutLeg).push(item);
     }
     const branches = [];
     for (const [leg, group] of byLeg) {
       if (!group.length) continue;
-      branches.push(branch(parentId + "/" + leg, leg, group.map((item) => renderItem(item, true)), {
+      const id = parentId + "/" + leg;
+      branches.push(branch(id, leg, kindBranches(id, group, { groupedByLeg: true }), {
         type: "leg", openByDefault: true,
       }));
     }
-    return branches.concat(withoutLeg.map((item) => renderItem(item)));
+    return branches.concat(kindBranches(parentId, withoutLeg));
   }
 
   function renderTree(items, orderedCampaigns) {
@@ -938,7 +957,7 @@
         const commands = [["Renommer", "✎", () => renameProject(project.id)]];
         if (!owner.archived) commands.push(archiveCommand(project.archived, () => setProjectArchived(project.id, !project.archived)));
         commands.push(["Supprimer", "", () => deleteMatch(project.id)]);
-        nodes.push(branch(project.id, opponent, kindBranches(project.id, entries), {
+        nodes.push(branch(project.id, opponent, legBranches(project.id, entries), {
           type: "project", subtitle: project.round, active: active === project,
           target: archives.checked ? undefined : project.id,
           commands, activate,
@@ -955,7 +974,7 @@
     const unfiled = items.filter((item) => !item.projectId);
     if (!archives.checked && connection) {
       sections.push(branch("__unfiled", translate("À classer"),
-        kindBranches("__unfiled", unfiled), { target: "" }));
+        legBranches("__unfiled", unfiled), { target: "" }));
     }
     results.replaceChildren(...sections);
   }
@@ -970,17 +989,24 @@
       node.addEventListener("dragend", stopDragging);
     }
     const check = document.createElement("input");
+    let displayName = item.name;
+    if (Object.hasOwn(thumbnailLabels, item.kind)) {
+      const label = thumbnailLabels[item.kind];
+      const tab = catalog[item.kind][2];
+      displayName = item.name === thumbnailEditors.get(tab).compositionName ? label : `${label} · ${item.name}`;
+    }
     check.type = "checkbox";
+    check.className = "library-save-select";
     check.disabled = !movable;
     check.checked = selected.has(item.id);
-    check.setAttribute("aria-label", translate("Sélectionner {name}", { name: item.name }));
+    check.setAttribute("aria-label", translate("Sélectionner {name}", { name: displayName }));
     check.addEventListener("change", () => {
       if (check.checked) selected.add(item.id);
       else selected.delete(item.id);
     });
     const summary = document.createElement("div");
     summary.className = "library-item-name";
-    summary.textContent = item.name;
+    summary.textContent = displayName;
     if (graphicPresetKinds.has(item.kind)) {
       const { leg, phase, team } = presetNaming(item);
       const detail = team || phase;
@@ -1006,7 +1032,7 @@
     }
     if (globalStyleIcons[item.kind]) node.append(globalStyleIcon(item.kind));
     node.append(summary);
-    appendActionsMenu(node, item.name, [
+    appendActionsMenu(node, displayName, [
       ["Ouvrir", "↗", () => openItem(item)],
       ["Renommer", "✎", () => renameItem(item)],
       ["Dupliquer", "⧉", () => duplicate(item)],
@@ -1014,7 +1040,7 @@
     ]);
     node.addEventListener("dblclick", (event) => {
       if (event.target.closest("button, input, .library-item-menu")) return;
-      openItem(item);
+      openItem(item, { activateMatch: false });
     });
     return node;
   }
@@ -1172,7 +1198,7 @@
     });
   }
 
-  async function openItem(item, navigate = true) {
+  async function openItem(item, { navigate = true, activateMatch = navigate, canApply } = {}) {
     try {
       const [, , tab, inputId, open] = catalog[item.kind];
       if (open) {
@@ -1180,28 +1206,74 @@
       } else {
         const data = structuredClone(item.entry.data);
         for (const [layer, details] of Object.entries(data.layers)) {
-          const media = details.media;
-          if (!media || mediaGroups[layer] !== media.group) continue;
-          const directory = await folder(connection.directory, ["Médias", media.group]);
-          const file = await (await directory.getFileHandle(media.filename)).getFile();
-          details.file = new File([file], media.name, { type: media.type });
+          for (const [fileField, mediaField] of videoAssetFields) {
+            const media = details[mediaField];
+            if (!media || mediaGroups[layer] !== media.group) continue;
+            const directory = await folder(connection.directory, ["Médias", media.group]);
+            const file = await (await directory.getFileHandle(media.filename)).getFile();
+            details[fileField] = new File([file], media.name, { type: media.type });
+          }
         }
-        await videoThumbnail.restoreLibraryPreset(data);
+        if (canApply && !canApply()) return;
+        if (!await thumbnailEditors.get(tab).restoreLibraryPreset(data, canApply)) return;
       }
       const project = projects.get(item.projectId);
-      if (navigate && !catalog[item.kind][5]) {
+      if (thumbnailKinds.get(tab) === item.kind) thumbnailProjects.set(tab, item.projectId);
+      if (activateMatch && !catalog[item.kind][5]) {
         await useProject(isProjectArchived(project) ? null : project);
         render();
       }
       if ($(inputId)) $(inputId).value = item.name;
-      if (navigate) document.querySelector(`.tab[data-tab="${tab}"]`).click();
+      if (navigate) {
+        openingThumbnailFromLibrary = thumbnailEditors.has(tab);
+        try {
+          document.querySelector(`.tab[data-tab="${tab}"]`).click();
+        } finally {
+          openingThumbnailFromLibrary = false;
+        }
+      }
     } catch {
+      if (canApply && !canApply()) return;
       if (!navigate) {
         alert(translate("Impossible d’ouvrir cette sauvegarde."));
         return;
       }
       resultMessage = "Impossible d’ouvrir cette sauvegarde.";
       render();
+    }
+  }
+
+  async function loadActiveThumbnail(tab) {
+    if (openingThumbnailFromLibrary) return;
+    await ready;
+    await queue;
+    const projectId = activeProjectId;
+    const thumbnailIsActive = () => document.querySelector(".tab.active")?.dataset.tab === tab;
+    if (thumbnailProjects.get(tab) === projectId || loadingThumbnails.has(tab) || !thumbnailIsActive()) return;
+    if (!projectId) {
+      thumbnailProjects.set(tab, projectId);
+      return;
+    }
+
+    const kind = thumbnailKinds.get(tab);
+    const item = findRecord(kind, thumbnailEditors.get(tab).compositionName, projectId)?.item ??
+      [...records.values()].map(({ item }) => item)
+        .filter((item) => item.kind === kind && item.projectId === projectId)
+        .sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))[0];
+    if (!item) {
+      thumbnailProjects.set(tab, projectId);
+      return;
+    }
+
+    const directory = connection.directory;
+    const canApply = () => thumbnailIsActive() && activeProjectId === projectId &&
+      connection?.directory === directory && thumbnailProjects.get(tab) !== projectId;
+    loadingThumbnails.add(tab);
+    try {
+      await openItem(item, { navigate: false, canApply });
+    } finally {
+      loadingThumbnails.delete(tab);
+      if (thumbnailIsActive() && activeProjectId !== projectId) loadActiveThumbnail(tab);
     }
   }
 
@@ -1576,7 +1648,6 @@
     resultMessage = undefined;
     render();
   });
-  $("library-refresh").addEventListener("click", () => schedule(readLibrary));
   function setAllBranchesOpen(open) {
     if (!open) expandedBranches.clear();
     for (const branch of results.querySelectorAll(".library-branch")) {
@@ -1586,8 +1657,36 @@
   }
   $("library-collapse-all").addEventListener("click", () => setAllBranchesOpen(false));
   $("library-expand-all").addEventListener("click", () => setAllBranchesOpen(true));
-  document.querySelector('.tab[data-tab="library"]').addEventListener("click", render);
+  const dock = $("library-dock");
+  const dockToggle = $("library-dock-toggle");
+  const workspace = dock.closest(".workspace");
+  const libraryView = document.querySelector('[data-preview="library"]');
+  const viewHome = libraryView.parentElement;
+  let dockRequested = false;
+
+  function syncLibraryDock(tab) {
+    const inLibrary = tab === "library";
+    const dockOpen = dockRequested && !inLibrary;
+    dockToggle.setAttribute("aria-expanded", String(dockOpen));
+    dock.inert = !dockOpen;
+    workspace.classList.toggle("library-only", inLibrary);
+    workspace.classList.toggle("has-library-dock", dockOpen);
+    const viewContainer = inLibrary ? viewHome : dock;
+    if (libraryView.parentElement !== viewContainer) viewContainer.append(libraryView);
+  }
+
+  dockToggle.addEventListener("click", () => {
+    dockRequested = !dockRequested;
+    syncLibraryDock(document.querySelector(".tab.active").dataset.tab);
+  });
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => {
+      syncLibraryDock(tab.dataset.tab);
+      if (tab.dataset.tab === "library") render();
+    });
+  }
   document.addEventListener("interface-language-change", () => { setStatus(message); render(); });
+  syncLibraryDock(document.querySelector(".tab.active").dataset.tab);
   render();
 
   const mediaDialog = $("library-media-dialog");
@@ -1595,6 +1694,7 @@
   const mediaStatus = $("library-media-status");
   const mediaUse = $("library-media-use");
   let mediaLayer;
+  let mediaInput;
   let mediaDirectory;
   function setMediaStatus(text) {
     if (text) mediaStatus.dataset.interfaceMessage = text;
@@ -1605,6 +1705,8 @@
   for (const mediaButton of document.querySelectorAll("[data-library-media]")) {
     mediaButton.addEventListener("click", async () => {
       mediaLayer = mediaButton.dataset.libraryMedia;
+      const input = mediaButton.closest("[data-thumbnail-editor]").querySelector(`[data-vt-layer="${mediaLayer}"]`);
+      mediaInput = input;
       mediaDirectory = null;
       mediaSelect.replaceChildren();
       mediaUse.disabled = true;
@@ -1625,7 +1727,7 @@
             }
           }
         }
-        if (!mediaDialog.open || mediaLayer !== mediaButton.dataset.libraryMedia) return;
+        if (!mediaDialog.open || mediaInput !== input) return;
         mediaDirectory = directory;
         files.sort((a, b) => a.text.localeCompare(b.text));
         mediaSelect.replaceChildren(...files);
@@ -1639,10 +1741,9 @@
 
   mediaDialog.addEventListener("close", async () => {
     if (mediaDialog.returnValue !== "use" || !mediaDirectory || !mediaSelect.value) return;
-    const layer = mediaLayer;
+    const input = mediaInput;
     try {
       const file = await (await mediaDirectory.getFileHandle(mediaSelect.value)).getFile();
-      const input = document.querySelector(`[data-vt-layer="${layer}"]`);
       const transfer = new DataTransfer();
       transfer.items.add(new File([file], file.name.replace(/^[a-f0-9]{20}-/, ""), { type: file.type }));
       input.files = transfer.files;
@@ -1696,6 +1797,9 @@
       return schedule(activate);
     }
   }).catch(() => setStatus(failed));
+  for (const tab of thumbnailKinds.keys()) {
+    document.querySelector(`.tab[data-tab="${tab}"]`).addEventListener("click", () => loadActiveThumbnail(tab));
+  }
 
   button.addEventListener("click", async () => {
     button.disabled = true;
@@ -1711,6 +1815,7 @@
           await accessConnection("readwrite", (store) => store.put(next, "active"));
           connection = next;
           activeProjectId = "";
+          thumbnailProjects.clear();
           selected.clear();
           expandedBranches.clear();
         }
@@ -1733,13 +1838,15 @@
   }
 
   document.addEventListener("ucl-presets-changed", (event) => {
-    const { inputId, name } = event.detail ?? {};
+    const { inputId, name, projectId, entry: snapshotEntry } = event.detail ?? {};
     const kind = Object.keys(catalog).find((key) => catalog[key][3] === inputId);
     if (!kind) return;
-    const scope = activeProjectId;
+    const scope = projectId ?? activeProjectId;
+    const tab = catalog[kind][2];
+    if (thumbnailKinds.get(tab) === kind && scope === activeProjectId) thumbnailProjects.set(tab, scope);
     const directory = connection?.directory;
-    const entry = catalog[kind][0] ? browserEntries(kind).find((record) => record.name === name)
-      : videoThumbnail.getLibraryPreset(name, kind === "competition");
+    const entry = snapshotEntry ?? (catalog[kind][0] ? browserEntries(kind).find((record) => record.name === name)
+      : thumbnailEditors.get(tab).getLibraryPreset(name, catalog[kind][5]));
     updateSaveFeedback(inputId, name, "Enregistrement dans la bibliothèque en attente.");
     pendingWrites = pendingWrites.then(async () => {
       const snapshot = await entry;

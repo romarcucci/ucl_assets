@@ -13,6 +13,8 @@ function cloneShortThumbnail(source) {
 const shortThumbnailPanel = cloneShortThumbnail(document.querySelector('[data-editor="video-thumbnail"]'));
 shortThumbnailPanel.dataset.editor = "short-thumbnail";
 shortThumbnailPanel.querySelector("h2").textContent = "Miniature Short (9:16)";
+shortThumbnailPanel.querySelector("#short-vt-reset-layout").closest("details")
+  .after(document.getElementById("short-vt-colors").content.cloneNode(true));
 const shortCompetitionShadow = shortThumbnailPanel.querySelector("#short-vt-competition-shadow");
 shortCompetitionShadow.max = 300;
 shortThumbnailPanel.querySelector("#short-vt-competition-shadow-number").max = 300;
@@ -71,10 +73,30 @@ function createThumbnailEditor(tab, portrait = false) {
   const styleControls = Object.fromEntries(
     [...panel.querySelectorAll("[data-vt-style]")].map((field) => [field.dataset.vtStyle, field]),
   );
-  function readStyle() {
-    return Object.fromEntries(Object.entries(styleControls).map(([key, field]) => {
+  const playerFilterKeys = new Set(["leftPlayerFilter", "rightPlayerFilter"]);
+  const colorValues = [...panel.querySelectorAll("[data-vt-color-value]")];
+  const gradingCanvas = document.createElement("canvas");
+  const colorPresets = {
+    neutral: { saturation: 100, contrast: 100, brightness: 100 },
+    vivid: { saturation: 140, contrast: 112, brightness: 104 },
+    soft: { saturation: 82, contrast: 90, brightness: 108 },
+    dramatic: { saturation: 90, contrast: 135, brightness: 94 },
+    monochrome: { saturation: 0, contrast: 115, brightness: 100 },
+  };
+
+  function colorFilter({ saturation, contrast, brightness }) {
+    return `saturate(${saturation}%) contrast(${contrast}%) brightness(${brightness}%)`;
+  }
+
+  function syncColorValues() {
+    for (const output of colorValues) output.value = styleControls[output.dataset.vtColorValue].value + " %";
+  }
+
+  function readStyle(competitionOnly = false) {
+    const fields = Object.entries(styleControls).filter(([key]) => !competitionOnly || !playerFilterKeys.has(key));
+    return Object.fromEntries(fields.map(([key, field]) => {
       if (field.type === "checkbox") return [key, field.checked];
-      if (field.type === "number") {
+      if (field.type === "number" || field.type === "range") {
         const value = Number.isFinite(field.valueAsNumber) ? field.valueAsNumber : Number(field.defaultValue);
         return [key, Math.max(Number(field.min), Math.min(Number(field.max), value))];
       }
@@ -82,15 +104,23 @@ function createThumbnailEditor(tab, portrait = false) {
     }));
   }
 
-  function applyStyle(settings = {}) {
+  function applyStyle(settings = {}, competitionOnly = false) {
     for (const [key, field] of Object.entries(styleControls)) {
+      if (competitionOnly && playerFilterKeys.has(key)) continue;
       if (field.type === "checkbox") field.checked = settings[key] ?? field.defaultChecked;
       else if (field.tagName === "SELECT") field.value = settings[key] ?? field.options[0].value;
       else field.value = settings[key] ?? field.defaultValue;
     }
+    if (settings.colorsEnabled === undefined) {
+      styleControls.colorsEnabled.checked = Object.keys(colorPresets.neutral)
+        .some((key) => settings[key] !== undefined && Number(settings[key]) !== colorPresets.neutral[key]);
+    }
+    syncColorValues();
   }
 
   const assetInputs = [...panel.querySelectorAll("[data-vt-layer]")];
+  const styleArtworkLayers = new Set(["background", "competition"]);
+  const stylePlacementLayers = ["leftPlayer", "rightPlayer", "leftClub", "rightClub"];
   const mirrorControls = new Map(
     [...panel.querySelectorAll("[data-vt-mirror]")].map((input) => [input.dataset.vtMirror, input]),
   );
@@ -226,7 +256,7 @@ function createThumbnailEditor(tab, portrait = false) {
     context.restore();
   }
 
-  function drawLayer(context, key, targetScale, regions) {
+  function drawLayer(context, key, targetScale, regions, filterPreset = "neutral") {
     const layer = layers.get(key);
     const { adjustment } = layer;
     const artwork = (cutoutOptions.get(key)?.checkbox.checked && layer.cutout) || layer.artwork;
@@ -251,6 +281,8 @@ function createThumbnailEditor(tab, portrait = false) {
       context.scale(-1, 1);
     }
     const group = key === "competition" ? "competition" : placement.logo ? "club" : "player";
+    const filter = colorPresets[filterPreset];
+    if (filter && filterPreset !== "neutral") context.filter = colorFilter(filter);
     const surface = key === "background" ? 0 : Number(shadowControls[`${group}-surface`].value) / 100;
     const makeWhite = key === "competition" && whiteLogo.checked;
     if (key === "competition") {
@@ -283,9 +315,10 @@ function createThumbnailEditor(tab, portrait = false) {
         const color = (opacity) => hex + Math.round(Math.min(1, opacity) * 255).toString(16).padStart(2, "0");
         const extraRadius = 28 * Math.max(0, strength - 1);
         const radius = placement.logo ? 16 + extraRadius : 25;
-        context.filter =
+        const shadow =
           `drop-shadow(0px ${8 * targetScale}px ${radius * 0.45 * targetScale}px ${color(strength)}) ` +
           `drop-shadow(0px ${12 * targetScale}px ${radius * targetScale}px ${color(strength * 0.85)})`;
+        context.filter = context.filter === "none" ? shadow : `${context.filter} ${shadow}`;
       }
     }
     if (surface > 0) {
@@ -296,7 +329,7 @@ function createThumbnailEditor(tab, portrait = false) {
     context.restore();
   }
 
-  function drawText(context, text, { size, family, color, italic }, x, baseline, maxWidth, targetScale) {
+  function drawText(context, text, { size, family, color, italic, shadow, shadowColor, outline }, x, baseline, maxWidth, targetScale) {
     context.save();
     const fontWeight = italic ? "italic 900" : "900";
     const fontFamily = `"${family}", Arial, sans-serif`;
@@ -306,17 +339,19 @@ function createThumbnailEditor(tab, portrait = false) {
       size *= maxWidth / measured;
       context.font = `${fontWeight} ${size}px ${fontFamily}`;
     }
-    context.shadowColor = "#05051df2";
+    context.shadowColor = shadowColor + Math.round(shadow / 100 * 255).toString(16).padStart(2, "0");
     context.shadowBlur = 23 * targetScale;
     context.shadowOffsetY = 6 * targetScale;
     context.fillStyle = color;
     context.textAlign = "center";
+    if (outline) {
+      context.strokeStyle = "#05051d";
+      context.lineJoin = "round";
+      context.lineWidth = size * 0.065;
+      context.strokeText(text, x, baseline);
+      context.shadowColor = "transparent";
+    }
     context.fillText(text, x, baseline);
-    context.shadowColor = "transparent";
-    context.strokeStyle = color;
-    context.lineJoin = "round";
-    context.lineWidth = size * 0.022;
-    context.strokeText(text, x, baseline);
     const metrics = context.measureText(text);
     const textWidth = metrics.width;
     const ascent = metrics.actualBoundingBoxAscent;
@@ -340,18 +375,18 @@ function createThumbnailEditor(tab, portrait = false) {
     context.stroke();
   }
 
-  function drawPortraitDivider(context, targetScale) {
+  function drawPortraitDivider(context, targetScale, color) {
     const top = { x: 606, y: 1264 };
     const bottom = { x: 411, y: 1845 };
     const glow = context.createLinearGradient(top.x, top.y, bottom.x, bottom.y);
-    glow.addColorStop(0, "#0085ff00");
-    glow.addColorStop(0.25, "#1bbdff");
-    glow.addColorStop(0.52, "#d8ffff");
-    glow.addColorStop(0.8, "#14afff");
-    glow.addColorStop(1, "#0085ff00");
+    glow.addColorStop(0, color + "00");
+    glow.addColorStop(0.25, color + "bb");
+    glow.addColorStop(0.52, color);
+    glow.addColorStop(0.8, color + "bb");
+    glow.addColorStop(1, color + "00");
     context.save();
     context.fillStyle = glow;
-    context.shadowColor = "#00aaff";
+    context.shadowColor = color;
     context.shadowBlur = 18 * targetScale;
     context.beginPath();
     context.moveTo(top.x, top.y);
@@ -360,6 +395,22 @@ function createThumbnailEditor(tab, portrait = false) {
     context.lineTo(502, 1554);
     context.closePath();
     context.fill();
+    context.restore();
+  }
+
+  function drawPortraitCorners(context, style) {
+    const radius = width * 0.55;
+    const verticalScale = 0.8;
+    context.save();
+    context.translate(0, height);
+    context.scale(1, verticalScale);
+    for (const [x, color] of [[0, style.lowerLeftColor], [width, style.lowerRightColor]]) {
+      const corner = context.createRadialGradient(x, 0, 0, x, 0, radius);
+      corner.addColorStop(0, color);
+      corner.addColorStop(1, color + "00");
+      context.fillStyle = corner;
+      context.fillRect(x === 0 ? 0 : width - radius, -radius, radius, radius);
+    }
     context.restore();
   }
 
@@ -393,7 +444,15 @@ function createThumbnailEditor(tab, portrait = false) {
   }
 
   function render(canvas = board) {
-    const context = canvas.getContext("2d");
+    const style = readStyle();
+    const { saturation, contrast, brightness } = style;
+    const graded = style.colorsEnabled && (saturation !== 100 || contrast !== 100 || brightness !== 100);
+    const output = canvas.getContext("2d");
+    if (graded && (gradingCanvas.width !== canvas.width || gradingCanvas.height !== canvas.height)) {
+      gradingCanvas.width = canvas.width;
+      gradingCanvas.height = canvas.height;
+    }
+    let context = graded ? gradingCanvas.getContext("2d") : output;
     const scale = canvas.width / width;
     context.save();
     context.scale(scale, canvas.height / height);
@@ -411,23 +470,25 @@ function createThumbnailEditor(tab, portrait = false) {
     regions?.clear();
     if (portrait) drawPortraitBackground(context, scale);
     else drawLayer(context, "background", scale);
-    drawLayer(context, "leftPlayer", scale, regions);
-    drawLayer(context, "rightPlayer", scale, regions);
+    drawLayer(context, "leftPlayer", scale, regions, style.leftPlayerFilter);
+    drawLayer(context, "rightPlayer", scale, regions, style.rightPlayerFilter);
 
     const vignette = context.createLinearGradient(0, textLayout.vignetteY, 0, portrait ? 1127 : height);
     vignette.addColorStop(0, "#0000");
-    if (portrait) vignette.addColorStop(0.65, "#050529de");
-    vignette.addColorStop(1, portrait ? "#030322f5" : "#0006");
+    if (portrait) vignette.addColorStop(0.65, style.lowerBackgroundColor + "de");
+    vignette.addColorStop(1, portrait ? style.lowerBackgroundColor : "#0006");
     context.fillStyle = vignette;
     context.fillRect(0, textLayout.vignetteY, width, height - textLayout.vignetteY);
 
-    if (portrait) drawPortraitDivider(context, scale);
+    if (portrait) {
+      drawPortraitCorners(context, style);
+      drawPortraitDivider(context, scale, style.dividerColor);
+    }
     drawLayer(context, "competition", scale, regions);
     drawLayer(context, "leftClub", scale, regions);
     drawLayer(context, "rightClub", scale, regions);
     const caption = title.value.trim().toUpperCase();
     const season = year.value.trim().toUpperCase();
-    const style = readStyle();
     if (caption) {
       const adjustment = layers.get("title").adjustment;
       const factor = adjustment.scale / 100;
@@ -435,6 +496,7 @@ function createThumbnailEditor(tab, portrait = false) {
       const y = textLayout.titleY + height * adjustment.y / 100;
       const bounds = drawText(context, caption, {
         size: style.titleSize * factor, family: style.titleFont, color: style.titleColor, italic: style.titleItalic,
+        shadow: style.titleShadow, shadowColor: style.titleShadowColor, outline: style.titleOutline,
       }, x, y, style.fitTitle ? textLayout.titleWidth * factor : Infinity, scale);
       regions?.set("title", bounds);
     }
@@ -445,6 +507,7 @@ function createThumbnailEditor(tab, portrait = false) {
       const baseline = textLayout.yearY + height * adjustment.y / 100;
       const bounds = drawText(context, season, {
         size: style.yearSize * factor, family: style.yearFont, color: style.yearColor, italic: style.yearItalic,
+        shadow: style.yearShadow, shadowColor: style.yearShadowColor, outline: style.yearOutline,
       }, x, baseline, textLayout.yearWidth * factor, scale);
       regions?.set("year", bounds);
       if (style.barsVisible) {
@@ -458,7 +521,19 @@ function createThumbnailEditor(tab, portrait = false) {
         }
       }
     }
-    if (regions && (drag?.guideX || drag?.guideY)) {
+    context.restore();
+    if (graded) {
+      output.save();
+      output.filter = colorFilter(style);
+      output.drawImage(gradingCanvas, 0, 0);
+      output.restore();
+    }
+    if (!regions) return canvas;
+
+    context = output;
+    context.save();
+    context.scale(scale, canvas.height / height);
+    if (drag?.guideX || drag?.guideY) {
       context.lineWidth = 2;
       context.strokeStyle = "#ff66e3";
       context.beginPath();
@@ -472,7 +547,7 @@ function createThumbnailEditor(tab, portrait = false) {
       }
       context.stroke();
     }
-    const selection = regions?.get(selectedLayer ?? hoveredLayer);
+    const selection = regions.get(selectedLayer ?? hoveredLayer);
     if (selection) {
       const { x, y, width: selectedWidth, height: selectedHeight } = selection;
       const left = Math.max(0, x);
@@ -803,7 +878,21 @@ function createThumbnailEditor(tab, portrait = false) {
     });
   }
   for (const field of [...Object.values(styleControls), ...Object.values(shadowColors)]) {
-    field.addEventListener("input", () => render());
+    field.addEventListener("input", () => {
+      if (field.type === "range") syncColorValues();
+      render();
+    });
+  }
+  for (const button of panel.querySelectorAll("[data-vt-color-preset]")) {
+    button.addEventListener("click", () => {
+      const preset = button.dataset.vtColorPreset;
+      for (const [key, value] of Object.entries(colorPresets[preset])) {
+        styleControls[key].value = value;
+      }
+      styleControls.colorsEnabled.checked = preset !== "neutral";
+      syncColorValues();
+      render();
+    });
   }
   layerSelect.addEventListener("change", () => {
     selectedLayer = layerSelect.value;
@@ -871,11 +960,10 @@ function createThumbnailEditor(tab, portrait = false) {
   }
 
   function compositionSnapshot(competitionOnly) {
-    const layerKeys = competitionOnly ? ["background", "competition"] : [...layers.keys()];
+    const layerKeys = competitionOnly ? [...styleArtworkLayers, ...stylePlacementLayers] : [...layers.keys()];
     const data = {
-      title: title.value,
       whiteLogo: whiteLogo.checked,
-      typography: readStyle(),
+      typography: readStyle(competitionOnly),
       shadows: Object.fromEntries(Object.entries(shadowControls)
         .filter(([key]) => !competitionOnly || key.startsWith("competition-"))
         .map(([key, field]) => [key, field.value])),
@@ -884,7 +972,9 @@ function createThumbnailEditor(tab, portrait = false) {
         .map(([key, field]) => [key, field.value])),
       layers: Object.fromEntries(layerKeys.map((key) => {
         const layer = layers.get(key);
-        const entry = { file: layer.artwork?.file ?? null, adjustment: { ...layer.adjustment } };
+        const entry = { adjustment: { ...layer.adjustment } };
+        if (competitionOnly && !styleArtworkLayers.has(key)) return [key, entry];
+        entry.file = layer.artwork?.file ?? null;
         if (mirrorControls.get(key)?.checked) entry.mirrored = true;
         if (cutoutOptions.get(key)?.checkbox.checked && layer.cutout) {
           entry.cutoutFile = layer.cutout.file;
@@ -893,6 +983,7 @@ function createThumbnailEditor(tab, portrait = false) {
       })),
     };
     if (!competitionOnly) {
+      data.title = title.value;
       const preview = document.createElement("canvas");
       const scale = 320 / Math.max(width, height);
       preview.width = Math.round(width * scale);
@@ -904,8 +995,9 @@ function createThumbnailEditor(tab, portrait = false) {
     return data;
   }
 
-  async function restoreComposition(data, canApply = () => true) {
-    const inputs = assetInputs.filter((input) => Object.hasOwn(data.layers, input.dataset.vtLayer));
+  async function restoreComposition(data, { competitionOnly = false, canApply = () => true } = {}) {
+    const inputs = assetInputs.filter(({ dataset: { vtLayer } }) =>
+      Object.hasOwn(data.layers, vtLayer) && (!competitionOnly || styleArtworkLayers.has(vtLayer)));
     const artwork = await Promise.all(inputs.map(async (input) => {
       const key = input.dataset.vtLayer;
       const { file, cutoutFile } = data.layers[key] || {};
@@ -936,10 +1028,18 @@ function createThumbnailEditor(tab, portrait = false) {
       input.files = transfer.files;
       errors.delete(key);
     });
-    title.value = data.title;
-    if (data.year !== undefined) year.value = data.year;
+    if (competitionOnly) {
+      for (const key of stylePlacementLayers) {
+        const adjustment = data.layers[key]?.adjustment;
+        if (adjustment) layers.get(key).adjustment = { ...defaults, ...adjustment };
+      }
+    }
+    if (!competitionOnly) {
+      if (data.title !== undefined) title.value = data.title;
+      if (data.year !== undefined) year.value = data.year;
+    }
     whiteLogo.checked = data.whiteLogo;
-    if (data.year !== undefined) {
+    if (!competitionOnly && data.year !== undefined) {
       for (const key of ["title", "year"]) {
         layers.get(key).adjustment = { ...defaults, ...data.layers[key]?.adjustment };
       }
@@ -956,7 +1056,7 @@ function createThumbnailEditor(tab, portrait = false) {
       }
       if (data.shadowColors?.competition !== undefined) shadowColors.competition.value = data.shadowColors.competition;
     }
-    applyStyle(data.typography);
+    applyStyle(data.typography, competitionOnly);
     showErrors();
     syncControls();
     syncShadowValues();
@@ -1034,7 +1134,7 @@ function createThumbnailEditor(tab, portrait = false) {
         for (const section of sections) section.inert = true;
         try {
           const data = await compositionRequest(storeName, "readonly", (store) => store.get(name));
-          await restoreComposition(data);
+          await restoreComposition(data, { competitionOnly });
         } finally {
           restoring = false;
           for (const section of sections) section.inert = false;
@@ -1098,11 +1198,11 @@ function createThumbnailEditor(tab, portrait = false) {
         data: await compositionRequest(store, "readonly", (entries) => entries.get(name)),
       })));
     },
-    async restoreLibraryPreset(data, canApply) {
+    async restoreLibraryPreset(data, options) {
       if (hasPendingImages()) throw new Error(translate("Patiente jusqu’à la fin du chargement des images."));
       restoring = true;
       try {
-        return await restoreComposition(data, canApply);
+        return await restoreComposition(data, options);
       } finally {
         restoring = false;
       }

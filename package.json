@@ -1,0 +1,11 @@
+{
+  "name": "ucl-assets",
+  "private": true,
+  "scripts": {
+    "highlights": "node highlights-server.mjs"
+  },
+  "optionalDependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
+    "tesseract.js": "6.0.1"
+  }
+}

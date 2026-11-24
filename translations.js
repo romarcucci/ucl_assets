@@ -13,6 +13,230 @@ Shorts|Short-form score|Score format court
 Showdown|Match graphic|Affiche de match
 Miniature vidéo|Video thumbnail
 Miniature Short (9:16)|Short thumbnail (9:16)
+Couleurs|Colors
+Couleurs vives|Vivid colors
+Doux|Soft
+Contrasté|High contrast
+Noir et blanc|Black and white
+Filtre du joueur gauche|Left player filter
+Filtre du joueur droit|Right player filter
+Intensité de l’ombre|Shadow intensity
+Couleur de l’ombre|Shadow color
+Contour du titre|Title outline
+Contour de l’année|Year outline
+Activer le filtre couleur|Enable color filter
+Neutre|Neutral
+Saturation|Saturation
+Contraste|Contrast
+Luminosité|Brightness
+Match à monter|Match footage
+Montage|Edit
+Résumé 16:9|16:9 recap
+Cadrage et restauration|Framing and restoration
+Cadrage|Framing
+Fond flou|Blurred background
+Image entière|Fit whole image
+Flou du fond|Background blur
+Rogner le haut (%)|Crop top (%)
+Rogner le bas (%)|Crop bottom (%)
+Audio du match|Match audio
+Décalage audio (ms)|Audio offset (ms)
+Corriger la dérive sur la durée du match|Correct audio drift across the match
+Décalage à la fin (ms)|End offset (ms)
+Normaliser le volume final|Normalize final loudness
+Glissement|Slide
+Carte de fin|End card
+Cartes de fin|End cards
+Nouvelle carte de fin|New end card
+Modifier la carte de fin|Edit end card
+Sans carte de fin|No end card
+Aucune carte de fin enregistrée.|No saved end cards.
+Une carte de fin porte déjà ce nom.|An end card already has this name.
+Chaque fichier de la carte de fin doit faire au maximum 15 Mo.|Each end card file must be 15 MB or smaller.
+Sélectionne une image PNG ou une vidéo MP4, MOV ou WebM.|Select a PNG image or an MP4, MOV, or WebM video.
+Impossible de charger la carte de fin.|Could not load the end card.
+Piste audio de fin (facultative)|End card audio (optional)
+Retirer la piste audio|Remove audio track
+Visuel de fin (PNG, MP4, MOV ou WebM)|End card visual (PNG, MP4, MOV, or WebM)
+Durée de l’image (s)|Image duration (s)
+Gain musique (dB)|Music gain (dB)
+Amélioration IA|AI enhancement
+Fond et séparation des logos|Background and logo divider
+Couleur du fond en bas|Bottom background color
+Dégradé du coin inférieur gauche|Bottom-left corner gradient
+Dégradé du coin inférieur droit|Bottom-right corner gradient
+Couleur de la barre diagonale|Diagonal divider color
+Mode d’amélioration IA|AI enhancement mode
+Rapide|Fast
+Qualité|Quality
+Traiter les extraits avec Real-ESRGAN|Process clips with Real-ESRGAN
+Utiliser les extraits améliorés|Use enhanced clips
+Progression du traitement IA|AI enhancement progress
+Les extraits améliorés sont prêts pour l’export.|Enhanced clips are ready to export.
+Relance le traitement IA pour les extraits et les réglages actuels.|Run AI enhancement again for the current clips and edit settings.
+Amélioration IA des extraits…|Enhancing clips with AI…
+Real-ESRGAN est indisponible sur le service local.|Real-ESRGAN is unavailable on the local service.
+Real-ESRGAN n’a pas pu améliorer la vidéo. Vérifie qu’un GPU compatible Vulkan est disponible.|Real-ESRGAN could not enhance the video. Check that a Vulkan-compatible GPU is available.
+Amélioration de l’image…|Enhancing image…
+Tester l’extrait|Render test clip
+Comparer avec la source|Compare with source
+Revenir au match|Return to match
+Enregistrer le montage dans Library|Save edit to Library
+Relance le service local pour activer le montage.|Restart the local service to enable editing.
+Réglages de l’extrait pour ce format|Clip settings for this format
+Appliquer le cadrage actuel|Apply current framing
+Reprendre le cadrage du montage|Use edit framing
+Cadrage enregistré pour cet extrait.|Framing saved for this clip.
+L’extrait reprend le cadrage du montage.|The clip now uses the edit framing.
+Active un match dans Library avant d’enregistrer le montage.|Activate a match in Library before saving the edit.
+Active un match dans Library avant d’enregistrer le Live Score.|Activate a match in Library before saving the Live Score.
+Active un match dans Library avant d’enregistrer le bandeau buteur.|Activate a match in Library before saving the goalscorer banner.
+Renseigne le nom du buteur et la minute du but.|Enter the goalscorer’s name and the goal minute.
+Montage enregistré dans Library.|Edit saved to Library.
+Impossible d’enregistrer le montage dans Library.|Could not save the edit to Library.
+Rouvre la vidéo {file} pour retrouver ce montage.|Open {file} again to restore this edit.
+Écoute de la source.|Playing source audio.
+Aperçu du montage.|Edit preview.
+Vidéo du match|Match video
+Images du match|Match Footage
+Analyse du match|Match Analysis
+Exportation|Export
+Dans la bibliothèque, associe une vidéo à un match et active ce match.|In the library, link a video to a match and activate that match.
+Montage vidéo|Video Editor
+Vidéos du match|Match videos
+Fichier vidéo|Video file
+Importer un fichier|Upload file
+Sélectionne un fichier vidéo.|Select a video file.
+Match aller|First leg
+Match retour|Second leg
+Match aller · fichier dans Games|First leg · file in Games
+Match retour · fichier dans Games|Second leg · file in Games
+Voir le match aller|Preview first leg
+Voir le match retour|Preview second leg
+Vidéo du match actif|Active match video
+Charger la vidéo sélectionnée|Load selected video
+Vidéos du match mises à jour.|Match videos updated.
+Aucune nouvelle vidéo à associer dans Games.|No new videos to link in Games.
+Rangement des vidéos dans Games…|Organizing videos in Games…
+Vidéos associées. Une copie d’origine reste dans Games.|Videos linked. An original copy remains in Games.
+Impossible de ranger les vidéos. Vérifie l’accès au dossier et l’espace disponible.|Could not organize the videos. Check folder access and available space.
+Associer une vidéo|Associate a video
+Modifier la vidéo associée|Change linked video
+Fichier dans Games|File in Games
+Aucune vidéo associée|No linked video
+Recherche des vidéos dans Games…|Looking for videos in Games…
+Fichier introuvable · {file}|File not found · {file}
+Aucune vidéo trouvée dans Games.|No videos found in Games.
+Impossible de lire le dossier Games.|Could not read the Games folder.
+Vidéo associée au match.|Video linked to the match.
+Remplacer la vidéo associée par « {file} » ?|Replace the linked video with “{file}”?
+Association vidéo retirée.|Video link removed.
+Charger la vidéo du match actif|Load the active match video
+Vidéo associée introuvable. Vérifie son emplacement dans Games.|Linked video not found. Check its location in Games.
+Ouvrir l’éditeur local|Open the local editor
+Analyser les commentaires avec Whisper|Analyze commentary with Whisper
+Écarter les ralentis répétés|Skip duplicate replays
+Définir la zone du score|Set scoreboard region
+Modifier la zone du score|Edit scoreboard region
+Effacer la zone|Clear region
+Trace un rectangle autour des deux chiffres du score, sans le chrono.|Draw a rectangle around both score numbers, leaving out the clock.
+Sélectionne une zone valide autour des deux chiffres du score.|Select a valid region around both score numbers.
+Zone du score définie. Elle sera utilisée à la prochaine analyse.|Scoreboard region set. It will be used in the next analysis.
+Axe du suivi|Tracking axis
+Horizontal et vertical|Horizontal and vertical
+Horizontal|Horizontal
+Vertical|Vertical
+Encadrer le sujet à suivre|Select the subject to track
+Retirer le suivi|Remove tracking
+Suivi du sujet dans l’extrait…|Tracking the subject in the clip…
+Le suivi exige une zone valide et un extrait de deux minutes maximum.|Tracking requires a valid selection and a clip no longer than two minutes.
+Relance le service local pour activer le suivi.|Restart the local service to enable tracking.
+Sélectionne un extrait dans la timeline.|Select a clip on the timeline.
+Suivi calculé sur {percent} % des images analysées.|Subject matched in {percent}% of the analyzed frames.
+Sujet perdu. Essaie un cadre plus précis ou un autre passage.|Subject lost. Try a tighter selection or another frame.
+Suivi partiel. Vérifie le recadrage avant l’export.|Partial tracking. Check the framing before exporting.
+Suivi prêt. Teste l’extrait pour voir le recadrage.|Tracking ready. Render a test clip to check the framing.
+Encadre le joueur ou le ballon sur une image où il est bien visible.|Draw a box around the player or ball on a frame where it is clearly visible.
+Langue du commentaire|Commentary language
+Automatique|Auto
+Suggestions max.|Max suggestions
+Analyser le match|Analyze the match
+Progression du montage|Highlights progress
+Temps écoulé|Elapsed time
+Extraits à garder|Clips to keep
+Validation rapide|Quick review
+Quitter la validation|Exit review
+Garder|Keep
+Ignorer|Skip
+À revoir|Review later
+Durée du montage · {duration}|Highlights duration · {duration}
+{current}/{total} · {clip} · {time}|{current}/{total} · {clip} · {time}
+Validation terminée.|Review complete.
+Validation terminée. Des extraits restent à revoir.|Review complete. Some clips are marked for later.
+Enregistrer l’analyse|Save analysis
+Analyse enregistrée pour cette vidéo.|Analysis saved for this video.
+Analyse sauvegardée rechargée.|Saved analysis restored.
+Le stockage local des analyses est indisponible.|Local analysis storage is unavailable.
+Relance le service local pour activer la lecture du score et la comparaison des ralentis.|Restart the local service to enable scoreboard reading and replay comparison.
+Installe les dépendances avec npm install pour lire le tableau de score.|Run npm install to enable scoreboard reading.
+Impossible d’enregistrer l’analyse sur cet appareil.|Could not save the analysis on this device.
+Extrait précédent|Previous clip
+Extrait suivant|Next clip
+Reculer de 5 secondes|Skip back 5 seconds
+Avancer de 5 secondes|Skip forward 5 seconds
+Lecture|Play
+Pause|Pause
+Position de lecture|Playback position
+Timeline du match|Match timeline
+Molette pour zoomer sur la timeline. I et O pour ajuster la coupe sélectionnée.|Scroll to zoom the timeline. Press I and O to trim the selected clip.
+Afficher le match en entier sur la timeline|Fit the full match on the timeline
+Ajouter autour de la tête de lecture|Add clip around playhead
+Ajouter un extrait|Add clip
+Commandes de lecture|Playback controls
+Vitesse de lecture|Playback speed
+Arrière ×2|Reverse ×2
+Exporter le montage MP4|Export highlights as MP4
+Télécharger le MP4|Download the MP4
+Choisis la vidéo du match pour la prévisualiser.|Choose a match video to preview it.
+Analyse du son du match…|Analyzing match audio…
+Transcription locale des commentaires…|Transcribing commentary locally…
+Lecture du tableau de score…|Reading the scoreboard…
+Recherche de ralentis répétés…|Looking for duplicate replays…
+Assemblage du MP4…|Assembling the MP4…
+La vidéo dépasse 32 Gio.|The video exceeds 32 GiB.
+Impossible d’ouvrir cette vidéo.|Could not open this video.
+Vérifie les heures de début et de fin des extraits cochés.|Check the start and end times of the selected clips.
+La session locale a expiré. Relance l’opération.|The local session expired. Try the operation again.
+Cette vidéo n’a pas de piste audio. Tu peux ajouter les extraits à la main.|This video has no audio track. You can add clips manually.
+Whisper a échoué. Les suggestions viennent de l’analyse du son.|Whisper failed. These suggestions come from audio analysis.
+Le score n’a pas pu être lu. Les autres indices restent disponibles.|The scoreboard could not be read. Other detection cues are still available.
+La comparaison des ralentis a échoué. Les suggestions ont été conservées.|Replay comparison failed. The suggestions were kept.
+Une opération est déjà en cours.|An operation is already in progress.
+L’opération a échoué. Réessaie avec cette vidéo ou un autre fichier.|The operation failed. Try again with this video or another file.
+But possible|Possible goal
+Score à l’écran · {score}|On-screen score · {score}
+Occasion possible|Possible chance
+Pic sonore|Audio peak
+Extrait manuel|Manual clip
+Début (s)|Start (s)
+Fin (s)|End (s)
+Lire l’extrait|Play clip
+Garder l’extrait|Keep clip
+Début ici|Start here
+Fin ici|End here
+Retirer|Remove
+Ce navigateur ne peut pas lire la vidéo d’origine.|This browser cannot play the source video.
+Ce navigateur ne peut pas lire la vidéo d’origine. L’analyse et l’export restent disponibles.|This browser cannot play the source video. Analysis and export are still available.
+Copier la commande|Copy command
+Impossible de copier la commande.|Could not copy the command.
+FFmpeg et FFprobe doivent être installés pour analyser et exporter.|FFmpeg and FFprobe are required for analysis and export.
+Whisper est indisponible. L’analyse du son reste utilisable.|Whisper is unavailable. Audio analysis is still available.
+Préparation locale de la vidéo…|Preparing the video locally…
+Opération annulée.|Operation canceled.
+Suggestions prêtes. Valide les extraits à garder.|Suggestions are ready. Review the clips you want to keep.
+Suggestions prêtes. Ralentis répétés écartés · {count}|Suggestions are ready. Duplicate replays removed · {count}
+Aucun passage détecté. Tu peux ajouter les extraits à la main.|No moments detected. You can add clips manually.
+Montage MP4 prêt à télécharger.|The highlights MP4 is ready to download.
 Exporter toutes les données locales (sauvegardes, préférences, ordre des sections) en JSON|Export local saves, preferences and section order as JSON
 📤 Export|📤 Export|📤 Exporter
 Importer un fichier JSON de sauvegardes|Import a JSON backup file
@@ -151,7 +375,7 @@ Détourage de la photo…|Removing the photo background…
 Impossible de détourer cette photo. Essaie une autre image.|Could not remove this photo’s background. Try another image.
 Impossible de charger le détourage. Vérifie ta connexion, puis réessaie.|Could not load background removal. Check your connection, then try again.
 Styles enregistrés|Saved styles
-Coller la liste des joueurs|Paste the player list
+Coller la liste des joueurs|Paste the players
 Colle un joueur par ligne (numéro puis nom) ou alterne numéro et nom sur deux lignes. Les marqueurs|Paste one player per line (number followed by name), or alternate numbers and names on separate lines. The markers
 = gardien et|= goalkeeper and
 ou un|or a
@@ -561,15 +785,19 @@ Sauvegarde copiée dans « {folder} ».|Backup written to “{folder}”.
 Bibliothèque|Library
 Campagne|Campaign
 Nouvelle campagne|New campaign
+Nouveau|New
 Équipe|Team
 Saison|Season
+Trier par|Sort by
+Année décroissante|Newest first
+Année croissante|Oldest first
 Créer la campagne|Create campaign
 Classer la sélection|File selected items
 Match|Match
 Type de visuel|Graphic type
 Vues de la bibliothèque|Library views
 Tout replier|Collapse all
-Tout déplier|Expand all
+Déplier le niveau suivant|Expand next level
 Toutes les campagnes|All campaigns
 À classer|Unfiled
 Tous les types|All types
@@ -617,6 +845,9 @@ Média|Media
 Utiliser|Use
 Nouveau match|New match
 Équipe adverse|Opponent
+Équipe à domicile|Home team
+Équipe à l’extérieur|Away team
+Une campagne existe déjà pour cette compétition et cette saison.|A campaign already exists for this competition and season.
 Créer et activer le match|Create and activate match
 Match de destination|Destination match
 Fermer le match actif|Close active match

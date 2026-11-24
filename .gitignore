@@ -7,3 +7,12 @@
 !/translations.js
 !/video-thumbnail.js
 !/local-library.js
+!/highlights.js
+!/highlights-server.mjs
+!/install-highlights-whisper.ps1
+!/package.json
+!/package-lock.json
+!/highlights-vision.mjs
+!/highlights-montage.mjs
+!/highlights-montage.js
+!/highlights-tracking.mjs

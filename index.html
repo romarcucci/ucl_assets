@@ -25,6 +25,7 @@
             <button class="tab" data-tab="shorts" lang="en">Live Score Short</button>
             <button class="tab" data-tab="video-thumbnail" lang="en">Thumbnail</button>
             <button class="tab" data-tab="short-thumbnail" lang="en">Thumbnail Short</button>
+            <button class="tab" data-tab="highlights">Montage vidéo</button>
           </div>
           <div class="tab-group">
             <button class="tab" data-tab="library" lang="en">Library</button>
@@ -633,6 +634,10 @@
                   >
                     Retirer le logo
                   </button>
+                  <label class="checkbox-field">
+                    <input type="checkbox" id="l-team-logo-shadows-toggle" checked />
+                    <span>Activer les ombres sur le logo de l'équipe</span>
+                  </label>
                 </div>
               </details>
 
@@ -704,42 +709,52 @@
           </details>
 
           <details class="collapsible">
-            <summary>Coller la liste des joueurs</summary>
+            <summary>Formations</summary>
             <div class="collapsible-body">
-              <p class="paste-comp-help">
-                Colle un joueur par ligne (numéro puis nom) ou alterne numéro et nom sur deux lignes. Les
-                marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
-                <code>(C)</code> ou un <code>C</code> collé au numéro =
-                capitaine sont reconnus puis retirés du nom.
-              </p>
-              <label class="field">
-                <span>Composition</span>
-                <textarea
-                  id="l-paste-comp"
-                  rows="12"
-                  placeholder="1C Alonso (GK)&#10;2 Marquitos&#10;3 Santamaría"
-                ></textarea>
-              </label>
-              <div class="paste-comp-actions">
-                <button
-                  class="btn-primary"
-                  id="l-paste-comp-apply"
-                  type="button"
-                >
-                  Remplir les joueurs
-                </button>
-                <span
-                  id="l-paste-comp-status"
-                  role="status"
-                  class="paste-comp-status"
-                ></span>
+              <div class="saved-teams-controls">
+                <select id="l-saved-formation-select" aria-label="Formations"></select>
+                <button class="btn-secondary" id="l-load-formation" type="button">Appliquer</button>
+                <button class="btn-secondary danger" id="l-delete-formation" type="button">×</button>
+              </div>
+              <div class="save-team-form">
+                <input
+                  type="text"
+                  id="l-save-formation-name"
+                  placeholder="Nom de la formation (ex: 4-3-3)…"
+                />
+                <button class="btn-primary" id="l-save-formation" type="button">💾 Enregistrer formation</button>
               </div>
             </div>
           </details>
 
           <details class="collapsible">
-            <summary>Joueurs et placement</summary>
+            <summary lang="en">Players</summary>
             <div class="collapsible-body">
+              <details class="collapsible collapsible-nested">
+                <summary>Coller la liste des joueurs</summary>
+                <div class="collapsible-body">
+                  <p class="paste-comp-help">
+                    Colle un joueur par ligne (numéro puis nom) ou alterne numéro et nom sur deux lignes. Les
+                    marqueurs <code>(GA)</code>/<code>(GK)</code> = gardien et
+                    <code>(C)</code> ou un <code>C</code> collé au numéro =
+                    capitaine sont reconnus puis retirés du nom.
+                  </p>
+                  <label class="field">
+                    <span>Composition</span>
+                    <textarea
+                      id="l-paste-comp"
+                      rows="12"
+                      placeholder="1C Alonso (GK)&#10;2 Marquitos&#10;3 Santamaría"
+                    ></textarea>
+                  </label>
+                  <div class="paste-comp-actions">
+                    <button class="btn-primary" id="l-paste-comp-apply" type="button">
+                      Remplir les joueurs
+                    </button>
+                    <span id="l-paste-comp-status" role="status" class="paste-comp-status"></span>
+                  </div>
+                </div>
+              </details>
               <label class="checkbox-field">
                 <input type="checkbox" id="l-show-grid" />
                 <span>Afficher la grille d'alignement</span>
@@ -882,14 +897,6 @@
                   <label class="checkbox-field">
                     <input type="checkbox" id="l-shirt-shadows-toggle" checked />
                     <span>Activer les ombres sur les maillots</span>
-                  </label>
-                  <label class="checkbox-field">
-                    <input
-                      type="checkbox"
-                      id="l-team-logo-shadows-toggle"
-                      checked
-                    />
-                    <span>Activer les ombres sur le logo de l'équipe</span>
                   </label>
                   <div class="row">
                     <label class="field">
@@ -1291,7 +1298,7 @@
             </div>
           </details>
 
-          <h3 class="editor-panel-heading">Styles et formations enregistrés</h3>
+          <h3 class="editor-panel-heading">Styles enregistrés</h3>
           <details class="collapsible">
             <summary>Styles globaux</summary>
             <div class="collapsible-body">
@@ -1323,43 +1330,6 @@
                     />
                     <button class="btn-primary" id="l-save-team" type="button">
                       💾 Enregistrer
-                    </button>
-                  </div>
-                </div>
-              </details>
-
-              <details class="collapsible collapsible-nested">
-                <summary>Formations (positions)</summary>
-                <div class="collapsible-body">
-                  <div class="saved-teams-controls">
-                    <select id="l-saved-formation-select"></select>
-                    <button
-                      class="btn-secondary"
-                      id="l-load-formation"
-                      type="button"
-                    >
-                      Appliquer
-                    </button>
-                    <button
-                      class="btn-secondary danger"
-                      id="l-delete-formation"
-                      type="button"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div class="save-team-form">
-                    <input
-                      type="text"
-                      id="l-save-formation-name"
-                      placeholder="Nom de la formation (ex: 4-3-3)…"
-                    />
-                    <button
-                      class="btn-primary"
-                      id="l-save-formation"
-                      type="button"
-                    >
-                      💾 Enregistrer formation
                     </button>
                   </div>
                 </div>
@@ -2086,8 +2056,8 @@
             </div>
           </details>
 
-          <details class="collapsible" hidden>
-            <summary>Sauvegardes</summary>
+          <details class="collapsible">
+            <summary>Styles enregistrés</summary>
             <div class="collapsible-body">
               <div class="saved-teams-controls">
                 <select id="s-saved-select"></select>
@@ -3722,6 +3692,14 @@ MBAPPÉ | 45+2'</textarea
                   <input type="checkbox" data-vt-style="fitTitle" checked />
                   <span>Réduire automatiquement les titres longs</span>
                 </label>
+                <label class="checkbox-field">
+                  <input type="checkbox" data-vt-style="titleOutline" />
+                  <span>Contour du titre</span>
+                </label>
+                <div class="row">
+                  <label class="field"><span>Intensité de l’ombre</span><input type="range" data-vt-style="titleShadow" min="0" max="100" value="95" /></label>
+                  <label class="field"><span>Couleur de l’ombre</span><input type="color" data-vt-style="titleShadowColor" value="#05051d" /></label>
+                </div>
               </fieldset>
               <fieldset class="vt-style-group">
                 <legend>Année</legend>
@@ -3753,6 +3731,14 @@ MBAPPÉ | 45+2'</textarea
                   <input type="checkbox" data-vt-style="yearItalic" checked />
                   <span>Italique</span>
                 </label>
+                <label class="checkbox-field">
+                  <input type="checkbox" data-vt-style="yearOutline" />
+                  <span>Contour de l’année</span>
+                </label>
+                <div class="row">
+                  <label class="field"><span>Intensité de l’ombre</span><input type="range" data-vt-style="yearShadow" min="0" max="100" value="95" /></label>
+                  <label class="field"><span>Couleur de l’ombre</span><input type="color" data-vt-style="yearShadowColor" value="#05051d" /></label>
+                </div>
               </fieldset>
               <fieldset class="vt-style-group">
                 <legend>Barres de l’année</legend>
@@ -3810,8 +3796,60 @@ MBAPPÉ | 45+2'</textarea
             </div>
           </details>
           <details class="collapsible">
+            <summary>Couleurs</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" data-vt-style="colorsEnabled" />
+                <span>Activer le filtre couleur</span>
+              </label>
+              <div class="row">
+                <button class="btn-secondary" type="button" data-vt-color-preset="neutral">Neutre</button>
+                <button class="btn-secondary" type="button" data-vt-color-preset="vivid">Couleurs vives</button>
+              </div>
+              <div class="row">
+                <button class="btn-secondary" type="button" data-vt-color-preset="soft">Doux</button>
+                <button class="btn-secondary" type="button" data-vt-color-preset="dramatic">Contrasté</button>
+                <button class="btn-secondary" type="button" data-vt-color-preset="monochrome">Noir et blanc</button>
+              </div>
+              <label class="field">
+                <span>Saturation <output for="vt-color-saturation" data-vt-color-value="saturation">100 %</output></span>
+                <input type="range" id="vt-color-saturation" data-vt-style="saturation" min="0" max="200" value="100" />
+              </label>
+              <label class="field">
+                <span>Contraste <output for="vt-color-contrast" data-vt-color-value="contrast">100 %</output></span>
+                <input type="range" id="vt-color-contrast" data-vt-style="contrast" min="60" max="150" value="100" />
+              </label>
+              <label class="field">
+                <span>Luminosité <output for="vt-color-brightness" data-vt-color-value="brightness">100 %</output></span>
+                <input type="range" id="vt-color-brightness" data-vt-style="brightness" min="60" max="150" value="100" />
+              </label>
+            </div>
+          </details>
+          <details class="collapsible">
             <summary>Joueurs - Ombres et éclairage</summary>
             <div class="collapsible-body">
+              <div class="row">
+                <label class="field">
+                  <span>Filtre du joueur gauche</span>
+                  <select data-vt-style="leftPlayerFilter">
+                    <option value="neutral">Neutre</option>
+                    <option value="vivid">Couleurs vives</option>
+                    <option value="soft">Doux</option>
+                    <option value="dramatic">Contrasté</option>
+                    <option value="monochrome">Noir et blanc</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Filtre du joueur droit</span>
+                  <select data-vt-style="rightPlayerFilter">
+                    <option value="neutral">Neutre</option>
+                    <option value="vivid">Couleurs vives</option>
+                    <option value="soft">Doux</option>
+                    <option value="dramatic">Contrasté</option>
+                    <option value="monochrome">Noir et blanc</option>
+                  </select>
+                </label>
+              </div>
               <label class="field">
                 <span>Ombre sur les joueurs <output for="vt-player-surface" id="vt-player-surface-value">0 %</output></span>
                 <div class="range-with-number">
@@ -3976,6 +4014,245 @@ MBAPPÉ | 45+2'</textarea
               </form>
             </div>
           </details>
+        </section>
+        <section class="editor-section highlights-editor" data-editor="highlights" data-fixed-section-order>
+          <h2>Montage vidéo</h2>
+          <details class="collapsible highlights-step">
+            <summary>Images du match</summary>
+            <div class="collapsible-body">
+              <p id="hl-library-source-hint">Dans la bibliothèque, associe une vidéo à un match et active ce match.</p>
+              <div class="highlights-actions" id="hl-library-source" hidden>
+                <label class="field"><span>Vidéo du match actif</span><select id="hl-match-video-select"></select></label>
+                <button class="btn-secondary" id="hl-use-match-video" type="button">Charger la vidéo sélectionnée</button>
+              </div>
+              <div id="hl-local-start" hidden>
+                <button id="hl-copy-command" class="btn-secondary" type="button">Copier la commande</button>
+              </div>
+            </div>
+          </details>
+          <details class="collapsible highlights-step">
+            <summary>Analyse du match</summary>
+            <div class="collapsible-body">
+              <label class="checkbox-field">
+                <input type="checkbox" id="hl-whisper" checked disabled />
+                <span>Analyser les commentaires avec Whisper</span>
+              </label>
+              <label class="checkbox-field">
+                <input type="checkbox" id="hl-replays" checked disabled />
+                <span>Écarter les ralentis répétés</span>
+              </label>
+              <div class="highlights-actions highlights-score-actions">
+                <button class="btn-secondary" id="hl-score-zone" type="button" disabled>Définir la zone du score</button>
+                <button class="btn-secondary" id="hl-score-clear" type="button" hidden>Effacer la zone</button>
+              </div>
+              <div class="row">
+                <label class="field">
+                  <span>Langue du commentaire</span>
+                  <select id="hl-language">
+                    <option value="auto">Automatique</option>
+                    <option value="fr" lang="fr">Français</option>
+                    <option value="en" lang="en">English</option>
+                    <option value="es" lang="es">Español</option>
+                    <option value="it" lang="it">Italiano</option>
+                    <option value="de" lang="de">Deutsch</option>
+                    <option value="pt" lang="pt">Português</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Suggestions max.</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="hl-limit" aria-label="Diminuer">−</button>
+                    <input type="number" id="hl-limit" min="1" max="40" value="10" />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="hl-limit" aria-label="Augmenter">+</button>
+                  </div>
+                </label>
+              </div>
+              <div class="highlights-actions">
+                <button class="btn-primary" id="hl-analyze" type="button" disabled>Analyser le match</button>
+              </div>
+              <div id="hl-analysis-feedback"></div>
+            </div>
+          </details>
+          <details class="collapsible highlights-step">
+            <summary>Extraits à garder</summary>
+            <div class="collapsible-body">
+              <div class="highlights-actions">
+                <button class="btn-secondary" id="hl-add" type="button" title="Ajouter autour de la tête de lecture" disabled>Ajouter un extrait</button>
+                <button class="btn-secondary" id="hl-save" type="button" disabled>Enregistrer l’analyse</button>
+              </div>
+              <div class="highlights-review" id="hl-review" hidden>
+                <div class="highlights-actions">
+                  <button class="btn-secondary" id="hl-review-start" type="button">Validation rapide</button>
+                  <span id="hl-total" role="status"></span>
+                </div>
+                <div id="hl-review-current" hidden>
+                  <p id="hl-review-label" role="status"></p>
+                  <div class="highlights-actions">
+                    <button class="btn-primary" id="hl-keep" type="button">Garder</button>
+                    <button class="btn-secondary" id="hl-ignore" type="button">Ignorer</button>
+                    <button class="btn-secondary" id="hl-review-later" type="button">À revoir</button>
+                  </div>
+                </div>
+              </div>
+              <ol id="hl-clips" class="highlights-clips"></ol>
+            </div>
+          </details>
+          <details class="collapsible highlights-step">
+            <summary>Montage</summary>
+            <div class="collapsible-body">
+              <label class="field"><span>Version</span><select id="hm-format"><option value="wide">Résumé 16:9</option><option value="short">Short 9:16</option></select></label>
+              <details class="collapsible">
+                <summary>Cadrage et restauration</summary>
+                <div class="collapsible-body">
+                  <label class="field"><span>Cadrage</span><select data-hm="framing.mode"><option value="fill">Plein écran</option><option value="blur">Fond flou</option><option value="fit">Image entière</option></select></label>
+                  <div class="field">
+                    <span id="hm-zoom-label">Zoom</span>
+                    <div class="range-with-number">
+                      <input type="range" data-hm="framing.zoom" aria-labelledby="hm-zoom-label" min="1" max="3" step="0.001" value="1" />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-0.001" data-target="hm-zoom-number" aria-label="Diminuer">−</button>
+                        <input type="number" id="hm-zoom-number" data-hm-number="framing.zoom" aria-labelledby="hm-zoom-label" min="1" max="3" step="0.001" value="1" />
+                        <button type="button" class="stepper-btn" data-step="0.001" data-target="hm-zoom-number" aria-label="Augmenter">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <span id="hm-position-x-label">Position horizontale</span>
+                    <div class="range-with-number">
+                      <input type="range" data-hm="framing.x" aria-labelledby="hm-position-x-label" min="-1" max="1" step="0.001" value="0" />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-0.001" data-target="hm-position-x-number" aria-label="Diminuer">−</button>
+                        <input type="number" id="hm-position-x-number" data-hm-number="framing.x" aria-labelledby="hm-position-x-label" min="-1" max="1" step="0.001" value="0" />
+                        <button type="button" class="stepper-btn" data-step="0.001" data-target="hm-position-x-number" aria-label="Augmenter">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <span id="hm-position-y-label">Position verticale</span>
+                    <div class="range-with-number">
+                      <input type="range" data-hm="framing.y" aria-labelledby="hm-position-y-label" min="-1" max="1" step="0.001" value="0" />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-0.001" data-target="hm-position-y-number" aria-label="Diminuer">−</button>
+                        <input type="number" id="hm-position-y-number" data-hm-number="framing.y" aria-labelledby="hm-position-y-label" min="-1" max="1" step="0.001" value="0" />
+                        <button type="button" class="stepper-btn" data-step="0.001" data-target="hm-position-y-number" aria-label="Augmenter">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <span id="hm-blur-label">Flou du fond</span>
+                    <div class="range-with-number">
+                      <input type="range" data-hm="framing.blur" aria-labelledby="hm-blur-label" min="4" max="65" step="1" value="24" />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-1" data-target="hm-blur-number" aria-label="Diminuer">−</button>
+                        <input type="number" id="hm-blur-number" data-hm-number="framing.blur" aria-labelledby="hm-blur-label" min="4" max="65" step="1" value="24" />
+                        <button type="button" class="stepper-btn" data-step="1" data-target="hm-blur-number" aria-label="Augmenter">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <span id="hm-crop-top-label">Rogner le haut (%)</span>
+                    <div class="range-with-number">
+                      <input type="range" data-hm="framing.cropTop" aria-labelledby="hm-crop-top-label" min="0" max="45" step="1" value="0" />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-1" data-target="hm-crop-top-number" aria-label="Diminuer">−</button>
+                        <input type="number" id="hm-crop-top-number" data-hm-number="framing.cropTop" aria-labelledby="hm-crop-top-label" min="0" max="45" step="1" value="0" />
+                        <button type="button" class="stepper-btn" data-step="1" data-target="hm-crop-top-number" aria-label="Augmenter">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <span id="hm-crop-bottom-label">Rogner le bas (%)</span>
+                    <div class="range-with-number">
+                      <input type="range" data-hm="framing.cropBottom" aria-labelledby="hm-crop-bottom-label" min="0" max="45" step="1" value="0" />
+                      <div class="number-stepper">
+                        <button type="button" class="stepper-btn" data-step="-1" data-target="hm-crop-bottom-number" aria-label="Diminuer">−</button>
+                        <input type="number" id="hm-crop-bottom-number" data-hm-number="framing.cropBottom" aria-labelledby="hm-crop-bottom-label" min="0" max="45" step="1" value="0" />
+                        <button type="button" class="stepper-btn" data-step="1" data-target="hm-crop-bottom-number" aria-label="Augmenter">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="hl-tracking" hidden>
+                    <label class="field"><span>Axe du suivi</span><select id="hl-track-axis">
+                      <option value="both">Horizontal et vertical</option>
+                      <option value="x">Horizontal</option>
+                      <option value="y">Vertical</option>
+                    </select></label>
+                    <div class="highlights-actions">
+                      <button class="btn-secondary" id="hl-track-start" type="button" disabled>Encadrer le sujet à suivre</button>
+                      <button class="btn-secondary" id="hl-track-clear" type="button" hidden>Retirer le suivi</button>
+                    </div>
+                    <p id="hl-track-status"></p>
+                  </div>
+                </div>
+              </details>
+              <details class="collapsible">
+                <summary>Audio du match</summary>
+                <div class="collapsible-body">
+                  <label class="field"><span>Gain (dB)</span><input type="number" data-hm="audio.gain" min="-30" max="24" value="0" /></label>
+                  <label class="field"><span>Décalage audio (ms)</span><input type="number" data-hm="audio.offset" min="-10000" max="10000" value="0" /></label>
+                  <label class="checkbox-field"><input type="checkbox" data-hm="audio.drift" /><span>Corriger la dérive sur la durée du match</span></label>
+                  <label class="field"><span>Décalage à la fin (ms)</span><input type="number" data-hm="audio.endOffset" min="-10000" max="10000" value="0" /></label>
+                  <label class="checkbox-field"><input type="checkbox" data-hm="audio.normalize" /><span>Normaliser le volume final</span></label>
+                </div>
+              </details>
+              <div class="highlights-actions hm-actions">
+                <button class="btn-secondary" id="hm-preview" type="button">Tester l’extrait</button>
+                <button class="btn-secondary" id="hm-dry" type="button">Comparer avec la source</button>
+                <button class="btn-secondary" id="hm-library-save" type="button">Enregistrer le montage dans Library</button>
+              </div>
+              <p id="hm-status" role="status"></p>
+              <div id="hl-edit-feedback"></div>
+            </div>
+          </details>
+          <details class="collapsible highlights-step">
+            <summary>Amélioration IA</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Mode d’amélioration IA</span>
+                <select id="hl-enhancement-mode">
+                  <option value="fast">Rapide</option>
+                  <option value="quality" selected>Qualité</option>
+                </select>
+              </label>
+              <button class="btn-secondary" id="hl-prepare-enhancement" type="button" disabled>Traiter les extraits avec Real-ESRGAN</button>
+              <p id="hl-enhance-unavailable" hidden>Real-ESRGAN est indisponible sur le service local.</p>
+              <p id="hl-enhancement-status" hidden></p>
+              <div class="highlights-progress" id="hl-enhancement-progress-group" hidden>
+                <progress id="hl-enhancement-progress" max="100" aria-label="Progression du traitement IA"></progress>
+                <output id="hl-enhancement-percent" aria-hidden="true"></output>
+                <span id="hl-enhancement-elapsed" role="timer" aria-label="Temps écoulé"></span>
+              </div>
+              <div id="hl-enhancement-feedback"></div>
+            </div>
+          </details>
+          <details class="collapsible highlights-step">
+            <summary>Exportation</summary>
+            <div class="collapsible-body">
+              <label class="field">
+                <span>Carte de fin</span>
+                <select id="hl-end-card">
+                  <option value="">Sans carte de fin</option>
+                </select>
+              </label>
+              <label class="checkbox-field"><input type="checkbox" id="hl-enhance-video" disabled /><span>Utiliser les extraits améliorés</span></label>
+              <div class="highlights-actions">
+                <button class="btn-primary" id="hl-export" type="button" disabled>Exporter le montage MP4</button>
+                <a id="hl-download" class="btn-secondary" hidden>Télécharger le MP4</a>
+              </div>
+              <div id="hl-export-feedback"></div>
+            </div>
+          </details>
+          <div id="hl-general-feedback">
+            <div id="hl-job-feedback">
+              <button class="btn-secondary" id="hl-cancel" type="button" hidden>Annuler</button>
+              <div class="highlights-progress" id="hl-progress-group" hidden>
+                <progress id="hl-progress" max="100" aria-label="Progression du montage"></progress>
+                <output id="hl-percent" aria-hidden="true"></output>
+                <span id="hl-elapsed" role="timer" aria-label="Temps écoulé" hidden></span>
+              </div>
+              <p id="hl-status" role="status"></p>
+            </div>
+          </div>
         </section>
         </div>
         <div class="editor-save-footer" id="editor-save-footer">
@@ -4421,6 +4698,56 @@ MBAPPÉ | 45+2'</textarea
           </div>
         </div>
 
+        <div class="preview-container highlights-preview" data-preview="highlights">
+          <div class="highlights-video-stage" id="hl-video-stage" hidden>
+            <div class="hm-source-frame">
+              <canvas id="hm-backdrop" aria-hidden="true" hidden></canvas>
+              <video id="hl-video" playsinline preload="metadata"></video>
+            </div>
+            <video id="hm-render" playsinline hidden></video>
+            <div class="highlights-score-box highlights-tracked-box" id="hl-track-box" hidden aria-hidden="true"></div>
+            <div class="highlights-score-picker" id="hl-score-picker" hidden>
+              <div class="highlights-score-box" id="hl-score-box" hidden></div>
+            </div>
+          </div>
+          <p id="hl-preview-note" role="status">Choisis la vidéo du match pour la prévisualiser.</p>
+          <div class="highlights-controls">
+            <div class="highlights-transport" id="hl-transport" hidden>
+              <div class="highlights-actions" role="group" aria-label="Commandes de lecture">
+                <button class="btn-secondary" id="hl-prev" type="button">Extrait précédent</button>
+                <button class="btn-secondary" id="hl-back" type="button" aria-label="Reculer de 5 secondes">−5 s</button>
+                <button class="btn-secondary" id="hl-play" type="button">Lecture</button>
+                <button class="btn-secondary" id="hl-forward" type="button" aria-label="Avancer de 5 secondes">+5 s</button>
+                <button class="btn-secondary" id="hl-next" type="button">Extrait suivant</button>
+                <select id="hl-speed" aria-label="Vitesse de lecture">
+                  <option value="1">×1</option>
+                  <option value="2">×2</option>
+                  <option value="4">×4</option>
+                  <option value="-2">Arrière ×2</option>
+                </select>
+                <button class="btn-secondary" id="hm-return" type="button" hidden>Revenir au match</button>
+                <button class="btn-secondary" id="hm-render-play" type="button" hidden>Lecture</button>
+                <input id="hm-render-position" type="range" min="0" max="0" step="any" value="0" aria-label="Position de lecture" hidden />
+                <label class="hm-player-volume"><span>Volume</span><input id="hm-player-volume" type="range" min="0" max="1" step="0.05" value="1" /></label>
+              </div>
+              <output id="hl-clock" aria-label="Position de lecture"></output>
+            </div>
+            <div class="highlights-timeline" id="hl-timeline" hidden>
+              <div class="highlights-timeline-scroll" id="hl-timeline-scroll">
+                <div class="highlights-timeline-track" id="hl-timeline-track" tabindex="0" aria-label="Timeline du match">
+                  <div class="highlights-timeline-ticks" id="hl-timeline-ticks" aria-hidden="true"></div>
+                  <div class="highlights-timeline-clips" id="hl-timeline-clips"></div>
+                  <div class="highlights-playhead" id="hl-playhead" aria-hidden="true"></div>
+                </div>
+              </div>
+              <div class="highlights-timeline-tools">
+                <span>Molette pour zoomer sur la timeline. I et O pour ajuster la coupe sélectionnée.</span>
+                <button class="btn-secondary" id="hl-timeline-reset" type="button" aria-label="Afficher le match en entier sur la timeline">100 %</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="preview-container library-view" data-preview="library">
           <div class="library-heading">
             <h2>Bibliothèque</h2>
@@ -4436,16 +4763,29 @@ MBAPPÉ | 45+2'</textarea
             <div class="library-subtabs" role="tablist" aria-label="Vues de la bibliothèque">
               <button id="library-view-campaigns" type="button" role="tab" aria-selected="true" aria-controls="library-subview" data-library-view="campaigns">Campagnes</button>
               <button id="library-view-styles" type="button" role="tab" aria-selected="false" aria-controls="library-subview" data-library-view="styles" tabindex="-1">Styles</button>
+              <button id="library-view-end-cards" type="button" role="tab" aria-selected="false" aria-controls="library-subview" data-library-view="end-cards" tabindex="-1">Cartes de fin</button>
             </div>
             <div class="library-create-actions">
-              <button class="btn-header" id="library-new-campaign" type="button" aria-haspopup="dialog">Nouvelle campagne</button>
+              <button class="btn-header" id="library-new-end-card" type="button" aria-haspopup="dialog" hidden>Nouvelle carte de fin</button>
+              <label class="library-sort">
+                <span>Trier par</span>
+                <select id="library-campaign-sort">
+                  <option value="competition">Compétition</option>
+                  <option value="season-desc">Année décroissante</option>
+                  <option value="season-asc">Année croissante</option>
+                </select>
+              </label>
               <label class="library-switch">
                 <span>Archives</span>
                 <input type="checkbox" role="switch" id="library-archives" />
               </label>
-              <button class="btn-header" id="library-new-match" type="button" aria-haspopup="dialog">Nouveau match</button>
+              <button class="btn-header" id="library-new" type="button" popovertarget="library-new-options">Nouveau</button>
+              <div class="library-item-menu" id="library-new-options" popover>
+                <button id="library-new-campaign" type="button" aria-haspopup="dialog">Nouvelle campagne</button>
+                <button id="library-new-match" type="button" aria-haspopup="dialog">Nouveau match</button>
+              </div>
               <button class="btn-header" id="library-collapse-all" type="button">Tout replier</button>
-              <button class="btn-header" id="library-expand-all" type="button">Tout déplier</button>
+              <button class="btn-header" id="library-expand-next" type="button">Déplier le niveau suivant</button>
               <button class="btn-header" id="library-close-project" type="button" hidden>Fermer le match actif</button>
             </div>
           </div>
@@ -4472,8 +4812,32 @@ MBAPPÉ | 45+2'</textarea
           <span>Nom</span>
           <input id="editor-quick-save-name" type="text" required />
         </label>
+        <label class="field" id="editor-quick-save-leg-field" hidden>
+          <span>Manche</span>
+          <select id="editor-quick-save-leg" disabled>
+            <option value="">Choisir…</option>
+            <option value="First Leg" lang="en">First Leg</option>
+            <option value="Second Leg" lang="en">Second Leg</option>
+          </select>
+        </label>
         <div class="import-modal-actions">
           <button class="import-modal-btn-secondary" type="button" id="editor-quick-save-cancel">Annuler</button>
+          <button class="import-modal-btn-primary" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="library-end-card-dialog" class="import-modal library-centered-dialog" aria-labelledby="library-end-card-heading">
+      <form id="library-end-card-form" class="import-modal-form">
+        <h3 id="library-end-card-heading">Nouvelle carte de fin</h3>
+        <label class="field"><span>Nom</span><input name="name" type="text" maxlength="80" required /></label>
+        <label class="field"><span>Visuel de fin (PNG, MP4, MOV ou WebM)</span><input name="visual" type="file" accept="image/png,video/mp4,video/quicktime,video/webm,.png,.mp4,.mov,.webm" required /></label>
+        <label class="field"><span>Piste audio de fin (facultative)</span><input name="music" type="file" accept="audio/*" /></label>
+        <label class="checkbox-field" id="library-end-card-remove-music" hidden><input name="removeMusic" type="checkbox" /><span>Retirer la piste audio</span></label>
+        <label class="field"><span>Durée de l’image (s)</span><input name="duration" type="number" min="2" max="25" step="any" value="8" required /></label>
+        <label class="field"><span>Gain musique (dB)</span><input name="gain" type="number" min="-40" max="12" step="any" value="-8" required /></label>
+        <p class="library-create-status" role="status"></p>
+        <div class="import-modal-actions">
+          <button class="import-modal-btn-secondary" type="button" data-library-dialog-cancel>Annuler</button>
           <button class="import-modal-btn-primary" type="submit">Enregistrer</button>
         </div>
       </form>
@@ -4481,10 +4845,6 @@ MBAPPÉ | 45+2'</textarea
     <dialog id="library-campaign-dialog" class="import-modal library-centered-dialog" aria-labelledby="library-campaign-heading">
       <form id="library-create" class="import-modal-form">
         <h3 id="library-campaign-heading">Nouvelle campagne</h3>
-        <label class="field">
-          <span>Équipe</span>
-          <input name="team" maxlength="80" type="text" required />
-        </label>
         <label class="field">
           <span>Compétition</span>
           <input name="competition" maxlength="80" type="text" required />
@@ -4500,30 +4860,59 @@ MBAPPÉ | 45+2'</textarea
         </div>
       </form>
     </dialog>
+    <dialog id="library-video-dialog" class="import-modal library-centered-dialog" aria-labelledby="library-video-heading">
+      <form method="dialog" class="import-modal-form">
+        <h3 id="library-video-heading">Vidéos du match</h3>
+        <p id="library-video-match"></p>
+        <label class="field">
+          <span>Match aller · fichier dans Games</span>
+          <select id="library-video-aller"></select>
+        </label>
+        <button class="btn-secondary library-video-preview" id="library-video-preview-aller" type="button">Voir le match aller</button>
+        <label class="field">
+          <span>Match retour · fichier dans Games</span>
+          <select id="library-video-retour"></select>
+        </label>
+        <button class="btn-secondary library-video-preview" id="library-video-preview-retour" type="button">Voir le match retour</button>
+        <video id="library-video-player" controls playsinline preload="metadata" hidden></video>
+        <p id="library-video-status" role="status"></p>
+        <div class="import-modal-actions">
+          <button class="import-modal-btn-secondary" value="cancel">Annuler</button>
+          <button class="import-modal-btn-primary" id="library-video-save" value="save">Enregistrer</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="library-match-dialog" class="import-modal library-centered-dialog" aria-labelledby="library-match-heading">
       <form id="library-create-project" class="import-modal-form">
         <h3 id="library-match-heading">Nouveau match</h3>
+        <div class="row">
+          <label class="field">
+            <span>Campagne</span>
+            <select id="library-project-campaign" required></select>
+          </label>
+          <label class="field">
+            <span>Tour</span>
+            <select name="round" required>
+              <option value="">Choisir un tour</option>
+              <option value="Game 1" lang="en">Game 1</option>
+              <option value="Game 2" lang="en">Game 2</option>
+              <option value="Game 3" lang="en">Game 3</option>
+              <option value="Round of 32" lang="en">Round of 32</option>
+              <option value="Round of 16" lang="en">Round of 16</option>
+              <option value="Quarter Finals" lang="en">Quarter Finals</option>
+              <option value="Semi Finals" lang="en">Semi Finals</option>
+              <option value="Final" lang="en">Final</option>
+            </select>
+          </label>
+        </div>
         <label class="field">
-          <span>Campagne</span>
-          <select id="library-project-campaign" required></select>
+          <span>Équipe à domicile</span>
+          <input name="home" maxlength="80" type="text" required />
         </label>
         <label class="field">
-          <span>Tour</span>
-          <select name="round" required>
-            <option value="">Choisir un tour</option>
-            <option value="Game 1" lang="en">Game 1</option>
-            <option value="Game 2" lang="en">Game 2</option>
-            <option value="Game 3" lang="en">Game 3</option>
-            <option value="Round of 32" lang="en">Round of 32</option>
-            <option value="Round of 16" lang="en">Round of 16</option>
-            <option value="Quarter Finals" lang="en">Quarter Finals</option>
-            <option value="Semi Finals" lang="en">Semi Finals</option>
-            <option value="Final" lang="en">Final</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Équipe adverse</span>
-          <input name="opponent" maxlength="80" type="text" required />
+          <span>Équipe à l’extérieur</span>
+          <input name="away" maxlength="80" type="text" required />
         </label>
         <p class="library-create-status" role="status"></p>
         <div class="import-modal-actions">
@@ -4590,9 +4979,34 @@ MBAPPÉ | 45+2'</textarea
         </div>
       </form>
     </dialog>
+    <template id="short-vt-colors">
+      <details class="collapsible">
+        <summary>Fond et séparation des logos</summary>
+        <div class="collapsible-body">
+          <label class="field">
+            <span>Couleur du fond en bas</span>
+            <input type="color" data-vt-style="lowerBackgroundColor" value="#030322" />
+          </label>
+          <label class="field">
+            <span>Dégradé du coin inférieur gauche</span>
+            <input type="color" data-vt-style="lowerLeftColor" value="#1e1660" />
+          </label>
+          <label class="field">
+            <span>Dégradé du coin inférieur droit</span>
+            <input type="color" data-vt-style="lowerRightColor" value="#14224f" />
+          </label>
+          <label class="field">
+            <span>Couleur de la barre diagonale</span>
+            <input type="color" data-vt-style="dividerColor" value="#1bbdff" />
+          </label>
+        </div>
+      </details>
+    </template>
     <script src="video-thumbnail.js"></script>
     <script src="translations.js"></script>
     <script src="script.js"></script>
     <script src="local-library.js"></script>
+    <script src="highlights-montage.js"></script>
+    <script src="highlights.js"></script>
   </body>
 </html>

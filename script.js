@@ -136,6 +136,11 @@ const quickSaveButton = document.getElementById("editor-quick-save");
 const quickSaveStatus = document.getElementById("editor-quick-save-status");
 const quickSaveDialog = document.getElementById("editor-quick-save-dialog");
 const quickSaveName = document.getElementById("editor-quick-save-name");
+const quickSaveLeg = document.getElementById("editor-quick-save-leg");
+const matchQuickSaves = new Map([
+  ["score", { kind: "matchScore", collect: collectScoreData, missingMatch: "Active un match dans Library avant d’enregistrer le Live Score." }],
+  ["player", { kind: "matchBanner", collect: collectBannerData, missingMatch: "Active un match dans Library avant d’enregistrer le bandeau buteur." }],
+]);
 const quickSaveControls = new Map([
   ["lineup", "#l-save-team"],
   ["showdown", "#sd-save"],
@@ -147,7 +152,7 @@ const quickSaveControls = new Map([
 ].map(([key, selector]) => {
   const button = document.querySelector(selector);
   const form = button.closest(".save-team-form");
-  return [key, { button, name: form.querySelector('input[type="text"]'), status: form.querySelector(".save-status") }];
+  return [key, { button, name: form.querySelector('input[type="text"]'), status: form.querySelector(".save-status"), matchSave: matchQuickSaves.get(key) }];
 }));
 
 function updateQuickSave() {
@@ -176,16 +181,32 @@ quickSaveButton.addEventListener("click", () => {
     control.button.click();
     return;
   }
-  pendingQuickSave = control;
-  quickSaveName.value = control.name.value.trim();
-  if (!quickSaveName.value && key === "player") {
-    quickSaveName.value = `${pFirstname.value} ${pLastname.value}`.trim();
+  const { matchSave } = control;
+  if (matchSave && !window.matchPresetMenus?.activeProjectId) {
+    alert(translate(matchSave.missingMatch));
+    return;
   }
+  const isGoalscorer = key === "player";
+  const name = isGoalscorer ? goalscorerSaveName() : control.name.value.trim();
+  if (isGoalscorer && !name) {
+    alert(translate("Renseigne le nom du buteur et la minute du but."));
+    return;
+  }
+  pendingQuickSave = control;
+  quickSaveName.readOnly = isGoalscorer;
+  quickSaveName.value = name;
+  const chooseLeg = Boolean(matchSave) && !window.matchPresetMenus.activeMatchIsFinal;
+  quickSaveLeg.closest("label").hidden = !chooseLeg;
+  quickSaveLeg.disabled = !chooseLeg;
+  quickSaveLeg.required = chooseLeg;
+  quickSaveLeg.value = "";
+  if (matchSave) quickSaveName.value = quickSaveName.value.replace(/ · (First|Second) Leg$/, "");
   if (control.name.maxLength >= 0) quickSaveName.maxLength = control.name.maxLength;
   else quickSaveName.removeAttribute("maxlength");
   quickSaveName.setCustomValidity("");
   quickSaveDialog.showModal();
-  quickSaveName.select();
+  if (isGoalscorer && chooseLeg) quickSaveLeg.focus();
+  else quickSaveName.select();
 });
 
 quickSaveName.addEventListener("input", () => quickSaveName.setCustomValidity(""));
@@ -200,7 +221,8 @@ document.getElementById("editor-quick-save-form").addEventListener("submit", (ev
   }
   pendingQuickSave.name.value = name;
   quickSaveDialog.close();
-  pendingQuickSave.button.click();
+  if (pendingQuickSave.matchSave) saveMatchGraphic(pendingQuickSave, name, quickSaveLeg.value);
+  else pendingQuickSave.button.click();
 });
 
 tabs.forEach((tab) => {
@@ -226,7 +248,7 @@ tabs.forEach((tab) => {
       target !== "showdown";
     document.getElementById("export-saved-renders").hidden =
       target !== "lineup" && target !== "showdown";
-    document.querySelector(".preview-toolbar").hidden = target === "library";
+    document.querySelector(".preview-toolbar").hidden = target === "library" || target === "highlights";
     document.querySelector(".editor-search").hidden = target === "library";
     updateQuickSave();
     document.getElementById("export-format-field").hidden =
@@ -785,6 +807,16 @@ function renderSavedBannersList() {
       .join("");
   }
 }
+
+function goalscorerSaveName() {
+  const name = [pFirstname.value.trim(), pLastname.value.trim()].filter(Boolean).join(" ");
+  const minute = pMinute.value.trim();
+  if (!name || !minute) return "";
+  const numericMinute = minute.match(/^(\d+(?:\s*\+\s*\d+)?)\s*['’′]?$/)?.[1];
+  const formattedMinute = numericMinute ? `${numericMinute.replace(/\s/g, "")}′` : minute;
+  return `${name} · ${formattedMinute}`;
+}
+
 function saveCurrentAsBanner() {
   const nameInput = document.getElementById("p-save-name");
   const sName =
@@ -3685,6 +3717,16 @@ function renderSavedScoresList() {
     list.length === 0
       ? emptyPresetOption("— Aucune sauvegarde —")
       : list.map((s, i) => `<option value="${i}">${s.name}</option>`).join("");
+  window.matchPresetMenus?.refresh(sel);
+}
+
+function saveMatchGraphic({ name: nameInput, matchSave }, name, leg) {
+  const projectId = window.matchPresetMenus?.activeProjectId;
+  if (!projectId) return;
+  const entryName = leg ? `${name} · ${leg}` : name;
+  showPresetSaveStatus(nameInput, entryName, {
+    kind: matchSave.kind, projectId, entry: { name: entryName, naming: { leg }, data: matchSave.collect() },
+  });
 }
 
 function saveCurrentScore() {
@@ -3709,6 +3751,7 @@ function saveCurrentScore() {
 
 function loadCurrentScore() {
   const sel = document.getElementById("s-saved-select");
+  if (window.matchPresetMenus?.load(sel)) return;
   const idx = +sel.value;
   if (isNaN(idx)) return;
   const list = getSavedScores();
@@ -3719,6 +3762,7 @@ function loadCurrentScore() {
 
 function deleteCurrentScore() {
   const sel = document.getElementById("s-saved-select");
+  if (window.matchPresetMenus?.remove(sel)) return;
   const idx = +sel.value;
   if (isNaN(idx)) return;
   const list = getSavedScores();

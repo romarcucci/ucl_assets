@@ -5,6 +5,8 @@
   const results = $("library-results");
   const resultStatus = $("library-results-status");
   const projectCampaign = $("library-project-campaign");
+  const newLibraryItem = $("library-new");
+  const newLibraryOptions = $("library-new-options");
   const newCampaign = $("library-new-campaign");
   const newMatch = $("library-new-match");
   const campaignDialog = $("library-campaign-dialog");
@@ -16,6 +18,7 @@
   let draggedIds = [];
   const archives = $("library-archives");
   const archiveControl = archives.closest("label");
+  const campaignSort = $("library-campaign-sort");
   const viewTabs = [...document.querySelectorAll("[data-library-view]")];
   let currentView = "campaigns";
   const catalog = {
@@ -27,7 +30,13 @@
       saveLineup();
     }],
     banner: [SAVED_BANNERS_KEY, "Bandeau buteur", "player", "p-save-name", (entry) => applyBannerData(entry.data), true],
+    matchBanner: [null, "Bandeau buteur", "player", "p-save-name", (entry) => {
+      applyBannerData(entry.data);
+      updatePlayerBanner();
+      saveBanner();
+    }],
     score: [S_SAVED_KEY, "Score en direct", "score", "s-save-name", (entry) => applyScoreData(entry.data), true],
+    matchScore: [null, "Score en direct", "score", "s-save-name", (entry) => applyScoreData(entry.data)],
     showdown: [SD_SAVED_KEY, "Affiche de match", "showdown", "sd-save-name", (entry) => {
       applyShowdownData(expandShowdownData(entry.data));
       updateShowdown();
@@ -37,6 +46,8 @@
       applyShortsSettings(structuredClone(entry.settings)), true],
     thumbnail: [null, "Miniature vidéo", "video-thumbnail", "vt-composition-name"],
     shortThumbnail: [null, "Miniature Short (9:16)", "short-thumbnail", "short-vt-composition-name"],
+    montage: [null, "Montage", "highlights", null, (entry) => window.highlightsProject.open(entry.data)],
+    endCard: [null, "Cartes de fin", null, null, null, true],
     kit: [SAVED_KITS_KEY, "Tenue", "lineup", "l-save-kit-name", (entry) => applyKitData(entry.data), true],
     formation: [SAVED_FORMATIONS_KEY, "Formation", "lineup", "l-save-formation-name", applySavedFormation, true],
     style: [SAVED_STYLES_KEY, "Style de fond", "lineup", "l-save-style-name", (entry) => applyStyleData(entry.data), true],
@@ -56,15 +67,16 @@
   };
   const thumbnailKinds = new Map([["video-thumbnail", "thumbnail"], ["short-thumbnail", "shortThumbnail"]]);
   const thumbnailLabels = { thumbnail: "Thumbnail 16:9", shortThumbnail: "Thumbnail 9:16" };
-  const editorKinds = new Set(["lineup", "banner", "score", "showdown", "shorts", ...thumbnailKinds.values()]);
+  const editorKinds = new Set(["lineup", "banner", "matchBanner", "score", "matchScore", "showdown", "shorts", ...thumbnailKinds.values()]);
   const globalStyleIcons = {
-    banner: "⚑", score: "◫", shorts: "▯", kit: "👕", formation: "⠿",
+    banner: "⚑", matchBanner: "⚑", score: "1:0", matchScore: "1:0", shorts: "▯", kit: "👕", formation: "⠿",
     style: "▧", typography: "Aa", showdownTypography: "Tt", showdownBackground: "◩", competition: "▣", shortCompetition: "▯",
   };
 
   function globalStyleIcon(kind) {
     const icon = document.createElement("span");
     icon.className = "library-style-icon";
+    icon.classList.toggle("library-score-icon", kind === "score" || kind === "matchScore");
     icon.textContent = globalStyleIcons[kind];
     icon.setAttribute("aria-hidden", "true");
     return icon;
@@ -246,6 +258,7 @@
             id: id + "/" + key, campaignId: id, directory,
             name: metadata?.name ?? "", round: metadata?.round ?? "",
             opponent: metadata?.opponent ?? "", archived: metadata?.archived === true, inferred: !metadata,
+            videos: normalizeMatchVideos(metadata),
           };
           await scanRecords(directory, project);
           if (project.name) projects.set(project.id, project);
@@ -332,7 +345,7 @@
 
   function browserEntries(kind) {
     const [key, , tab, , , globalStyle] = catalog[kind];
-    if (!key) return thumbnailEditors.get(tab).listLibraryPresets(globalStyle);
+    if (!key) return thumbnailEditors.get(tab)?.listLibraryPresets(globalStyle) ?? [];
     try {
       const entries = JSON.parse(localStorage.getItem(key) || "[]");
       return Array.isArray(entries) ? entries : [];
@@ -351,7 +364,7 @@
     const item = {
       version: 1, id, kind, name: entry.name, ...placement,
       updatedAt: new Date().toISOString(),
-      entry: catalog[kind][0] || portable ? entry : await storeVideoAssets(entry),
+      entry: !thumbnailEditors.has(catalog[kind][2]) || portable ? entry : await storeVideoAssets(entry),
     };
     await persist(item, existing);
   }
@@ -406,6 +419,317 @@
       !/[<>:"/\\|?*\x00-\x1f]/.test(name);
   }
 
+  function validVideoPath(path) {
+    return Array.isArray(path) && path.length > 0 && path.length <= 12 &&
+      path.every(validFilename) && /\.(mp4|m4v|mkv|webm|mov|avi|mpg|mpeg|ts|m2ts|mts|wmv)$/i.test(path.at(-1));
+  }
+
+  function normalizeMatchVideos(data) {
+    const aller = data?.videos ? data.videos.aller : data?.video;
+    const retour = data?.videos?.retour;
+    return {
+      aller: validVideoPath(aller) ? aller : undefined,
+      retour: validVideoPath(retour) ? retour : undefined,
+    };
+  }
+
+  const organizedVideosFolder = "Associés";
+
+  function isOrganizedVideo(path) {
+    return path?.[0]?.toLowerCase() === organizedVideosFolder.toLowerCase();
+  }
+
+  async function getMatchVideo(path) {
+    if (!connection || !validVideoPath(path)) return null;
+    const directory = await folder(connection.directory, ["Games", ...path.slice(0, -1)]);
+    return (await directory.getFileHandle(path.at(-1))).getFile();
+  }
+
+  async function gameVideoPaths(directory, base = []) {
+    const paths = [];
+    if (!directory || base.length >= 12) return paths;
+    for await (const [name, handle] of directory.entries()) {
+      if (!validFilename(name)) continue;
+      if (!base.length && isOrganizedVideo([name])) continue;
+      const path = [...base, name];
+      if (handle.kind === "directory") paths.push(...await gameVideoPaths(handle, path));
+      else if (validVideoPath(path)) paths.push(path);
+    }
+    return paths;
+  }
+
+  function writeProject(project, updates = {}) {
+    const data = { ...project, ...updates };
+    const { name, round, opponent, archived } = data;
+    return writeJson(project.directory, "projet.json", { name, round, opponent, archived, videos: normalizeMatchVideos(data) });
+  }
+
+  function videoPathKey(path) {
+    return path?.join("/").toLowerCase();
+  }
+
+  function assignedVideoPaths(exceptProject) {
+    const keys = new Set();
+    for (const project of projects.values()) {
+      if (project === exceptProject) continue;
+      for (const path of Object.values(normalizeMatchVideos(project))) {
+        if (path) keys.add(videoPathKey(path));
+      }
+    }
+    return keys;
+  }
+
+  async function copyVideoToMatch(project, leg, path) {
+    const source = await folder(connection.directory, ["Games", ...path.slice(0, -1)]);
+    const original = path.at(-1);
+    const file = await (await source.getFileHandle(original)).getFile();
+    const copy = await storeMatchVideo(project, leg, file);
+    return { ...copy, source, original, file };
+  }
+
+  async function storeMatchVideo(project, leg, file) {
+    const original = file.name;
+    const parts = [organizedVideosFolder, ...project.id.split("/"), leg === "aller" ? "Aller" : "Retour"];
+    const destination = await folder(connection.directory, ["Games", ...parts], true);
+    const dot = original.lastIndexOf(".");
+    const stem = original.slice(0, dot);
+    const extension = original.slice(dot);
+    let name = original;
+    for (let suffix = 2; ; suffix++) {
+      try {
+        await destination.getFileHandle(name);
+      } catch (error) {
+        if (error.name === "NotFoundError") break;
+        if (error.name !== "TypeMismatchError") throw error;
+      }
+      name = stem.slice(0, 210) + " (" + suffix + ")" + extension;
+    }
+
+    const target = await destination.getFileHandle(name, { create: true });
+    try {
+      await file.stream().pipeTo(await target.createWritable());
+      if ((await target.getFile()).size !== file.size) throw new Error("Incomplete game video copy");
+    } catch (error) {
+      await destination.removeEntry(name).catch(() => {});
+      throw error;
+    }
+    return { path: [...parts, name], destination, name };
+  }
+
+  function uploadMatchVideo(projectId, leg, file) {
+    if (!validVideoPath([file.name])) {
+      resultMessage = "Sélectionne un fichier vidéo.";
+      render();
+      return;
+    }
+    const project = projects.get(projectId);
+    if (!project || isProjectArchived(project)) return;
+    const previous = normalizeMatchVideos(project)[leg];
+    if (previous && !confirm(translate("Remplacer la vidéo associée par « {file} » ?", { file: file.name }))) return;
+    schedule(async () => {
+      if (projects.get(projectId) !== project || isProjectArchived(project)) return;
+      const videos = normalizeMatchVideos(project);
+      if (videoPathKey(videos[leg]) !== videoPathKey(previous)) return;
+      let copy;
+      try {
+        copy = await storeMatchVideo(project, leg, file);
+        videos[leg] = copy.path;
+        await writeProject(project, { videos });
+      } catch {
+        if (copy) await copy.destination.removeEntry(copy.name).catch(() => {});
+        resultMessage = "Impossible de ranger les vidéos. Vérifie l’accès au dossier et l’espace disponible.";
+        return;
+      }
+      project.videos = videos;
+      delete project.inferred;
+      resultMessage = "Vidéo associée au match.";
+    });
+  }
+
+  async function organizeMatchVideos(project, requested) {
+    const previous = normalizeMatchVideos(project);
+    const shared = assignedVideoPaths(project);
+    const videos = { ...requested };
+    const staged = [];
+    try {
+      for (const [leg, path] of Object.entries(requested)) {
+        if (!path) continue;
+        if (isOrganizedVideo(path)) continue;
+        let copy;
+        try {
+          copy = await copyVideoToMatch(project, leg, path);
+        } catch (error) {
+          if (error.name === "NotFoundError" && videoPathKey(previous[leg]) === videoPathKey(path)) continue;
+          throw error;
+        }
+        staged.push({ ...copy, sourceKey: videoPathKey(path) });
+        videos[leg] = copy.path;
+      }
+      if (JSON.stringify(previous) !== JSON.stringify(videos)) {
+        await writeProject(project, { videos });
+        project.videos = videos;
+        delete project.inferred;
+      }
+    } catch (error) {
+      await Promise.allSettled(staged.map(({ destination, name }) => destination.removeEntry(name)));
+      throw error;
+    }
+
+    let originalKept = false;
+    const removed = new Set();
+    for (const { source, original, file, sourceKey } of staged) {
+      if (shared.has(sourceKey) || removed.has(sourceKey)) continue;
+      try {
+        const current = await (await source.getFileHandle(original)).getFile();
+        if (current.size !== file.size || current.lastModified !== file.lastModified) {
+          originalKept = true;
+          continue;
+        }
+        await source.removeEntry(original);
+        removed.add(sourceKey);
+      } catch (error) {
+        if (error.name !== "NotFoundError") originalKept = true;
+      }
+    }
+    return originalKept;
+  }
+
+  const videoDialog = $("library-video-dialog");
+  const videoFields = Object.fromEntries(["aller", "retour"].map((leg) => [
+    leg, { select: $("library-video-" + leg), preview: $("library-video-preview-" + leg) },
+  ]));
+  const videoPlayer = $("library-video-player");
+  const videoSave = $("library-video-save");
+  const videoStatus = $("library-video-status");
+  let videoProject;
+  let videoPreviewUrl;
+  let videoPreviewRequest = 0;
+  let organizingVideos = false;
+
+  function stopVideoPreview() {
+    videoPreviewRequest++;
+    videoPlayer.pause();
+    videoPlayer.hidden = true;
+    videoPlayer.removeAttribute("src");
+    videoPlayer.load();
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    videoPreviewUrl = undefined;
+  }
+
+  async function previewLinkedVideo(leg) {
+    const { select } = videoFields[leg];
+    if (!select.value) return;
+    stopVideoPreview();
+    const request = videoPreviewRequest;
+    try {
+      const file = await getMatchVideo(JSON.parse(select.value));
+      if (request !== videoPreviewRequest || !videoDialog.open || !file) return;
+      videoPreviewUrl = URL.createObjectURL(file);
+      videoPlayer.src = videoPreviewUrl;
+      videoPlayer.hidden = false;
+      videoStatus.textContent = "";
+    } catch {
+      if (request === videoPreviewRequest) videoStatus.textContent = translate("Vidéo associée introuvable. Vérifie son emplacement dans Games.");
+    }
+  }
+
+  for (const [leg, { select, preview }] of Object.entries(videoFields)) {
+    select.addEventListener("change", () => {
+      stopVideoPreview();
+      preview.disabled = !select.value;
+      videoStatus.textContent = "";
+    });
+    preview.addEventListener("click", () => previewLinkedVideo(leg));
+  }
+  videoPlayer.addEventListener("error", () => {
+    if (videoPreviewUrl) videoStatus.textContent = translate("Ce navigateur ne peut pas lire la vidéo d’origine.");
+  });
+
+  async function associateMatchVideo(id, previewLeg) {
+    const project = projects.get(id);
+    if (!project || !connection || videoDialog.open) return;
+    videoProject = project;
+    $("library-video-match").textContent = project.name;
+    for (const { select, preview } of Object.values(videoFields)) {
+      select.replaceChildren(new Option(translate("Aucune vidéo associée"), ""));
+      select.disabled = preview.disabled = true;
+    }
+    videoSave.disabled = true;
+    videoStatus.textContent = translate("Recherche des vidéos dans Games…");
+    videoDialog.returnValue = "";
+    videoDialog.showModal();
+    try {
+      const assigned = assignedVideoPaths();
+      const paths = (await gameVideoPaths(await optionalFolder(connection.directory, ["Games"])))
+        .filter((path) => !assigned.has(videoPathKey(path)));
+      if (!videoDialog.open || videoProject !== project) return;
+      paths.sort((a, b) => compareLibraryNames(a.join(" / "), b.join(" / ")));
+      const videos = normalizeMatchVideos(project);
+      for (const [leg, { select, preview }] of Object.entries(videoFields)) {
+        const linked = videos[leg];
+        const current = linked ? JSON.stringify(linked) : "";
+        const options = paths.map((path) => new Option(path.join(" / "), JSON.stringify(path)));
+        select.append(...options);
+        let available = false;
+        if (current) {
+          try { available = Boolean(await getMatchVideo(linked)); } catch {}
+          if (!videoDialog.open || videoProject !== project) return;
+          if (!options.some((option) => option.value === current)) {
+            const label = available ? linked.at(-1) : translate("Fichier introuvable · {file}", { file: linked.join(" / ") });
+            const linkedOption = new Option(label, current);
+            linkedOption.disabled = !available;
+            select.append(linkedOption);
+          }
+        }
+        select.value = current;
+        select.disabled = !paths.length && !current;
+        preview.disabled = !available;
+      }
+      videoSave.disabled = !paths.length && !videos.aller && !videos.retour;
+      videoStatus.textContent = paths.length ? "" : translate("Aucune nouvelle vidéo à associer dans Games.");
+      if (previewLeg) await previewLinkedVideo(previewLeg);
+    } catch {
+      if (videoDialog.open && videoProject === project) videoStatus.textContent = translate("Impossible de lire le dossier Games.");
+    }
+  }
+
+  videoDialog.addEventListener("close", () => {
+    videoProject = undefined;
+    stopVideoPreview();
+  });
+  videoDialog.addEventListener("cancel", (event) => {
+    if (organizingVideos) event.preventDefault();
+  });
+  videoDialog.querySelector("form").addEventListener("submit", async (event) => {
+    if (event.submitter?.value !== "save" && !organizingVideos) return;
+    event.preventDefault();
+    const project = videoProject;
+    if (!project || organizingVideos) return;
+    const videos = Object.fromEntries(Object.entries(videoFields).map(([leg, { select }]) => [
+      leg, select.value ? JSON.parse(select.value) : undefined,
+    ]));
+    organizingVideos = true;
+    stopVideoPreview();
+    const controls = [...videoDialog.querySelectorAll("select, button")];
+    const disabled = controls.map((control) => control.disabled);
+    controls.forEach((control) => { control.disabled = true; });
+    videoStatus.textContent = translate("Rangement des vidéos dans Games…");
+    let saved = false;
+    try {
+      await schedule(async () => {
+        if (projects.get(project.id) !== project) return;
+        const originalKept = await organizeMatchVideos(project, videos);
+        saved = true;
+        resultMessage = originalKept ? "Vidéos associées. Une copie d’origine reste dans Games." : "Vidéos du match mises à jour.";
+      });
+      if (saved) videoDialog.close();
+      else videoStatus.textContent = translate("Impossible de ranger les vidéos. Vérifie l’accès au dossier et l’espace disponible.");
+    } finally {
+      organizingVideos = false;
+      controls.forEach((control, index) => { control.disabled = disabled[index]; });
+    }
+  });
+
   async function exportLibrary() {
     const media = [];
     for (const group of new Set(Object.values(mediaGroups))) {
@@ -426,8 +750,8 @@
     const backup = {
       format: "ucl-library", version: 1,
       campaigns: [...campaigns.values()].map(({ directory, ...entry }) => entry),
-      projects: [...projects.values()].map(({ id, campaignId, name, round, opponent, archived }) =>
-        ({ id, campaignId, name, round, opponent, archived })),
+      projects: [...projects.values()].map(({ id, campaignId, name, round, opponent, archived, videos }) =>
+        ({ id, campaignId, name, round, opponent, archived, videos })),
       records: [...records.values()].map(({ item }) => item),
       media,
     };
@@ -463,9 +787,17 @@
       for (const project of backup.projects ?? []) {
         const campaign = importedCampaigns.get(project?.campaignId);
         if (!campaign || typeof project.name !== "string" || !project.name.trim()) continue;
-        importedProjects.set(project.id, await ensureProject(campaign, project.name.trim(),
+        const target = await ensureProject(campaign, project.name.trim(),
           typeof project.round === "string" ? project.round : "",
-          typeof project.opponent === "string" ? project.opponent : "", project.archived === true));
+          typeof project.opponent === "string" ? project.opponent : "", project.archived === true);
+        const linked = normalizeMatchVideos(target);
+        const imported = normalizeMatchVideos(project);
+        const videos = { aller: linked.aller ?? imported.aller, retour: linked.retour ?? imported.retour };
+        if (videos.aller !== linked.aller || videos.retour !== linked.retour) {
+          await writeProject(target, { videos });
+          target.videos = videos;
+        }
+        importedProjects.set(project.id, target);
       }
       for (const media of backup.media ?? []) {
         if (!Object.values(mediaGroups).includes(media?.group) || !validFilename(media.name) ||
@@ -564,19 +896,41 @@
   }
 
   function campaignLabel(campaign) {
-    return [campaignTitle(campaign), campaign.competition, campaign.season].filter(Boolean)
-      .filter((value, index, items) => items.indexOf(value) === index).join(" · ");
+    return campaign.displayName || campaignTitle(campaign);
   }
 
   function campaignTitle(campaign) {
-    return campaign.displayName || campaign.team || campaign.name;
+    return [campaign.competition, campaign.season].filter(Boolean).join(" · ") || campaign.name;
+  }
+
+  function campaignKey(campaign) {
+    if (!campaign.competition?.trim() || !campaign.season?.trim()) return campaign.id;
+    return "competition:" + JSON.stringify([campaign.competition, campaign.season]
+      .map((value) => value.trim().replace(/\s+/g, " ").toLowerCase()));
+  }
+
+  function groupCampaigns(orderedCampaigns) {
+    const groups = new Map();
+    for (const campaign of orderedCampaigns) {
+      const key = campaignKey(campaign);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(campaign);
+    }
+    return groups;
   }
 
   function compareCampaigns(a, b) {
     const options = { numeric: true, sensitivity: "base" };
-    return (a.team || a.name).localeCompare(b.team || b.name, undefined, options) ||
-      (a.season ?? "").localeCompare(b.season ?? "", undefined, options) ||
-      (a.competition ?? "").localeCompare(b.competition ?? "", undefined, options);
+    const competition = (a.competition || a.name).trim().localeCompare((b.competition || b.name).trim(), undefined, options);
+    const aSeason = a.season?.trim() || "";
+    const bSeason = b.season?.trim() || "";
+    const missingSeason = Number(!aSeason) - Number(!bSeason);
+    const season = aSeason.localeCompare(bSeason, undefined, options);
+    const order = campaignSort.value === "competition"
+      ? competition || missingSeason || season
+      : missingSeason || (campaignSort.value === "season-desc" ? -season : season) || competition;
+    return order ||
+      Number(!!a.team) - Number(!!b.team) || a.id.localeCompare(b.id);
   }
 
   function projectLabel(project) {
@@ -596,6 +950,7 @@
   const matchLoadKinds = new Map([
     ["l-saved-team-select", "lineup"],
     ["sd-saved-select", "showdown"],
+    ["s-saved-select", "matchScore"],
     ["vt-saved-compositions", "thumbnail"],
     ["short-vt-saved-compositions", "shortThumbnail"],
   ]);
@@ -644,6 +999,7 @@
   const matchSavePhase = $("match-save-phase");
   const matchSavePreview = $("match-save-preview");
   const graphicPresetKinds = new Set(["lineup", "showdown"]);
+  const legPresetKinds = new Set([...graphicPresetKinds, "matchScore", "matchBanner"]);
   const presetLegs = ["First Leg", "Second Leg"];
   const showdownPhases = ["Open", "Close"];
   let pendingMatchSave;
@@ -668,6 +1024,7 @@
       const team = stored?.team || data?.team;
       return { leg, team: typeof team === "string" ? team : "" };
     }
+    if (kind === "matchScore" || kind === "matchBanner") return { leg };
     const phaseHint = (name || "").match(/\b(open|close)\b(?!.*\b(?:open|close)\b)/i)?.[0].toLowerCase();
     const phase = showdownPhases.includes(stored?.phase) ? stored.phase :
       showdownPhases.find((option) => option.toLowerCase() === phaseHint) || "";
@@ -767,7 +1124,40 @@
     get activeProjectId() {
       return activeProjectId;
     },
+    get activeMatchIsFinal() {
+      return isFinalPreset({ projectId: activeProjectId });
+    },
+    get activeMatchVideos() {
+      const project = projects.get(activeProjectId);
+      if (!project) return null;
+      const linked = normalizeMatchVideos(project);
+      const videos = Object.entries(linked).filter(([, path]) => path).map(([leg, path]) => ({ leg, name: path.join(" / ") }));
+      return videos.length ? { id: project.id, name: project.name, videos } : null;
+    },
+    async loadActiveMatchVideo(id, leg) {
+      if (activeProjectId !== id || !["aller", "retour"].includes(leg)) return null;
+      return getMatchVideo(normalizeMatchVideos(projects.get(id))[leg]);
+    },
     refresh: refreshMatchLoadMenu,
+    loadEndCard(id) {
+      const item = records.get(id)?.item;
+      if (item?.kind !== "endCard") throw new Error("End card unavailable");
+      const { image, video, music, duration, gain } = item.entry.data;
+      const assets = video ? { "outro-video": unpackEndCardAsset(video) } : { outro: unpackEndCardAsset(image) };
+      if (music) assets.music = unpackEndCardAsset(music);
+      return { assets, duration, gain };
+    },
+    async saveMontage(projectId, data, leg) {
+      const project = projects.get(projectId);
+      if (!project) throw new Error("No match for montage");
+      let saved = false;
+      const name = leg === "aller" ? "Montage · Match aller" : leg === "retour" ? "Montage · Match retour" : "Montage";
+      await schedule(async () => {
+        await syncEntry("montage", { name, data }, { project, portable: true });
+        saved = true;
+      });
+      if (!saved) throw new Error("Could not save montage");
+    },
     nameSave: nameMatchSave,
     load(select) {
       const item = selectedMatchSave(select);
@@ -781,35 +1171,41 @@
     },
   };
 
-  function projectOpponent(project, campaign) {
-    if (project.opponent) return project.opponent;
-    const [home, away] = project.name.split(/\s+[-–—]\s+/);
-    const team = campaign?.team;
-    if (team && away) {
-      if (normalizeTeamName(home) === normalizeTeamName(team)) return away;
-      if (normalizeTeamName(away) === normalizeTeamName(team)) return home;
-    }
-    return project.name;
-  }
-
-  const normalizeTeamName = (value) => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   function render() {
     const styles = currentView === "styles";
-    archiveControl.hidden = styles;
+    const endCards = currentView === "end-cards";
+    archiveControl.hidden = styles || endCards;
+    campaignSort.closest("label").hidden = styles || endCards;
+    for (const control of [newLibraryItem, $("library-collapse-all"), $("library-expand-next")]) {
+      control.hidden = endCards;
+    }
+    const createEndCard = $("library-new-end-card");
+    createEndCard.hidden = !endCards;
+    createEndCard.disabled = !connection;
+    const cards = [...records.values()].map(({ item }) => item).filter((item) => item.kind === "endCard")
+      .sort((a, b) => compareLibraryNames(a.name, b.name));
+    refreshEndCardSelect(cards);
     const archived = archives.checked;
     const active = projects.get(activeProjectId);
     const orderedCampaigns = [...campaigns.values()].sort(compareCampaigns);
-    setOptions(projectCampaign, orderedCampaigns.filter((campaign) => !campaign.archived)
-      .map((campaign) => new Option(campaignLabel(campaign), campaign.id)));
+    const groups = groupCampaigns(orderedCampaigns);
+    setOptions(projectCampaign, [...groups.values()].flatMap((owners) => {
+      const target = owners.find((campaign) => !campaign.archived);
+      return target ? [new Option(campaignLabel(owners[0]), target.id)] : [];
+    }));
     newCampaign.disabled = !connection;
     newMatch.disabled = !connection || !projectCampaign.options.length;
-    closeProject.hidden = !active;
+    newLibraryItem.disabled = !connection;
+    closeProject.hidden = !active || endCards;
+    document.dispatchEvent(new Event("ucl-active-match-video"));
     activeHeader.hidden = !active;
     if (active) {
       const campaign = campaigns.get(active.campaignId);
-      const match = [projectOpponent(active, campaign), active.round].filter(Boolean).join(" · ");
-      activeHeader.querySelector("strong").textContent = match;
-      activeHeader.querySelector("span").textContent = campaignLabel(campaign);
+      const matchName = projectLabel(active);
+      const campaignName = campaignLabel(groups.get(campaignKey(campaign))[0]);
+      activeHeader.querySelector("strong").textContent = matchName;
+      activeHeader.querySelector("span").textContent = campaignName;
+      activeHeader.title = `${matchName} · ${campaignName}`;
     }
     for (const kind of graphicPresetKinds) $(catalog[kind][3]).hidden = true;
     for (const id of matchLoadKinds.keys()) {
@@ -818,16 +1214,45 @@
       refreshMatchLoadMenu(select);
       if (previous !== select.selectedOptions[0]) select.dispatchEvent(new Event("match-presets-change"));
     }
+    if (endCards) {
+      results.replaceChildren(...cards.map((item) => renderItem(item)));
+      resultStatus.textContent = translate(resultMessage ?? (!connection ? disconnected :
+        cards.length ? "" : "Aucune carte de fin enregistrée."));
+      return;
+    }
     const items = [...records.values()].map(({ item }) => item).filter((item) =>
-      Boolean(catalog[item.kind][5]) === styles && (styles || isProjectArchived(projects.get(item.projectId)) === archived));
+      item.kind !== "endCard" && Boolean(catalog[item.kind][5]) === styles &&
+      (styles || isProjectArchived(projects.get(item.projectId)) === archived));
     items.sort(styles ? (a, b) => compareLibraryNames(a.name, b.name) :
       (a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "") || a.name.localeCompare(b.name));
     if (styles) results.replaceChildren(...kindBranches("__global", items, { byName: true }));
     else {
-      renderTree(items, orderedCampaigns);
+      renderTree(items, groups);
     }
     resultStatus.textContent = translate(resultMessage ?? (!connection ? disconnected :
       items.length || results.childElementCount ? "" : "Aucune sauvegarde dans cette vue."));
+  }
+
+  function refreshEndCardSelect(cards) {
+    const select = $("hl-end-card");
+    const current = select.selectedOptions[0];
+    const noCard = select.options[0];
+    const options = cards.map((item) => {
+      const option = new Option(item.name, item.id);
+      option.dataset.updatedAt = item.updatedAt;
+      return option;
+    });
+    setOptions(select, [noCard, ...options]);
+    if (current?.value !== select.value || current?.dataset.updatedAt !== select.selectedOptions[0]?.dataset.updatedAt) {
+      select.dispatchEvent(new Event("change"));
+    }
+  }
+
+  function unpackEndCardAsset(url) {
+    const match = /^data:([\w.+/-]+);base64,([\s\S]+)$/.exec(url);
+    if (!match) throw new Error("Invalid end card asset");
+    const [, type, contents] = match;
+    return new Blob([Uint8Array.from(atob(contents), (character) => character.charCodeAt(0))], { type });
   }
 
   function projectOptions() {
@@ -888,6 +1313,18 @@
     return item;
   }
 
+  function goalscorerMinute(item) {
+    const minute = String(item.entry?.data?.minute ?? "").trim();
+    const match = /^(\d+)\s*['’′]?(?:\s*\+\s*(\d+)\s*['’′]?)?$/.exec(minute);
+    return match ? [Number(match[1]), Number(match[2] ?? 0)] : [Infinity, 0];
+  }
+
+  function compareGoalscorers(a, b) {
+    const [minuteA, addedA] = goalscorerMinute(a);
+    const [minuteB, addedB] = goalscorerMinute(b);
+    return minuteA - minuteB || addedA - addedB || compareLibraryNames(a.name, b.name);
+  }
+
   function kindBranches(parentId, items, { byName = false, groupedByLeg = false } = {}) {
     const groups = new Map();
     for (const item of items) {
@@ -901,6 +1338,7 @@
     return orderedGroups.map(([kind, list]) => {
       const id = parentId + "/" + kind;
       if (graphicPresetKinds.has(kind)) list.sort(compareGraphicPresets);
+      if (kind === "matchBanner") list.sort(compareGoalscorers);
       if (kind === "thumbnail") {
         list.sort((a, b) => Number(a.kind === "shortThumbnail") - Number(b.kind === "shortThumbnail"));
       }
@@ -909,66 +1347,128 @@
     });
   }
 
-  function legBranches(parentId, items) {
+  function legBranches(parentId, items, project) {
     const byLeg = new Map(presetLegs.map((leg) => [leg, []]));
+    const videos = normalizeMatchVideos(project);
     const withoutLeg = [];
     for (const item of items) {
-      const leg = graphicPresetKinds.has(item.kind) ? presetNaming(item).leg : "";
+      const leg = legPresetKinds.has(item.kind) ? presetNaming(item).leg : "";
       (byLeg.get(leg) ?? withoutLeg).push(item);
     }
     const branches = [];
     for (const [leg, group] of byLeg) {
-      if (!group.length) continue;
+      const videoLeg = leg === "First Leg" ? "aller" : "retour";
+      const path = videos[videoLeg];
+      const canUpload = project && !isProjectArchived(project) &&
+        (videoLeg === "aller" || project.round.trim().toLowerCase() !== "final" || path);
+      if (!group.length && !path && !canUpload) continue;
       const id = parentId + "/" + leg;
-      branches.push(branch(id, leg, kindBranches(id, group, { groupedByLeg: true }), {
+      const children = kindBranches(id, group, { groupedByLeg: true });
+      if (path || canUpload) children.unshift(matchVideoRow(parentId, videoLeg, path, canUpload));
+      branches.push(branch(id, leg, children, {
         type: "leg", openByDefault: true,
       }));
     }
     return branches.concat(kindBranches(parentId, withoutLeg));
   }
 
-  function renderTree(items, orderedCampaigns) {
+  function matchVideoRow(projectId, leg, path, canUpload) {
+    const row = document.createElement("li");
+    row.className = "library-item library-match-video";
+    const icon = document.createElement("span");
+    icon.className = "library-video-icon";
+    icon.setAttribute("aria-hidden", "true");
+    const label = document.createElement("strong");
+    label.className = "library-item-name";
+    label.textContent = translate("Fichier vidéo");
+    label.title = path?.at(-1) ?? "";
+    row.append(icon, label);
+    if (canUpload) {
+      const upload = document.createElement("button");
+      upload.type = "button";
+      upload.className = "btn-secondary";
+      upload.textContent = translate("Importer un fichier");
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "video/*,.mp4,.m4v,.mkv,.webm,.mov,.avi,.mpg,.mpeg,.ts,.m2ts,.mts,.wmv";
+      input.hidden = true;
+      upload.addEventListener("click", () => input.click());
+      input.addEventListener("change", () => {
+        const file = input.files[0];
+        input.value = "";
+        if (file) uploadMatchVideo(projectId, leg, file);
+      });
+      row.append(upload, input);
+    }
+    if (path) {
+      const preview = document.createElement("button");
+      preview.type = "button";
+      preview.className = "btn-secondary";
+      preview.textContent = "▶";
+      preview.title = translate(leg === "aller" ? "Voir le match aller" : "Voir le match retour");
+      preview.setAttribute("aria-label", preview.title);
+      preview.addEventListener("click", () => associateMatchVideo(projectId, leg));
+      row.append(preview);
+    }
+    return row;
+  }
+
+  function renderTree(items, groups) {
     const sections = [];
     const active = projects.get(activeProjectId);
     const campaignNodes = [];
     const orderedProjects = [...projects.values()].sort(compareProjectsByRound);
-    for (const owner of orderedCampaigns) {
-      if (owner.archived && !archives.checked) continue;
+    for (const [key, owners] of groups) {
+      const visibleOwners = owners.filter((owner) => !owner.archived || archives.checked);
+      const ownersById = new Map(visibleOwners.map((owner) => [owner.id, owner]));
       const nodes = [];
       for (const project of orderedProjects) {
-        if (project.campaignId !== owner.id || isProjectArchived(project) !== archives.checked) continue;
+        const owner = ownersById.get(project.campaignId);
+        if (!owner || isProjectArchived(project) !== archives.checked) continue;
         const entries = items.filter((item) => item.projectId === project.id);
-        const opponent = projectOpponent(project, owner);
-        let activate;
-        if (!archives.checked) {
-          activate = document.createElement("button");
-          activate.type = "button";
-          activate.className = "btn-secondary library-activate-project";
-          activate.textContent = translate(active === project ? "Activé" : "Activer");
-          activate.setAttribute("aria-label", translate(active === project ? "Match actif" : "Activer le match"));
-          activate.setAttribute("aria-pressed", String(active === project));
-          activate.disabled = active === project;
-          activate.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            schedule(() => useProject(project));
+        const activate = document.createElement("button");
+        activate.type = "button";
+        activate.className = "btn-secondary library-activate-project";
+        activate.classList.toggle("library-activate-archived", archives.checked);
+        activate.textContent = translate(active === project ? "Activé" : "Activer");
+        activate.setAttribute("aria-label", translate(active === project ? "Match actif" : "Activer le match"));
+        activate.setAttribute("aria-pressed", String(active === project));
+        activate.disabled = active === project;
+        activate.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          schedule(async () => {
+            if (isProjectArchived(project)) {
+              if (campaigns.get(project.campaignId)?.archived) {
+                await updateCampaignArchived(project.campaignId, false);
+              }
+              if (project.archived) await updateProjectArchived(project.id, false);
+            }
+            await useProject(project);
           });
-        }
-        const commands = [["Renommer", "✎", () => renameProject(project.id)]];
+        });
+        const commands = [
+          ["Vidéos du match", "▸", () => associateMatchVideo(project.id)],
+          ["Renommer", "✎", () => renameProject(project.id)],
+        ];
         if (!owner.archived) commands.push(archiveCommand(project.archived, () => setProjectArchived(project.id, !project.archived)));
         commands.push(["Supprimer", "", () => deleteMatch(project.id)]);
-        nodes.push(branch(project.id, opponent, legBranches(project.id, entries), {
+        nodes.push(branch(project.id, project.name, legBranches(project.id, entries, project), {
           type: "project", subtitle: project.round, active: active === project,
           target: archives.checked ? undefined : project.id,
           commands, activate,
         }));
       }
-      const title = campaignTitle(owner);
-      const metadata = [owner.competition, owner.season].filter((value) => value && value !== title);
-      if (nodes.length || !!owner.archived === archives.checked) campaignNodes.push(branch(owner.id, title, nodes, {
-        type: "campaign", subtitle: [...new Set(metadata)].join(" · "),
-        commands: campaignCommands(owner, !!owner.archived === archives.checked),
-      }));
+      const matchingOwners = visibleOwners.filter((owner) => !!owner.archived === archives.checked);
+      if (!nodes.length && !matchingOwners.length) continue;
+      const primary = owners[0];
+      const title = primary.displayName || primary.competition || campaignLabel(primary);
+      const season = !primary.displayName && primary.competition ? primary.season : "";
+      const commands = [["Renommer", "✎", () => renameCampaign(primary.id)]];
+      commands.push(...matchingOwners.flatMap((owner) =>
+        campaignCommands(owner).map(([label, icon, action]) =>
+          [owners.length === 1 ? label : translate(label) + " · " + (owner.team || owner.name), icon, action])));
+      campaignNodes.push(branch(key, title, nodes, { type: "campaign", subtitle: season, commands }));
     }
     if (campaignNodes.length) sections.push(branch("__projects", translate(archives.checked ? "Archives" : "Campagnes"), campaignNodes));
     const unfiled = items.filter((item) => !item.projectId);
@@ -990,6 +1490,9 @@
     }
     const check = document.createElement("input");
     let displayName = item.name;
+    if (groupedByLeg && item.kind === "matchBanner") {
+      displayName = displayName.replace(/ · (First|Second) Leg$/, "");
+    }
     if (Object.hasOwn(thumbnailLabels, item.kind)) {
       const label = thumbnailLabels[item.kind];
       const tab = catalog[item.kind][2];
@@ -1013,34 +1516,28 @@
       if (detail && (groupedByLeg || isFinalPreset(item))) summary.textContent = detail;
       else if (leg && detail) summary.textContent = `${leg} · ${detail}`;
     }
-    if (movable) {
-      const grip = document.createElement("span");
-      grip.className = "library-grip";
-      grip.textContent = "⠿";
-      grip.title = translate("Glisser pour déplacer");
-      grip.setAttribute("aria-hidden", "true");
-      node.append(grip);
-    }
     if (movable) node.append(check);
-    const preview = item.entry?.data?.libraryPreview;
-    if (typeof preview === "string" && preview.startsWith("data:image/jpeg;base64,")) {
+    const endCard = item.kind === "endCard";
+    const preview = endCard ? item.entry.data?.image : item.entry?.data?.libraryPreview;
+    if (typeof preview === "string" && preview.startsWith(endCard ? "data:image/png;base64," : "data:image/jpeg;base64,")) {
       const image = document.createElement("img");
       image.src = preview;
       image.alt = "";
       image.loading = "lazy";
       node.append(image);
     }
-    if (globalStyleIcons[item.kind]) node.append(globalStyleIcon(item.kind));
+    if (!movable && globalStyleIcons[item.kind]) node.append(globalStyleIcon(item.kind));
     node.append(summary);
     appendActionsMenu(node, displayName, [
-      ["Ouvrir", "↗", () => openItem(item)],
+      ...(endCard ? [["Modifier", "✎", () => openEndCard(item)]] : [["Ouvrir", "↗", () => openItem(item)]]),
       ["Renommer", "✎", () => renameItem(item)],
       ["Dupliquer", "⧉", () => duplicate(item)],
       ["Supprimer", "", () => deleteItem(item)],
     ]);
     node.addEventListener("dblclick", (event) => {
       if (event.target.closest("button, input, .library-item-menu")) return;
-      openItem(item, { activateMatch: false });
+      if (endCard) openEndCard(item);
+      else openItem(item, { activateMatch: false });
     });
     return node;
   }
@@ -1072,6 +1569,15 @@
       });
       menu.append(button);
     }
+    positionLibraryPopover(trigger, menu);
+    context.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      if (!menu.matches(":popover-open")) trigger.click();
+    });
+    container.append(trigger, menu);
+  }
+
+  function positionLibraryPopover(trigger, menu) {
     menu.addEventListener("toggle", (event) => {
       if (event.newState !== "open") return;
       const anchor = trigger.getBoundingClientRect();
@@ -1080,13 +1586,8 @@
       const top = anchor.bottom + bounds.height + 12 <= window.innerHeight
         ? anchor.bottom + 4 : Math.max(8, anchor.top - bounds.height - 4);
       menu.style.top = `${top}px`;
-      menu.firstElementChild.focus({ preventScroll: true });
+      menu.querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
     });
-    context.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      if (!menu.matches(":popover-open")) trigger.click();
-    });
-    container.append(trigger, menu);
   }
 
   function deleteItem(item) {
@@ -1156,10 +1657,8 @@
     return archived ? ["Réactiver", "↶", action] : ["Archiver", "⇩", action];
   }
 
-  function campaignCommands(campaign, showArchiveAction) {
-    const commands = [["Renommer", "✎", () => renameCampaign(campaign.id)]];
-    if (!showArchiveAction) return commands;
-    commands.push(archiveCommand(campaign.archived, () => setCampaignArchived(campaign.id, !campaign.archived)));
+  function campaignCommands(campaign) {
+    const commands = [archiveCommand(campaign.archived, () => setCampaignArchived(campaign.id, !campaign.archived))];
     if (campaign.archived) {
       commands.push(["Supprimer", "", () => deleteArchivedCampaign(campaign.id)]);
     }
@@ -1202,7 +1701,7 @@
     try {
       const [, , tab, inputId, open] = catalog[item.kind];
       if (open) {
-        open(structuredClone(item.entry));
+        await open(structuredClone(item.entry));
       } else {
         const data = structuredClone(item.entry.data);
         for (const [layer, details] of Object.entries(data.layers)) {
@@ -1215,7 +1714,9 @@
           }
         }
         if (canApply && !canApply()) return;
-        if (!await thumbnailEditors.get(tab).restoreLibraryPreset(data, canApply)) return;
+        if (!await thumbnailEditors.get(tab).restoreLibraryPreset(data, {
+          competitionOnly: catalog[item.kind][5], canApply,
+        })) return;
       }
       const project = projects.get(item.projectId);
       if (thumbnailKinds.get(tab) === item.kind) thumbnailProjects.set(tab, item.projectId);
@@ -1347,8 +1848,8 @@
   function renameCampaign(id) {
     const campaign = campaigns.get(id);
     if (!campaign) return;
-    const displayName = prompt(translate("Nouveau nom de la campagne"), campaignTitle(campaign))?.trim();
-    if (!displayName || displayName === campaignTitle(campaign)) return;
+    const displayName = prompt(translate("Nouveau nom de la campagne"), campaignLabel(campaign))?.trim();
+    if (!displayName || displayName === campaignLabel(campaign)) return;
     return schedule(async () => {
       const current = campaigns.get(id);
       if (!current) return;
@@ -1362,24 +1863,22 @@
   function renameProject(id) {
     const project = projects.get(id);
     if (!project) return;
-    const currentOpponent = projectOpponent(project, campaigns.get(project.campaignId));
-    const opponent = prompt(translate("Nouveau nom affiché pour le match"), currentOpponent)?.trim();
-    if (!opponent || opponent === currentOpponent) return;
+    const name = prompt(translate("Nouveau nom affiché pour le match"), project.name)?.trim();
+    if (!name || name === project.name) return;
     return schedule(async () => {
       const current = projects.get(id);
       if (!current) return;
-      const { team } = campaigns.get(current.campaignId);
       const { round, archived } = current;
-      const name = team ? [team, opponent].join(" – ") : opponent;
       const duplicate = [...projects.values()].some((other) => other.id !== id &&
-        other.campaignId === current.campaignId && other.name.toLowerCase() === name.toLowerCase() &&
+        campaignKey(campaigns.get(other.campaignId)) === campaignKey(campaigns.get(current.campaignId)) &&
+        other.name.toLowerCase() === name.toLowerCase() &&
         other.round.toLowerCase() === round.toLowerCase());
       if (duplicate) {
         resultMessage = "Un match porte déjà ce nom pour ce tour.";
         return;
       }
-      await writeJson(current.directory, "projet.json", { name, round, opponent, archived });
-      Object.assign(current, { name, opponent, inferred: false });
+      await writeProject(current, { name, round, opponent: "", archived });
+      Object.assign(current, { name, opponent: "", inferred: false });
       for (const { item } of records.values()) {
         if (item.projectId === id) item.match = name;
       }
@@ -1404,10 +1903,12 @@
     });
   }
 
+  positionLibraryPopover(newLibraryItem, newLibraryOptions);
   for (const [button, dialog] of [[newCampaign, campaignDialog], [newMatch, matchDialog]]) {
     const feedback = dialog.querySelector(".library-create-status");
     button.addEventListener("click", () => {
       feedback.textContent = "";
+      if (newLibraryOptions.matches(":popover-open")) newLibraryOptions.hidePopover();
       dialog.showModal();
     });
     dialog.querySelector("[data-library-dialog-cancel]").addEventListener("click", () => dialog.close());
@@ -1429,24 +1930,127 @@
     submit.disabled = false;
   }
 
+  const endCardDialog = $("library-end-card-dialog");
+  const endCardForm = $("library-end-card-form");
+  let editingEndCardId;
+
+  const endCardVideoTypes = {
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    webm: "video/webm",
+  };
+
+  function endCardVideoType(file) {
+    return endCardVideoTypes[file?.name.match(/\.(mp4|mov|webm)$/i)?.[1].toLowerCase()];
+  }
+
+  function updateEndCardDuration() {
+    const file = endCardForm.elements.visual.files[0];
+    const data = records.get(editingEndCardId)?.item.entry.data;
+    endCardForm.elements.duration.disabled = Boolean(file ? endCardVideoType(file) : data?.video);
+  }
+
+  function openEndCard(item) {
+    if (endCardDialog.open) return;
+    editingEndCardId = item?.id;
+    const data = item?.entry.data;
+    endCardForm.reset();
+    endCardForm.elements.namedItem("name").value = item?.name ?? "";
+    endCardForm.elements.visual.required = !data?.image && !data?.video;
+    endCardForm.elements.duration.value = data?.duration ?? 8;
+    updateEndCardDuration();
+    endCardForm.elements.gain.value = data?.gain ?? -8;
+    $("library-end-card-remove-music").hidden = !data?.music;
+    $("library-end-card-heading").textContent = translate(item ? "Modifier la carte de fin" : "Nouvelle carte de fin");
+    endCardForm.querySelector(".library-create-status").textContent = "";
+    endCardDialog.showModal();
+  }
+
+  function packEndCardAsset(file, type = file.type || "application/octet-stream") {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(new Blob([file], { type }));
+    });
+  }
+
+  $("library-new-end-card").addEventListener("click", () => openEndCard());
+  endCardForm.elements.visual.addEventListener("change", updateEndCardDuration);
+  endCardDialog.querySelector("[data-library-dialog-cancel]").addEventListener("click", () => endCardDialog.close());
+  endCardForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const fields = new FormData(endCardForm);
+    const name = fields.get("name").trim();
+    const visual = fields.get("visual");
+    const videoType = endCardVideoType(visual);
+    const music = fields.get("music");
+    const duration = Number(endCardForm.elements.duration.value);
+    const id = editingEndCardId;
+    submitCreation(endCardForm, async () => {
+      const previous = records.get(id);
+      const existing = findRecord("endCard", name, "");
+      if (!name || (id && !previous)) return false;
+      if (existing && existing.item.id !== id) {
+        resultMessage = "Une carte de fin porte déjà ce nom.";
+        return false;
+      }
+      if (visual.size > 15 * 1024 ** 2 || music.size > 15 * 1024 ** 2) {
+        resultMessage = "Chaque fichier de la carte de fin doit faire au maximum 15 Mo.";
+        return false;
+      }
+      if (visual.size && !videoType) {
+        const signature = new Uint8Array(await visual.slice(0, 8).arrayBuffer());
+        if (signature.join(",") !== "137,80,78,71,13,10,26,10") {
+          resultMessage = "Sélectionne une image PNG ou une vidéo MP4, MOV ou WebM.";
+          return false;
+        }
+      }
+      const old = previous?.item.entry.data;
+      if (!visual.size && !old?.image && !old?.video) {
+        resultMessage = "Sélectionne une image PNG ou une vidéo MP4, MOV ou WebM.";
+        return false;
+      }
+      const media = visual.size
+        ? await packEndCardAsset(visual, videoType || "image/png")
+        : old.video || old.image;
+      const mediaKey = (visual.size ? videoType : old.video) ? "video" : "image";
+      const data = {
+        [mediaKey]: media,
+        music: music.size ? await packEndCardAsset(music) : fields.has("removeMusic") ? undefined : old?.music,
+        duration,
+        gain: Number(fields.get("gain")),
+      };
+      if (previous) {
+        await persist({ ...previous.item, name, entry: { name, data }, updatedAt: new Date().toISOString() }, previous);
+      } else {
+        await syncEntry("endCard", { name, data }, { portable: true });
+      }
+      return true;
+    });
+  });
+
   $("library-create").addEventListener("submit", (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const fields = Object.fromEntries(new FormData(form));
-    const team = fields.team.trim();
     const competition = fields.competition.trim();
     const season = fields.season.trim();
-    if (!team || !competition || !season) return;
-    const name = [team, competition, season].join(" · ");
+    if (!competition || !season) return;
+    const metadata = { name: [competition, season].join(" "), competition, season, archived: false };
+    const key = campaignKey(metadata);
     submitCreation(form, async () => {
-      const id = readableName(name) + "-" + crypto.randomUUID().slice(0, 8);
+      if ([...campaigns.values()].some((campaign) => campaignKey(campaign) === key)) {
+        resultMessage = "Une campagne existe déjà pour cette compétition et cette saison.";
+        return;
+      }
+      const id = readableName(metadata.name) + "-" + crypto.randomUUID().slice(0, 8);
       const directory = await folder(connection.directory, ["Campagnes", id], true);
-      const metadata = { name, team, competition, season, archived: false };
       await writeJson(directory, "campagne.json", metadata);
       campaigns.set(id, { ...metadata, id, directory });
       archives.checked = false;
       expandedBranches.set("__projects", true);
-      expandedBranches.set(id, true);
+      expandedBranches.set(key, true);
       selectView($("library-view-campaigns"));
       projectCampaign.value = id;
       return true;
@@ -1454,40 +2058,44 @@
   });
 
   function setCampaignArchived(campaignId, archived) {
-    schedule(async () => {
-      const campaign = campaigns.get(campaignId);
-      if (!campaign || campaign.archived === archived) return;
-      const { id, directory, ...metadata } = campaign;
-      metadata.archived = archived;
-      await writeJson(directory, "campagne.json", metadata);
-      campaigns.set(id, { ...metadata, id, directory });
-      if (archived && projects.get(activeProjectId)?.campaignId === id) await useProject(null);
-      if (!archived) {
-        archives.checked = false;
-        expandedBranches.set("__projects", true);
-        expandedBranches.set(id, true);
-      }
-      resultMessage = archived ? "Campagne archivée." : "Campagne réactivée.";
-    });
+    schedule(() => updateCampaignArchived(campaignId, archived));
+  }
+
+  async function updateCampaignArchived(campaignId, archived) {
+    const campaign = campaigns.get(campaignId);
+    if (!campaign || campaign.archived === archived) return;
+    const { id, directory, ...metadata } = campaign;
+    metadata.archived = archived;
+    await writeJson(directory, "campagne.json", metadata);
+    campaigns.set(id, { ...metadata, id, directory });
+    if (archived && projects.get(activeProjectId)?.campaignId === id) await useProject(null);
+    if (!archived) {
+      archives.checked = false;
+      expandedBranches.set("__projects", true);
+      expandedBranches.set(campaignKey(campaign), true);
+    }
+    resultMessage = archived ? "Campagne archivée." : "Campagne réactivée.";
   }
 
   function setProjectArchived(projectId, archived) {
-    schedule(async () => {
-      const project = projects.get(projectId);
-      if (!project || project.archived === archived || campaigns.get(project.campaignId)?.archived) return;
-      const { name, round, opponent } = project;
-      await writeJson(project.directory, "projet.json", { name, round, opponent, archived });
-      project.archived = archived;
-      delete project.inferred;
-      if (archived && activeProjectId === projectId) await useProject(null);
-      if (!archived) {
-        archives.checked = false;
-        expandedBranches.set("__projects", true);
-        expandedBranches.set(project.campaignId, true);
-        expandedBranches.set(projectId, true);
-      }
-      resultMessage = archived ? "Match archivé." : "Match réactivé.";
-    });
+    schedule(() => updateProjectArchived(projectId, archived));
+  }
+
+  async function updateProjectArchived(projectId, archived) {
+    const project = projects.get(projectId);
+    if (!project || project.archived === archived || campaigns.get(project.campaignId)?.archived) return;
+    const { name, round, opponent } = project;
+    await writeProject(project, { name, round, opponent, archived });
+    project.archived = archived;
+    delete project.inferred;
+    if (archived && activeProjectId === projectId) await useProject(null);
+    if (!archived) {
+      archives.checked = false;
+      expandedBranches.set("__projects", true);
+      expandedBranches.set(campaignKey(campaigns.get(project.campaignId)), true);
+      expandedBranches.set(projectId, true);
+    }
+    resultMessage = archived ? "Match archivé." : "Match réactivé.";
   }
 
   $("library-create-project").addEventListener("submit", (event) => {
@@ -1495,21 +2103,27 @@
     const form = event.currentTarget;
     const fields = new FormData(form);
     const round = fields.get("round").trim();
-    const opponent = fields.get("opponent").trim();
+    const home = fields.get("home").trim();
+    const away = fields.get("away").trim();
     const campaign = campaigns.get(projectCampaign.value);
-    if (!round || !opponent || !campaign || campaign.archived) return;
-    const name = campaign.team ? [campaign.team, opponent].join(" – ") : opponent;
+    if (!round || !home || !away || !campaign || campaign.archived) return;
+    const name = [home, away].join(" – ");
+    const key = campaignKey(campaign);
     submitCreation(form, async () => {
       const current = campaigns.get(campaign.id);
       if (!current || current.archived) return;
-      const project = await ensureProject(current, name, round, opponent);
-      if (project.archived) {
+      const matches = [...projects.values()].filter((project) =>
+        campaignKey(campaigns.get(project.campaignId)) === key &&
+        project.name.toLowerCase() === name.toLowerCase() && project.round.toLowerCase() === round.toLowerCase());
+      const project = matches.find((entry) => !isProjectArchived(entry)) ?? matches[0] ??
+        await ensureProject(current, name, round);
+      if (isProjectArchived(project)) {
         resultMessage = "Ce match est dans les archives. Réactive-le pour l’utiliser.";
         return;
       }
       await useProject(project);
       archives.checked = false;
-      expandedBranches.set(campaign.id, true);
+      expandedBranches.set(key, true);
       expandedBranches.set("__projects", true);
       selectView($("library-view-campaigns"));
       return true;
@@ -1545,7 +2159,7 @@
       archives.checked = false;
       if (project) {
         expandedBranches.set("__projects", true);
-        expandedBranches.set(project.campaignId, true);
+        expandedBranches.set(campaignKey(campaigns.get(project.campaignId)), true);
         expandedBranches.set(project.id, true);
       } else {
         expandedBranches.set("__unfiled", true);
@@ -1643,20 +2257,39 @@
     });
   }
 
+  campaignSort.addEventListener("change", () => {
+    expandedBranches.set("__projects", true);
+    render();
+  });
   archives.addEventListener("input", () => {
     expandedBranches.set("__projects", true);
     resultMessage = undefined;
     render();
   });
-  function setAllBranchesOpen(open) {
-    if (!open) expandedBranches.clear();
+  function collapseAllBranches() {
+    expandedBranches.clear();
     for (const branch of results.querySelectorAll(".library-branch")) {
-      expandedBranches.set(branch.dataset.branchId, open);
-      branch.open = open;
+      expandedBranches.set(branch.dataset.branchId, false);
+      branch.open = false;
     }
   }
-  $("library-collapse-all").addEventListener("click", () => setAllBranchesOpen(false));
-  $("library-expand-all").addEventListener("click", () => setAllBranchesOpen(true));
+
+  function expandNextLevel() {
+    let level = [...results.querySelectorAll(":scope > li > .library-branch")];
+    while (level.length) {
+      const closed = level.filter((branch) => !branch.open);
+      if (closed.length) {
+        for (const branch of closed) {
+          expandedBranches.set(branch.dataset.branchId, true);
+          branch.open = true;
+        }
+        return;
+      }
+      level = level.flatMap((branch) => [...branch.querySelectorAll(":scope > .library-tree-children > li > .library-branch")]);
+    }
+  }
+  $("library-collapse-all").addEventListener("click", collapseAllBranches);
+  $("library-expand-next").addEventListener("click", expandNextLevel);
   const dock = $("library-dock");
   const dockToggle = $("library-dock-toggle");
   const workspace = dock.closest(".workspace");
@@ -1664,15 +2297,30 @@
   const viewHome = libraryView.parentElement;
   let dockRequested = false;
 
+  function revealActiveMatchInDock() {
+    const project = projects.get(activeProjectId);
+    if (!project || isProjectArchived(project)) return;
+    const campaign = campaigns.get(project.campaignId);
+    if (!campaign) return;
+    archives.checked = false;
+    expandedBranches.set("__projects", true);
+    expandedBranches.set(campaignKey(campaign), true);
+    expandedBranches.set(project.id, true);
+    if (currentView === "campaigns") render();
+    else selectView($("library-view-campaigns"));
+  }
+
   function syncLibraryDock(tab) {
     const inLibrary = tab === "library";
     const dockOpen = dockRequested && !inLibrary;
+    const opening = dockOpen && dock.inert;
     dockToggle.setAttribute("aria-expanded", String(dockOpen));
     dock.inert = !dockOpen;
     workspace.classList.toggle("library-only", inLibrary);
     workspace.classList.toggle("has-library-dock", dockOpen);
     const viewContainer = inLibrary ? viewHome : dock;
     if (libraryView.parentElement !== viewContainer) viewContainer.append(libraryView);
+    if (opening) revealActiveMatchInDock();
   }
 
   dockToggle.addEventListener("click", () => {
@@ -1769,7 +2417,7 @@
     await migrate();
     for (const project of projects.values()) {
       if (!project.inferred) continue;
-      await writeJson(project.directory, "projet.json", { name: project.name, round: project.round });
+      await writeProject(project);
       delete project.inferred;
     }
     for (const previous of [...records.values()]) {
@@ -1780,6 +2428,7 @@
         entry: { ...item.entry, name }, updatedAt: new Date().toISOString() }, previous);
     }
     await flushPending();
+    if (!dock.inert) revealActiveMatchInDock();
     setStatus("Bibliothèque connectée à « {folder} ».");
   }
 
@@ -1838,8 +2487,9 @@
   }
 
   document.addEventListener("ucl-presets-changed", (event) => {
-    const { inputId, name, projectId, entry: snapshotEntry } = event.detail ?? {};
-    const kind = Object.keys(catalog).find((key) => catalog[key][3] === inputId);
+    const { inputId, name, projectId, entry: snapshotEntry, kind: requestedKind } = event.detail ?? {};
+    const kind = requestedKind ?? Object.keys(catalog).find((key) => catalog[key][3] === inputId);
+    if (catalog[kind]?.[3] !== inputId) return;
     if (!kind) return;
     const scope = projectId ?? activeProjectId;
     const tab = catalog[kind][2];

@@ -49,6 +49,7 @@
     replayFallback: "La comparaison des ralentis a échoué. Les suggestions ont été conservées.",
     invalidScoreRegion: "Sélectionne une zone valide autour des deux chiffres du score.",
     invalidTracking: "Le suivi exige une zone valide et un extrait de deux minutes maximum.",
+    graphicUnavailable: "Impossible de charger le graphique enregistré.",
     busy: "Une opération est déjà en cours.",
     operationFailed: "L’opération a échoué. Réessaie avec cette vidéo ou un autre fichier.",
     enhancementFailed: "Real-ESRGAN n’a pas pu améliorer la vidéo. Vérifie qu’un GPU compatible Vulkan est disponible.",
@@ -75,6 +76,19 @@
   let selectedClip;
   let expandedClip;
   const clipDetails = new WeakMap();
+  const graphicTrack = $("graphics-track");
+  const graphicSource = $("graphic-source");
+  const graphicPicker = $("graphic-picker");
+  const montageSaveProgress = $("montage-save-progress");
+  const montageSaveStatus = $("montage-save-status");
+  let graphicChoice;
+  let graphicPickerSignature;
+  const graphicList = $("graphic-list");
+  const graphicEditors = new WeakMap();
+  const graphicImages = new Map();
+  let graphics = [];
+  let selectedGraphic;
+  let loadingGraphic = false;
   let timelineZoom = 1;
   let timelineDrag;
   let scoreRegion;
@@ -124,14 +138,58 @@
       .map((part) => String(part).padStart(2, "0")).join(":");
   }
 
+  function minuteTime(seconds, precision = 2) {
+    const units = 10 ** precision;
+    const time = Math.round(Math.max(0, seconds) * units);
+    const remainder = String(time % (60 * units)).padStart(2 + precision, "0");
+    return `${String(Math.floor(time / (60 * units))).padStart(2, "0")}:${remainder.slice(0, 2)}.${remainder.slice(2)}`;
+  }
+
+  function parseMinuteTime(value) {
+    const text = value.trim().replace(",", ".");
+    const time = /^(\d+):([0-5]?\d(?:\.\d+)?)$/.exec(text);
+    if (time) return Number(time[1]) * 60 + Number(time[2]);
+    return /^\d+(?:\.\d+)?$/.test(text) ? Number(text) * 60 : NaN;
+  }
+
+  function stepperField(title, read, write, { time = false, step = 1, precision = 2, min = 0, max }) {
+    const field = document.createElement("label");
+    field.className = "field";
+    const text = document.createElement("span");
+    text.textContent = translate(title);
+    const input = document.createElement("input");
+    input.type = time ? "text" : "number";
+    input.inputMode = "decimal";
+    if (time) input.placeholder = `mm:ss.${"s".repeat(precision)}`;
+    const refresh = () => { input.value = time ? minuteTime(read(), precision) : read(); };
+    const set = (value) => {
+      if (Number.isFinite(value)) write(Math.max(min, Math.min(max(), Number(value.toFixed(precision)))));
+      refresh();
+    };
+    const stepper = document.createElement("div");
+    stepper.className = "number-stepper";
+    const button = (symbol, adjust, label) => {
+      const control = makeButton(symbol, () => set(read() + adjust));
+      control.className = "stepper-btn";
+      control.setAttribute("aria-label", `${translate(label)} · ${translate(title)}`);
+      return control;
+    };
+    input.addEventListener("change", () => set(time ? parseMinuteTime(input.value) : input.valueAsNumber));
+    stepper.append(button("−", -step, "Diminuer"), input, button("+", step, "Augmenter"));
+    field.append(text, stepper);
+    refresh();
+    return { field, set, refresh };
+  }
+
   function valid({ start, end }) {
     return start >= 0 && end <= duration + 0.01 && end - start >= 0.1;
   }
 
   function updateControls() {
     const kept = clips.filter((clip) => clip.keep).map(exportClip);
-    const restoring = busy || loadingAnalysis;
+    const restoring = busy || loadingAnalysis || loadingGraphic;
     updateMatchVideoButton();
+    updateGraphicControls();
     whisper.disabled = busy || !service?.whisper;
     replayToggle.disabled = restoring || !service?.replays;
     scoreButton.disabled = restoring || !service?.scoreboard || !Number.isFinite(video.duration);
@@ -257,6 +315,7 @@
     playhead.style.left = `${duration ? video.currentTime / duration * 100 : 0}%`;
     $("clock").value = `${clock(video.currentTime)} / ${clock(duration)}`;
     renderTrackedBox();
+    renderGraphicPreview();
   }
 
   function seek(time) {
@@ -331,8 +390,384 @@
       }
     }
     clipTrack.style.height = `${Math.max(26, lanes.length * 24 + 4)}px`;
+    renderGraphicTrack();
     timestamps();
   }
+
+  function updateGraphicControls() {
+    const groups = window.matchPresetMenus?.listMontageGraphics() ?? [];
+    const signature = JSON.stringify(groups);
+    if (signature !== graphicPickerSignature) {
+      graphicPickerSignature = signature;
+      renderGraphicPicker(groups);
+    }
+    const controls = $("graphics-controls");
+    controls.inert = busy || loadingAnalysis || loadingGraphic;
+    graphicSource.disabled = !groups.length;
+    $("graphic-add").disabled = !graphicChoice || duration < 0.2 || graphics.length >= 16;
+  }
+
+  function renderGraphicPicker(groups) {
+    const previous = graphicChoice?.id;
+    const options = [];
+    const pick = (choice) => {
+      graphicChoice = choice;
+      const text = $("graphic-source-value");
+      text.textContent = choice?.name ?? "Saved Graphic";
+      text.title = choice?.label ?? text.textContent;
+      graphicSource.querySelector("[aria-hidden='true']")?.remove();
+      if (choice) graphicSource.prepend(window.matchPresetMenus.graphicIcon(choice.kind));
+      for (const [entry, button] of options) button.setAttribute("aria-pressed", String(entry === choice));
+    };
+    graphicPicker.replaceChildren(...groups.map(({ kind, label, items }) => {
+      const group = document.createElement("details");
+      group.name = "saved-graphic-groups";
+      const heading = document.createElement("summary");
+      heading.className = "highlights-graphic-group";
+      heading.append(window.matchPresetMenus.graphicIcon(kind), label);
+      group.append(heading);
+      for (const { id, name, leg } of items) {
+        const duplicateName = items.some((other) => other.id !== id && other.name === name);
+        const optionLabel = duplicateName && leg ? `${name} · ${translate(leg)}` : name;
+        const choice = { id, kind, name, label: `${label} · ${optionLabel}` };
+        const button = makeButton(optionLabel, () => {
+          pick(choice);
+          updateGraphicControls();
+          graphicPicker.hidePopover();
+          graphicSource.focus();
+        });
+        options.push([choice, button]);
+        group.append(button);
+      }
+      return group;
+    }));
+    pick(options.find(([choice]) => choice.id === previous)?.[0]);
+    if (!options.length && graphicPicker.matches(":popover-open")) graphicPicker.hidePopover();
+  }
+
+  graphicPicker.addEventListener("toggle", (event) => {
+    if (event.newState !== "open") return;
+    for (const group of graphicPicker.querySelectorAll("details")) group.open = false;
+    if (window.innerHeight - graphicSource.getBoundingClientRect().bottom < 180) {
+      graphicSource.scrollIntoView({ block: "center" });
+    }
+    positionGraphicPicker();
+    graphicPicker.querySelector("summary")?.focus({ preventScroll: true });
+  });
+
+  function positionGraphicPicker() {
+    if (!graphicPicker.matches(":popover-open")) return;
+    const anchor = graphicSource.getBoundingClientRect();
+    graphicPicker.style.left = `${anchor.left}px`;
+    graphicPicker.style.width = `${anchor.width}px`;
+    graphicPicker.style.top = `${anchor.bottom + 4}px`;
+    graphicPicker.style.maxHeight = `min(320px, 55vh, ${Math.max(0, window.innerHeight - anchor.bottom - 12)}px)`;
+  }
+  document.addEventListener("scroll", positionGraphicPicker, true);
+  window.addEventListener("resize", positionGraphicPicker);
+  graphicPicker.addEventListener("keydown", (event) => {
+    if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+    const buttons = [...graphicPicker.querySelectorAll("summary, details[open] > button")];
+    const index = buttons.indexOf(event.target);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1
+      : (index + (event.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length;
+    event.preventDefault();
+    buttons[next]?.focus();
+  });
+
+  function positionGraphic(block, graphic) {
+    block.style.left = `${graphic.at / duration * 100}%`;
+    block.style.width = `${graphic.length / duration * 100}%`;
+  }
+
+  function renderGraphicTrack() {
+    graphicTrack.replaceChildren();
+    graphicTrack.hidden = !graphics.length || !duration;
+    if (graphicTrack.hidden) return;
+    const lanes = [];
+    for (const graphic of [...graphics].sort((a, b) => a.at - b.at)) {
+      let lane = lanes.findIndex((end) => end <= graphic.at);
+      if (lane === -1) lane = lanes.length;
+      lanes[lane] = graphic.at + graphic.length;
+      const block = document.createElement("div");
+      block.className = "highlights-timeline-clip highlights-timeline-graphic";
+      block.dataset.graphic = graphic.slot;
+      block.dataset.selected = graphic === selectedGraphic;
+      block.style.top = `${lane * 24 + 3}px`;
+      block.title = graphic.label;
+      positionGraphic(block, graphic);
+      const button = makeButton(graphic.label, () => {
+        selectGraphic(graphic);
+        seek(graphic.at);
+      });
+      button.className = "highlights-clip-target";
+      const handle = makeButton("Redimensionner le graphique", () => selectGraphic(graphic));
+      handle.className = "highlights-trim";
+      handle.dataset.graphicResize = "";
+      handle.setAttribute("aria-label", handle.textContent);
+      handle.textContent = "";
+      block.append(button, handle);
+      graphicTrack.append(block);
+    }
+    graphicTrack.style.height = `${lanes.length * 24 + 4}px`;
+  }
+
+  const graphicTransitions = [
+    ["none", "Aucune"], ["vertical", "Volet vertical"], ["horizontal", "Volet horizontal"],
+    ["slide-left-right", "Store de gauche à droite"], ["slide-top-down", "Store de haut en bas"],
+    ["slide-bottom-up", "Store de bas en haut"], ["glow", "Halo"], ["lightning", "Éclair"], ["fade", "Fondu"],
+  ];
+  const graphicTransitionDuration = 0.625;
+  const graphicWipeFeather = 1.8;
+  const graphicWipeEdges = {
+    "slide-left-right": ["right", "left"],
+    "slide-top-down": ["bottom", "top"],
+    "slide-bottom-up": ["top", "bottom"],
+  };
+  const graphicDefaults = {
+    matchScore: { length: 5, x: 5, y: 5, size: 30, intro: "none", outro: "none" },
+    matchBanner: { length: 5, x: 5, y: 95, size: 35, intro: "slide-left-right", outro: "slide-left-right" },
+    showdown: { length: 5, x: 50, y: 50, size: 80, intro: "slide-top-down", outro: "slide-bottom-up" },
+    lineup: { length: 10, x: 50, y: 50, size: 80, intro: "slide-top-down", outro: "slide-bottom-up",
+      teamIntro: "glow", teamOutro: "slide-bottom-up" },
+  };
+
+  function graphicLayers(graphic) {
+    if (!graphic.teamSlot) return [graphic];
+    const delay = graphic.intro === "none" ? 0 : graphicTransitionDuration;
+    const layers = [{ ...graphic, mode: "background" }];
+    if (graphic.length > delay) {
+      layers.push({ ...graphic, slot: graphic.teamSlot, mode: "team", at: graphic.at + delay,
+        length: graphic.length - delay, intro: graphic.teamIntro, outro: graphic.teamOutro });
+    }
+    return layers;
+  }
+
+  function graphicTransitionRow(graphic, definitions) {
+    const row = document.createElement("div");
+    row.className = "row highlights-graphic-transitions";
+    for (const [key, title] of definitions) {
+      const label = document.createElement("label");
+      label.className = "field";
+      const text = document.createElement("span");
+      text.textContent = translate(title);
+      const select = document.createElement("select");
+      select.append(...graphicTransitions.map(([value, label]) => new Option(translate(label), value)));
+      const fallback = graphic.motion === "fade" ? "fade" : "none";
+      select.value = graphic[key] ?? fallback;
+      select.addEventListener("change", () => {
+        graphic[key] = select.value;
+        for (const [other] of definitions) graphic[other] ??= fallback;
+        graphicsChanged();
+      });
+      label.append(text, select);
+      row.append(label);
+    }
+    return row;
+  }
+
+  function renderGraphicEditors() {
+    graphicList.replaceChildren();
+    for (const graphic of graphics) {
+      const row = document.createElement("li");
+      const details = document.createElement("details");
+      details.name = "highlights-graphic-editors";
+      details.open = graphic === selectedGraphic;
+      details.addEventListener("toggle", () => {
+        if (!details.isConnected) return;
+        if (details.open && graphic !== selectedGraphic) selectGraphic(graphic);
+        else if (!details.open && graphic === selectedGraphic) {
+          selectedGraphic = undefined;
+          renderGraphicTrack();
+        }
+      });
+      const summary = document.createElement("summary");
+      const caption = document.createElement("span");
+      caption.className = "highlights-clip-caption";
+      const name = document.createElement("span");
+      name.textContent = name.title = graphic.label;
+      const time = document.createElement("span");
+      caption.append(name, time);
+      const remove = makeButton("Retirer", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        removeGraphic(graphic);
+      });
+      remove.classList.add("highlights-clip-remove");
+      summary.append(caption, remove);
+      details.append(summary);
+      const timing = document.createElement("div");
+      timing.className = "row";
+      const placement = document.createElement("div");
+      placement.className = "row row-3";
+      const fields = [
+        ["at", "Début (min:s)", timing, { time: true, step: 0.1, max: () => Math.max(0, duration - 0.2) }],
+        ["length", "Durée (min:s)", timing, { time: true, step: 0.1, min: 0.2, max: () => Math.max(0.2, duration - graphic.at) }],
+        ["x", "Position X (%)", placement, { max: () => 100 }],
+        ["y", "Position Y (%)", placement, { max: () => 100 }],
+        ["size", "Taille (%)", placement, { min: 5, max: () => 100 }],
+      ].map(([key, title, container, options]) => {
+        const field = stepperField(title, () => graphic[key], (value) => {
+          graphic[key] = value;
+          graphic.length = Math.max(0.2, Math.min(graphic.length, duration - graphic.at));
+          graphicsChanged();
+        }, options);
+        container.append(field.field);
+        return field;
+      });
+      const transitions = graphicTransitionRow(graphic, graphic.teamSlot
+        ? [["intro", "Entrée du fond"], ["outro", "Sortie du fond"]]
+        : [["intro", "Transition d’entrée"], ["outro", "Transition de sortie"]]);
+      details.append(timing, placement, transitions);
+      if (graphic.teamSlot) {
+        details.append(graphicTransitionRow(graphic, [
+          ["teamIntro", "Entrée de l’équipe"], ["teamOutro", "Sortie de l’équipe"],
+        ]));
+      }
+      row.append(details);
+      graphicList.append(row);
+      const refresh = () => {
+        time.textContent = ` · ${minuteTime(graphic.at)}`;
+        fields.forEach((field) => field.refresh());
+      };
+      graphicEditors.set(graphic, { details, refresh });
+      refresh();
+    }
+  }
+
+  function renderGraphicPreview() {
+    const overlay = $("graphic-preview");
+    if (!overlay.childElementCount) return;
+    const layers = graphics.flatMap(graphicLayers);
+    for (const image of [...overlay.children]) {
+      const index = layers.findIndex(({ slot }) => slot === image.dataset.slot);
+      const graphic = layers[index];
+      if (!graphic) { image.remove(); continue; }
+      const time = video.currentTime;
+      image.hidden = time < graphic.at || time >= graphic.at + graphic.length;
+      image.style.width = `${graphic.size}%`;
+      image.style.zIndex = index;
+      image.style.left = `${graphic.x}%`;
+      image.style.top = `${graphic.y}%`;
+      image.style.translate = `-${graphic.x}% -${graphic.y}%`;
+      image.style.maskImage = "";
+      image.style.filter = "";
+      image.style.opacity = "1";
+      if (graphic.intro !== undefined || graphic.outro !== undefined) {
+        const masks = [];
+        let opacity = 1, brightness = 1, glow = 0;
+        const phases = [[graphic.intro, time - graphic.at], [graphic.outro, graphic.at + graphic.length - time]];
+        for (const [phase, [effect, remaining]] of phases.entries()) {
+          if (remaining >= graphicTransitionDuration) continue;
+          const linear = Math.max(0, remaining / graphicTransitionDuration);
+          const progress = linear * linear * (3 - 2 * linear);
+          const cutoff = progress * (100 + graphicWipeFeather);
+          const edge = graphicWipeEdges[effect]?.[phase];
+          if (edge) {
+            masks.push(`linear-gradient(to ${edge}, black ${cutoff - graphicWipeFeather}%, transparent ${cutoff}%)`);
+          } else if (effect === "vertical" || effect === "horizontal") {
+            const direction = effect === "vertical" ? "bottom" : "right";
+            const outer = cutoff / 2;
+            const inner = Math.max(0, (cutoff - graphicWipeFeather) / 2);
+            masks.push(`linear-gradient(to ${direction}, transparent ${50 - outer}%, black ${50 - inner}%, black ${50 + inner}%, transparent ${50 + outer}%)`);
+          }
+          if (effect === "lightning") brightness += 4 * (1 - progress);
+          if (effect === "glow") glow += 4 * progress * (1 - progress);
+          if (effect === "fade" || effect === "lightning" || effect === "glow") opacity *= progress;
+        }
+        if (masks.length) image.style.maskImage = masks.join(", ");
+        if (brightness !== 1) image.style.filter = `brightness(${brightness})`;
+        if (glow) image.style.filter += ` drop-shadow(0 0 ${14 * glow}px rgb(225 245 255 / ${Math.min(1, glow)}))`;
+        image.style.opacity = opacity;
+      } else if (graphic.motion === "fade") {
+        const fade = Math.min(0.3, graphic.length / 3);
+        image.style.opacity = Math.max(0, Math.min(1, (time - graphic.at) / fade, (graphic.at + graphic.length - time) / fade));
+      }
+    }
+  }
+
+  async function graphicAsset(graphic) {
+    const cached = graphicImages.get(graphic.slot);
+    if (cached) return cached.blob;
+    const blob = await window.matchPresetMenus.renderMontageGraphic(graphic.recordId, graphic.mode);
+    if (!graphics.some(({ slot, teamSlot }) => slot === graphic.slot || teamSlot === graphic.slot)) return blob;
+    const url = URL.createObjectURL(blob);
+    graphicImages.set(graphic.slot, { blob, url });
+    const image = document.createElement("img");
+    image.dataset.slot = graphic.slot;
+    image.alt = "";
+    image.src = url;
+    $("graphic-preview").append(image);
+    renderGraphicPreview();
+    return blob;
+  }
+
+  function clearGraphicPreview() {
+    for (const { url } of graphicImages.values()) URL.revokeObjectURL(url);
+    graphicImages.clear();
+    $("graphic-preview").replaceChildren();
+  }
+
+  function selectGraphic(graphic) {
+    selectedGraphic = graphic;
+    $("graphics-controls").closest("details").open = true;
+    const editor = graphicEditors.get(graphic);
+    if (editor) editor.details.open = true;
+    updateGraphicControls();
+    for (const block of graphicTrack.children) block.dataset.selected = block.dataset.graphic === graphic.slot;
+    const layers = graphicLayers(graphic);
+    if (layers.some(({ slot }) => !graphicImages.has(slot)) && !loadingGraphic && !busy) {
+      loadingGraphic = true;
+      updateControls();
+      montageAssets({ graphics: layers }).catch(() => setStatus(messages.graphicUnavailable)).finally(() => {
+        loadingGraphic = false;
+        updateControls();
+      });
+    }
+  }
+
+  function graphicsChanged() {
+    invalidateExport();
+    renderGraphicTrack();
+    renderGraphicPreview();
+    updateGraphicControls();
+    graphics.forEach((graphic) => graphicEditors.get(graphic)?.refresh());
+  }
+
+  async function montageAssets(configuration, extra = {}) {
+    const assets = { ...extra };
+    try {
+      for (const graphic of configuration.graphics ?? []) assets[graphic.slot] = await graphicAsset(graphic);
+    } catch {
+      throw new Error(messages.graphicUnavailable);
+    }
+    return assets;
+  }
+
+  $("graphic-add").addEventListener("click", () => {
+    if (!graphicChoice || duration < 0.2 || graphics.length >= 16 || loadingGraphic || busy) return;
+    const at = Math.min(video.currentTime, duration - 0.2);
+    const defaults = graphicDefaults[graphicChoice.kind] ?? { length: 5, intro: "fade", outro: "fade" };
+    const graphic = { slot: `graphic-${crypto.randomUUID()}`, recordId: graphicChoice.id, label: graphicChoice.label,
+      x: 50, y: 15, size: 60, ...defaults, at, length: Math.min(defaults.length, duration - at) };
+    if (graphicChoice.kind === "lineup") graphic.teamSlot = `graphic-${crypto.randomUUID()}`;
+    graphics.push(graphic);
+    renderGraphicEditors();
+    selectGraphic(graphic);
+    graphicsChanged();
+  });
+  function removeGraphic(graphic) {
+    for (const slot of [graphic.slot, graphic.teamSlot]) {
+      const cached = graphicImages.get(slot);
+      if (cached) URL.revokeObjectURL(cached.url);
+      graphicImages.delete(slot);
+    }
+    graphics = graphics.filter((item) => item !== graphic);
+    if (selectedGraphic === graphic) selectedGraphic = undefined;
+    renderGraphicEditors();
+    graphicsChanged();
+  }
+  document.addEventListener("ucl-active-match-video", updateGraphicControls);
 
   function selectClip(clip, shouldSeek = true) {
     selectedClip = clip;
@@ -382,7 +817,7 @@
 
   function renderClips() {
     clipList.replaceChildren();
-    for (const [index, clip] of clips.entries()) {
+    for (const clip of clips) {
       const li = document.createElement("li");
       const details = document.createElement("details");
       clipDetails.set(clip, details);
@@ -454,43 +889,14 @@
       const row = document.createElement("div");
       row.className = "row";
       const fields = {};
-      for (const [key, title] of [["start", "Début (s)"], ["end", "Fin (s)"]]) {
-        const field = document.createElement("label");
-        field.className = "field";
-        const text = document.createElement("span");
-        text.textContent = translate(title);
-        const input = document.createElement("input");
-        input.id = `hl-clip-${index}-${key}`;
-        input.type = "number";
-        input.step = "0.01";
-        input.min = "0";
-        input.max = String(duration);
-        input.value = clip[key].toFixed(2);
-        input.addEventListener("input", () => {
-          clip[key] = input.valueAsNumber;
+      for (const [key, title] of [["start", "Début (min:s)"], ["end", "Fin (min:s)"]]) {
+        fields[key] = stepperField(title, () => clip[key], (value) => {
+          clip[key] = value;
           refreshCaption();
           invalidateExport();
           renderTimeline();
-        });
-        input.addEventListener("change", () => {
-          if (Number.isFinite(input.valueAsNumber)) input.value = input.valueAsNumber.toFixed(2);
-        });
-        const stepper = document.createElement("div");
-        stepper.className = "number-stepper";
-        const stepButton = (symbol, step, label) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "stepper-btn";
-          button.dataset.target = input.id;
-          button.dataset.step = step;
-          button.setAttribute("aria-label", translate(label));
-          button.textContent = symbol;
-          return button;
-        };
-        stepper.append(stepButton("−", "-0.01", "Diminuer"), input, stepButton("+", "0.01", "Augmenter"));
-        fields[key] = input;
-        field.append(text, stepper);
-        row.append(field);
+        }, { time: true, step: 0.01, max: () => duration });
+        row.append(fields[key].field);
       }
       body.append(row);
       const actions = document.createElement("div");
@@ -505,16 +911,14 @@
       play.disabled = !Number.isFinite(video.duration) || Boolean(video.error);
       actions.append(play);
       for (const [key, title] of [["start", "Début ici"], ["end", "Fin ici"]]) {
-        const button = makeButton(title, () => {
-          fields[key].value = video.currentTime.toFixed(2);
-          fields[key].dispatchEvent(new Event("input"));
-        });
+        const button = makeButton(title, () => fields[key].set(video.currentTime));
         button.disabled = play.disabled;
         actions.append(button);
       }
       body.append(actions);
       clipList.append(li);
     }
+    renderGraphicEditors();
     renderTimeline();
     renderTicks();
     renderReview();
@@ -659,6 +1063,8 @@
     const changingVideo = Boolean(file);
     file = chosen;
     mountedMatchVideo = linkedVideo;
+    montageSaveProgress.hidden = true;
+    setMontageSaveStatus("");
     montage.returnToSource();
     if (changingVideo) montage.restore();
     session = undefined;
@@ -666,6 +1072,9 @@
     standardProgress.group.hidden = enhancementProgress.group.hidden = true;
     duration = 0;
     clips = [];
+    graphics = [];
+    selectedGraphic = undefined;
+    clearGraphicPreview();
     expandedClip = undefined;
     reviewQueue = [];
     reviewIndex = -1;
@@ -706,6 +1115,9 @@
 
   function applyAnalysis(saved) {
     clips = saved.clips;
+    graphics = saved.graphics ?? [];
+    selectedGraphic = undefined;
+    clearGraphicPreview();
     transcript = saved.transcript ?? [];
     scoreRegion = saved.scoreRegion;
     analyzed = saved.analyzed;
@@ -717,33 +1129,45 @@
   }
 
   function snapshotAnalysis() {
-    return { duration, clips: structuredClone(clips), transcript, analyzed, scoreRegion, montage: montage.snapshot() };
+    return { duration, clips: structuredClone(clips), graphics: structuredClone(graphics), transcript, analyzed, scoreRegion, montage: montage.snapshot() };
   }
 
   async function saveMontageToLibrary() {
     if (!signature || savingAnalysis || busy) return;
     if (!window.matchPresetMenus?.activeProjectId) {
-      montage.message("Active un match dans Library avant d’enregistrer le montage.");
+      montageSaveProgress.hidden = true;
+      setMontageSaveStatus("Active un match dans Library avant d’enregistrer le montage.");
       return;
     }
     const project = window.matchPresetMenus.activeProjectId;
     savingAnalysis = true;
+    montageSaveProgress.hidden = false;
+    montageSaveProgress.value = 0;
+    setMontageSaveStatus("Enregistrement du montage…");
     updateControls();
     try {
       const data = snapshotAnalysis();
       await analysisRecord("readwrite", (store) => store.put(data, signature));
+      montageSaveProgress.value = 1;
       const portable = structuredClone(data);
       portable.signature = signature;
       portable.source = file.name;
       const leg = mountedMatchVideo?.projectId === project ? mountedMatchVideo.leg : undefined;
       await window.matchPresetMenus.saveMontage(project, portable, leg);
-      montage.message("Montage enregistré dans Library.");
+      montageSaveProgress.value = montageSaveProgress.max;
+      setMontageSaveStatus("Montage enregistré dans Library.");
     } catch {
-      montage.message("Impossible d’enregistrer le montage dans Library.");
+      montageSaveProgress.hidden = true;
+      setMontageSaveStatus("Impossible d’enregistrer le montage dans Library.");
     } finally {
       savingAnalysis = false;
       updateControls();
     }
+  }
+
+  function setMontageSaveStatus(message) {
+    montageSaveStatus.dataset.interfaceMessage = message;
+    montageSaveStatus.textContent = message ? translate(message) : "";
   }
 
   window.highlightsProject = {
@@ -953,6 +1377,17 @@
 
   track.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 || timelineDrag || !duration) return;
+    const graphicBlock = event.target.closest("[data-graphic]");
+    if (graphicBlock) {
+      if (busy || loadingGraphic) return;
+      const graphic = graphics.find(({ slot }) => slot === graphicBlock.dataset.graphic);
+      if (!graphic) return;
+      const resize = Boolean(event.target.closest("[data-graphic-resize]"));
+      timelineDrag = { id: event.pointerId, graphic, block: graphicBlock, resize,
+        offset: trackTime(event.clientX) - (resize ? graphic.at + graphic.length : graphic.at) };
+      track.setPointerCapture(event.pointerId);
+      return;
+    }
     const edge = event.target.closest("[data-edge]")?.dataset.edge;
     const block = event.target.closest("[data-index]");
     if (block && !edge) return;
@@ -972,7 +1407,16 @@
   track.addEventListener("pointermove", (event) => {
     if (timelineDrag?.id !== event.pointerId) return;
     const time = trackTime(event.clientX);
-    const { clip, edge, block, offset } = timelineDrag;
+    const { clip, edge, block, offset, graphic, resize } = timelineDrag;
+    if (graphic) {
+      const position = Math.round((time - offset) * 100) / 100;
+      if (resize) graphic.length = Math.max(0.2, Math.min(duration - graphic.at, position - graphic.at));
+      else graphic.at = Math.max(0, Math.min(duration - graphic.length, position));
+      timelineDrag.moved = true;
+      positionGraphic(block, graphic);
+      renderGraphicPreview();
+      return;
+    }
     if (edge) {
       updateTrim(clip, edge, time + offset, block);
       seek(clip[edge]);
@@ -982,6 +1426,11 @@
   });
   track.addEventListener("lostpointercapture", (event) => {
     if (timelineDrag?.id !== event.pointerId) return;
+    if (timelineDrag.graphic) {
+      selectGraphic(timelineDrag.graphic);
+      if (timelineDrag.moved) graphicsChanged();
+      else seek(timelineDrag.graphic.at);
+    }
     if (timelineDrag.edge) renderClips();
     timelineDrag = undefined;
   });
@@ -1157,6 +1606,7 @@
     updateControls();
     try {
       await ensureSource(request.signal);
+      if (typeof assets === "function") assets = await assets();
       for (const [slot, asset] of Object.entries(assets)) {
         if (cancellationRequested) break;
         if (uploadedMontageAssets.get(slot) === asset) continue;
@@ -1269,7 +1719,7 @@
     perform("enhance", { clips: kept, montage: configuration }, () => {
       enhancement = { key, sessionId: session.id };
       setStatus("");
-    }, {}, "enhancement");
+    }, () => montageAssets(configuration), "enhancement");
   });
   exportButton.addEventListener("click", () => {
     const kept = clips.filter((clip) => clip.keep).map(exportClip);
@@ -1296,7 +1746,7 @@
       download.href = `${api}/${session.id}/download`;
       setStatus("Montage MP4 prêt à télécharger.");
       download.click();
-    }, service?.montage ? assets : {}, "export");
+    }, service?.montage ? () => montageAssets(configuration, assets) : {}, "export");
   });
 
   function exportClip({ start, end, edits }) {
@@ -1308,7 +1758,7 @@
   }
 
   function enhancementConfiguration() {
-    return { ...montage.payload(false, false), enhancementMode: $("enhancement-mode").value };
+    return { ...montage.payload(false, false), enhancementMode: $("enhancement-mode").value, graphics: graphics.flatMap(graphicLayers) };
   }
 
   function isEnhancementReady(kept, configuration) {
@@ -1320,6 +1770,7 @@
     const clip = [selectedClip, ...clips].find((entry) => entry && valid(entry));
     if (!clip || !service?.montage) return;
     const configuration = montage.payload(dry, true);
+    if (!dry) configuration.graphics = graphics.flatMap(graphicLayers);
     const format = montage.format();
     const edit = exportClip(clip);
     if (dry) delete edit.gain;
@@ -1335,13 +1786,14 @@
       pausePlayback();
       montage.showRender(blob);
       setStatus(dry ? "Écoute de la source." : "Aperçu du montage.");
-    });
+    }, () => montageAssets(configuration));
   }
 
   whisper.addEventListener("change", updateControls);
   document.addEventListener("interface-language-change", () => {
     setStatus(statusMessage, statusVariables);
     setPreview(previewMessage);
+    setMontageSaveStatus(montageSaveStatus.dataset.interfaceMessage ?? "");
     renderClips();
   });
   window.addEventListener("focus", () => {

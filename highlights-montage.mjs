@@ -6,6 +6,14 @@ const clamp = (value, low, high, fallback) => Number.isFinite(Number(value)) ? M
 const seconds = (value) => Number(value).toFixed(3);
 const even = (value) => Math.max(2, 2 * Math.round(value / 2));
 const outroFade = 0.25;
+const graphicTransitionDuration = 0.625;
+const graphicWipeFeather = 0.018;
+const graphicWipeEdges = {
+  "slide-left-right": ["X/W", "1-X/W"],
+  "slide-top-down": ["Y/H", "1-Y/H"],
+  "slide-bottom-up": ["1-Y/H", "Y/H"],
+};
+const graphicTransitions = new Set(["none", "vertical", "horizontal", "lightning", "fade", "glow", ...Object.keys(graphicWipeEdges)]);
 
 function fadeToBlack(duration) {
   const lastFrame = Math.max(0, Math.ceil(duration * 30 - 0.001) - 1);
@@ -31,11 +39,13 @@ export function montageSettings(raw = {}, duration) {
       at: clamp(entry.at, 0, duration, 0), seconds: clamp(entry.seconds, 0, 9600, 0),
       score: /^\d{1,2}[-–:]\d{1,2}$/.test(entry.score) ? entry.score.replace(/[–:]/g, "-") : "",
     })).sort((a, b) => a.at - b.at) : [],
-    graphics: Array.isArray(raw.graphics) ? raw.graphics.slice(0, 16).filter((entry) => assetSlot.test(entry.slot) && entry.slot.startsWith("graphic-"))
+    graphics: Array.isArray(raw.graphics) ? raw.graphics.slice(0, 32).filter((entry) => assetSlot.test(entry.slot) && entry.slot.startsWith("graphic-"))
       .map((entry) => ({
-        slot: entry.slot, at: clamp(entry.at, 0, duration, 0), length: clamp(entry.length, 0.2, duration + 1, 5),
+        slot: entry.slot, at: clamp(entry.at, 0, duration, 0), length: clamp(entry.length, 0.001, duration + 1, 5),
         x: clamp(entry.x, 0, 100, 50), y: clamp(entry.y, 0, 100, 15), size: clamp(entry.size, 5, 100, 80),
         motion: ["fade", "slide", "none"].includes(entry.motion) ? entry.motion : "fade",
+        intro: graphicTransitions.has(entry.intro) ? entry.intro : undefined,
+        outro: graphicTransitions.has(entry.outro) ? entry.outro : undefined,
       })) : [],
     outro: raw.outro === true,
     outroVideo: raw.outroVideo === true,
@@ -43,6 +53,41 @@ export function montageSettings(raw = {}, duration) {
     music: raw.music === true,
     musicGain: clamp(raw.musicGain, -40, 12, -8),
   };
+}
+
+function graphicTransitionFilters(graphic, from, to) {
+  const span = graphicTransitionDuration;
+  const windows = [
+    [graphic.intro, from, from + span, `T-(${seconds(from)})`, 0],
+    [graphic.outro, to - span, to, `(${seconds(to)})-T`, 1],
+  ].filter(([effect]) => effect && effect !== "none");
+  if (windows.length === 0) return [];
+  const masks = [];
+  const flashes = [];
+  const glows = [];
+  const enabled = [];
+  for (const [effect, start, end, elapsed, phase] of windows) {
+    const window = `between(T,${seconds(start)},${seconds(end)})`;
+    const linear = `clip((${elapsed})/${span},0,1)`;
+    const progress = `(pow(${linear},2)*(3-2*${linear}))`;
+    const edge = graphicWipeEdges[effect]?.[phase] ??
+      (effect === "vertical" ? "abs(2*Y/H-1)" : effect === "horizontal" ? "abs(2*X/W-1)" : "");
+    const mask = edge ? `clip((${progress}*${1 + graphicWipeFeather}-(${edge}))/${graphicWipeFeather},0,1)` : progress;
+    masks.push(`if(${window},${mask},1)`);
+    if (effect === "lightning") flashes.push(`if(${window},4*(1-${progress}),0)`);
+    if (effect === "glow") glows.push(`if(${window},4*${progress}*(1-${progress}),0)`);
+    enabled.push(`between(t,${seconds(start)},${seconds(end)})`);
+  }
+  const channels = ["r", "g", "b"].map((channel, index) => {
+    const sample = `${channel}(X,Y)`;
+    const level = flashes.length ? `min(255,${sample}*(1+${flashes.join("+")}))` : sample;
+    const value = glows.length ? `if(gt(alpha(X,Y),0),${level},${[215, 240, 255][index]})` : level;
+    return `${channel}='${value}'`;
+  });
+  const halo = "(alpha(X-5,Y)+alpha(X+5,Y)+alpha(X,Y-5)+alpha(X,Y+5)+0.5*(alpha(X-13,Y)+alpha(X+13,Y)+alpha(X,Y-13)+alpha(X,Y+13)))/6";
+  const opacity = glows.length ? `max(alpha(X,Y),0.8*(${glows.join("+")})*(${halo}))` : "alpha(X,Y)";
+  const alpha = `a='${opacity}*${masks.join("*")}'`;
+  return ["format=gbrap", `geq=${[...channels, alpha, `enable='${enabled.join("+")}'`].join(":")}`];
 }
 
 function framing(raw = {}, portrait) {
@@ -240,17 +285,22 @@ export async function renderMontage(session, clips, raw, job, signal, tools, { p
         const to = from + graphic.length;
         const fade = Math.min(0.3, graphic.length / 3);
         const filters = [`scale=${even(settings.width * graphic.size / 100)}:-2`, "format=rgba"];
-        if (graphic.motion === "fade") {
+        const hasTransitions = graphic.intro !== undefined || graphic.outro !== undefined;
+        if (hasTransitions) {
+          filters.push(...graphicTransitionFilters(graphic, from, to));
+        } else if (graphic.motion === "fade") {
           const phase = Math.max(0, -from);
           filters.push(`setpts=PTS+${seconds(phase)}/TB`, `fade=t=in:st=0:d=${seconds(fade)}:alpha=1`,
             `fade=t=out:st=${seconds(graphic.length - fade)}:d=${seconds(fade)}:alpha=1`,
             `setpts=PTS+${seconds(from)}/TB`);
         }
         graph.push(`[${nextInput}:v]${filters.join(",") }[${layer}]`);
-        const horizontal = graphic.motion === "slide"
+        const x = `(W-w)*${graphic.x / 100}`;
+        const y = `(H-h)*${graphic.y / 100}`;
+        const horizontal = !hasTransitions && graphic.motion === "slide"
           ? `(W-w)*${graphic.x / 100}-W*max(0,1-min((t-(${seconds(from)}))/${seconds(fade)},((${seconds(to)})-t)/${seconds(fade)}))`
-          : `(W-w)*${graphic.x / 100}`;
-        graph.push(`[${label}][${layer}]overlay=x='${horizontal}':y='(H-h)*${graphic.y / 100}':enable='between(t,${seconds(Math.max(0, from))},${seconds(to)})'[${shown}]`);
+          : x;
+        graph.push(`[${label}][${layer}]overlay=x='${horizontal}':y='${y}':enable='between(t,${seconds(Math.max(0, from))},${seconds(to)})'[${shown}]`);
         label = shown;
         nextInput++;
       }

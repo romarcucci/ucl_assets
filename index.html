@@ -4198,10 +4198,24 @@ MBAPPÉ | 45+2'</textarea
               <div class="highlights-actions hm-actions">
                 <button class="btn-secondary" id="hm-preview" type="button">Tester l’extrait</button>
                 <button class="btn-secondary" id="hm-dry" type="button">Comparer avec la source</button>
-                <button class="btn-secondary" id="hm-library-save" type="button">Enregistrer le montage dans Library</button>
               </div>
               <p id="hm-status" role="status"></p>
               <div id="hl-edit-feedback"></div>
+            </div>
+          </details>
+          <details class="collapsible highlights-step">
+            <summary>Graphiques du match</summary>
+            <div class="collapsible-body" id="hl-graphics-controls">
+              <div class="field">
+                <button class="btn-secondary highlights-graphic-source" id="hl-graphic-source"
+                  type="button" popovertarget="hl-graphic-picker"
+                  aria-labelledby="hl-graphic-source-value" disabled>
+                  <span id="hl-graphic-source-value">Saved Graphic</span>
+                </button>
+                <div class="library-item-menu highlights-graphic-picker" id="hl-graphic-picker" popover></div>
+              </div>
+              <button class="btn-secondary" id="hl-graphic-add" type="button">Ajouter à la tête de lecture</button>
+              <ul id="hl-graphic-list" class="highlights-clips"></ul>
             </div>
           </details>
           <details class="collapsible highlights-step">
@@ -4258,6 +4272,11 @@ MBAPPÉ | 45+2'</textarea
         <div class="editor-save-footer" id="editor-save-footer">
           <button class="btn-primary" id="editor-quick-save" type="button" aria-haspopup="dialog">Enregistrer</button>
           <p class="save-status" id="editor-quick-save-status" role="status"></p>
+          <div class="editor-montage-save" id="editor-montage-save" hidden>
+            <progress id="hl-montage-save-progress" max="2" value="0" aria-label="Progression de la sauvegarde" hidden></progress>
+            <button class="btn-primary" id="hm-library-save" type="button" disabled>Enregistrer le montage dans Library</button>
+            <p class="save-status" id="hl-montage-save-status" role="status"></p>
+          </div>
         </div>
         </div>
       </aside>
@@ -4703,6 +4722,7 @@ MBAPPÉ | 45+2'</textarea
             <div class="hm-source-frame">
               <canvas id="hm-backdrop" aria-hidden="true" hidden></canvas>
               <video id="hl-video" playsinline preload="metadata"></video>
+              <div id="hl-graphic-preview" aria-hidden="true"></div>
             </div>
             <video id="hm-render" playsinline hidden></video>
             <div class="highlights-score-box highlights-tracked-box" id="hl-track-box" hidden aria-hidden="true"></div>
@@ -4737,6 +4757,7 @@ MBAPPÉ | 45+2'</textarea
                 <div class="highlights-timeline-track" id="hl-timeline-track" tabindex="0" aria-label="Timeline du match">
                   <div class="highlights-timeline-ticks" id="hl-timeline-ticks" aria-hidden="true"></div>
                   <div class="highlights-timeline-clips" id="hl-timeline-clips"></div>
+                  <div class="highlights-graphics-track" id="hl-graphics-track" aria-label="Graphiques du match" hidden></div>
                   <div class="highlights-playhead" id="hl-playhead" aria-hidden="true"></div>
                 </div>
               </div>

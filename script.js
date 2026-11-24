@@ -134,12 +134,21 @@ for (const editor of editorSections) {
 const quickSaveFooter = document.getElementById("editor-save-footer");
 const quickSaveButton = document.getElementById("editor-quick-save");
 const quickSaveStatus = document.getElementById("editor-quick-save-status");
+const montageSaveFooter = document.getElementById("editor-montage-save");
 const quickSaveDialog = document.getElementById("editor-quick-save-dialog");
 const quickSaveName = document.getElementById("editor-quick-save-name");
 const quickSaveLeg = document.getElementById("editor-quick-save-leg");
 const matchQuickSaves = new Map([
-  ["score", { kind: "matchScore", collect: collectScoreData, missingMatch: "Active un match dans Library avant d’enregistrer le Live Score." }],
-  ["player", { kind: "matchBanner", collect: collectBannerData, missingMatch: "Active un match dans Library avant d’enregistrer le bandeau buteur." }],
+  ["score", {
+    kind: "matchScore", collect: collectScoreData, getName: liveScoreSaveName,
+    missingMatch: "Active un match dans Library avant d’enregistrer le Live Score.",
+    missingName: "Renseigne les deux équipes et leur score.",
+  }],
+  ["player", {
+    kind: "matchBanner", collect: collectBannerData, getName: goalscorerSaveName,
+    missingMatch: "Active un match dans Library avant d’enregistrer le bandeau buteur.",
+    missingName: "Renseigne le nom du buteur et la minute du but.",
+  }],
 ]);
 const quickSaveControls = new Map([
   ["lineup", "#l-save-team"],
@@ -158,7 +167,10 @@ const quickSaveControls = new Map([
 function updateQuickSave() {
   const key = document.querySelector(".tab.active")?.dataset.tab;
   const control = quickSaveControls.get(key);
-  quickSaveFooter.hidden = !control;
+  const isMontage = key === "highlights";
+  quickSaveFooter.hidden = !control && !isMontage;
+  montageSaveFooter.hidden = !isMontage;
+  quickSaveButton.hidden = quickSaveStatus.hidden = isMontage;
   quickSaveButton.disabled = !!control?.button.disabled;
   if (thumbnailEditors.has(key)) quickSaveButton.removeAttribute("aria-haspopup");
   else quickSaveButton.setAttribute("aria-haspopup", "dialog");
@@ -186,26 +198,24 @@ quickSaveButton.addEventListener("click", () => {
     alert(translate(matchSave.missingMatch));
     return;
   }
-  const isGoalscorer = key === "player";
-  const name = isGoalscorer ? goalscorerSaveName() : control.name.value.trim();
-  if (isGoalscorer && !name) {
-    alert(translate("Renseigne le nom du buteur et la minute du but."));
+  const name = matchSave ? matchSave.getName() : control.name.value.trim();
+  if (matchSave && !name) {
+    alert(translate(matchSave.missingName));
     return;
   }
   pendingQuickSave = control;
-  quickSaveName.readOnly = isGoalscorer;
+  quickSaveName.readOnly = Boolean(matchSave);
   quickSaveName.value = name;
   const chooseLeg = Boolean(matchSave) && !window.matchPresetMenus.activeMatchIsFinal;
   quickSaveLeg.closest("label").hidden = !chooseLeg;
   quickSaveLeg.disabled = !chooseLeg;
   quickSaveLeg.required = chooseLeg;
   quickSaveLeg.value = "";
-  if (matchSave) quickSaveName.value = quickSaveName.value.replace(/ · (First|Second) Leg$/, "");
   if (control.name.maxLength >= 0) quickSaveName.maxLength = control.name.maxLength;
   else quickSaveName.removeAttribute("maxlength");
   quickSaveName.setCustomValidity("");
   quickSaveDialog.showModal();
-  if (isGoalscorer && chooseLeg) quickSaveLeg.focus();
+  if (chooseLeg) quickSaveLeg.focus();
   else quickSaveName.select();
 });
 
@@ -305,7 +315,7 @@ for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) {
 window.addEventListener("blur", stopStepperPress);
 
 document.addEventListener("click", (event) => {
-  const button = event.target.closest(".stepper-btn");
+  const button = event.target.closest(".stepper-btn[data-target]");
   if (!button) return;
   if (event.detail > 0 && repeatedStepper === button) {
     repeatedStepper = undefined;
@@ -3720,6 +3730,11 @@ function renderSavedScoresList() {
   window.matchPresetMenus?.refresh(sel);
 }
 
+function liveScoreSaveName() {
+  const [home, homeScore, awayScore, away] = [sHome, sHomeScore, sAwayScore, sAway].map((field) => field.value.trim());
+  return home && homeScore && awayScore && away ? `${home} ${homeScore} - ${awayScore} ${away}` : "";
+}
+
 function saveMatchGraphic({ name: nameInput, matchSave }, name, leg) {
   const projectId = window.matchPresetMenus?.activeProjectId;
   if (!projectId) return;
@@ -6131,6 +6146,50 @@ async function loadGraphicExportLibraries(format, archive) {
 
 function supportsGraphicLayers(preview) {
   return preview === "lineup" || preview === "showdown";
+}
+
+async function captureMontageGraphic(tab, data, layer) {
+  const renderers = {
+    lineup: [() => ({ ...collectLineupData(), style: collectStyleData() }),
+      (preset) => applyLineupData(preset, false), updateLineupCommon, expandLineupData],
+    showdown: [collectShowdownData, (preset) => applyShowdownData(preset, false), updateShowdown, expandShowdownData],
+    player: [collectBannerData, applyBannerData, updatePlayerBanner],
+    score: [collectScoreData, applyScoreData, updateScoreBanner],
+  };
+  const [collect, apply, update, expand] = renderers[tab];
+  await loadGraphicExportLibraries("png", false);
+  const preview = document.querySelector(`[data-preview="${tab}"]`);
+  const target = preview.firstElementChild;
+  const snapshot = collect();
+  const previousMode = target.dataset.exportMode;
+  const restoredBackgrounds = [];
+  const header = document.querySelector(".app-header");
+  const workspace = preview.closest(".workspace");
+  const previousInert = [header.inert, workspace.inert];
+  header.inert = workspace.inert = true;
+  preview.classList.add("montage-graphic-capture");
+  try {
+    apply(expand ? expand(data) : data);
+    update();
+    if (tab === "lineup" && (layer === "background" || layer === "team")) target.dataset.exportMode = layer;
+    await document.fonts.ready;
+    await Promise.all([...target.querySelectorAll("img")].map((image) => image.decode().catch(() => {})));
+    restoredBackgrounds.push(...await preInlineBgImages(target));
+    const { width } = target.getBoundingClientRect();
+    if (!width) throw new Error("Graphic has no renderable size");
+    return await renderGraphicExport(target, "png", { pixelRatio: Math.min(2, 1280 / width), backgroundColor: null });
+  } finally {
+    if (previousMode === undefined) delete target.dataset.exportMode;
+    else target.dataset.exportMode = previousMode;
+    for (const { el, original } of restoredBackgrounds) el.style.backgroundImage = original;
+    try {
+      apply(snapshot);
+      update();
+    } finally {
+      preview.classList.remove("montage-graphic-capture");
+      [header.inert, workspace.inert] = previousInert;
+    }
+  }
 }
 
 async function renderGraphicComposition(active, settings, baseName, modes, archive) {

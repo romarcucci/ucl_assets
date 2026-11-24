@@ -82,6 +82,8 @@ Tester l’extrait|Render test clip
 Comparer avec la source|Compare with source
 Revenir au match|Return to match
 Enregistrer le montage dans Library|Save edit to Library
+Progression de la sauvegarde|Save progress
+Enregistrement du montage…|Saving edit…
 Relance le service local pour activer le montage.|Restart the local service to enable editing.
 Réglages de l’extrait pour ce format|Clip settings for this format
 Appliquer le cadrage actuel|Apply current framing
@@ -90,6 +92,7 @@ Cadrage enregistré pour cet extrait.|Framing saved for this clip.
 L’extrait reprend le cadrage du montage.|The clip now uses the edit framing.
 Active un match dans Library avant d’enregistrer le montage.|Activate a match in Library before saving the edit.
 Active un match dans Library avant d’enregistrer le Live Score.|Activate a match in Library before saving the Live Score.
+Renseigne les deux équipes et leur score.|Enter both teams and their scores.
 Active un match dans Library avant d’enregistrer le bandeau buteur.|Activate a match in Library before saving the goalscorer banner.
 Renseigne le nom du buteur et la minute du but.|Enter the goalscorer’s name and the goal minute.
 Montage enregistré dans Library.|Edit saved to Library.
@@ -222,6 +225,30 @@ Début (s)|Start (s)
 Fin (s)|End (s)
 Lire l’extrait|Play clip
 Garder l’extrait|Keep clip
+Graphiques du match|Match graphics
+Début (min:s)|Start (min:s)
+Fin (min:s)|End (min:s)
+Durée (min:s)|Duration (min:s)
+Transition d’entrée|Intro transition
+Transition de sortie|Outro transition
+Volet vertical|Vertical wipe
+Volet horizontal|Horizontal wipe
+Store de gauche à droite|Left to right reveal
+Store de haut en bas|Top to bottom reveal
+Store de bas en haut|Bottom to top reveal
+Halo|Glow
+Entrée du fond|Background intro
+Sortie du fond|Background outro
+Entrée de l’équipe|Team intro
+Sortie de l’équipe|Team outro
+Décalage de l’équipe (min:s)|Team delay (min:s)
+Éclair|Lightning
+Graphique enregistré|Saved graphic
+Choisir un graphique|Choose a graphic
+Ajouter à la tête de lecture|Add at playhead
+Retirer le graphique|Remove graphic
+Redimensionner le graphique|Resize graphic
+Impossible de charger le graphique enregistré.|Could not load the saved graphic.
 Début ici|Start here
 Fin ici|End here
 Retirer|Remove

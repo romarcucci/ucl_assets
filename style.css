@@ -196,10 +196,19 @@ body {
   border-top: 1px solid #30363d;
   background: #161b22;
 }
-.editor-save-footer > .btn-primary {
+.editor-save-footer > .btn-primary,
+.editor-montage-save > .btn-primary {
   min-height: 42px;
   margin: 0;
   font-size: 15px;
+}
+.editor-montage-save:not([hidden]) {
+  display: grid;
+  gap: 6px;
+}
+.editor-montage-save progress {
+  width: 100%;
+  accent-color: #58a6ff;
 }
 #editor-search-status:empty {
   display: none;
@@ -1137,6 +1146,16 @@ body {
 }
 .preview-container.active {
   display: flex;
+}
+.preview-container.montage-graphic-capture {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: max-content;
+  max-width: none;
+  padding: 0;
+  overflow: visible;
 }
 .preview-container[data-preview="shorts"] {
   align-items: center;
@@ -3176,19 +3195,105 @@ body {
 .highlights-clip-actions > .btn-secondary {
   flex: 1 1 0;
 }
+.btn-secondary.highlights-graphic-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  text-align: left;
+}
+#hl-graphic-source-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.highlights-graphic-source::after {
+  content: "▾";
+  margin-left: auto;
+}
+.library-item-menu.highlights-graphic-picker {
+  min-width: 0;
+  max-height: min(320px, 55vh);
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.highlights-graphic-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  color: #a5afba;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+}
+.highlights-graphic-group::-webkit-details-marker {
+  display: none;
+}
+.highlights-graphic-group::after {
+  content: "▸";
+  margin-left: auto;
+}
+.highlights-graphic-picker details[open] > .highlights-graphic-group::after {
+  transform: rotate(90deg);
+}
+.highlights-graphic-picker details + details {
+  margin-top: 4px;
+  border-top: 1px solid #39495d;
+}
+.highlights-graphic-picker .btn-secondary {
+  width: 100%;
+  margin: 0;
+  padding: 5px 8px;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.highlights-graphic-picker .btn-secondary:hover,
+.highlights-graphic-picker .btn-secondary[aria-pressed="true"] {
+  background: #23364d;
+}
+.highlights-graphic-group .library-folder-icon::before,
+.highlights-graphic-source .library-folder-icon::before {
+  content: none;
+}
 .highlights-clips .row {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 8px 0;
 }
+.highlights-clips .row-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 .highlights-clips .field {
   margin: 0;
+}
+.highlights-graphic-transitions .field,
+.highlights-graphic-transitions .field select {
+  min-width: 0;
+  width: 100%;
+}
+.highlights-graphic-transitions .field select {
+  max-width: none;
+  field-sizing: fixed;
 }
 .highlights-clips .number-stepper {
   width: 100%;
 }
-.highlights-clips .number-stepper input[type="number"] {
+.highlights-clips .number-stepper input[type="number"],
+.highlights-clips .number-stepper input[type="text"] {
   flex: 1 1 0;
   width: 0;
+  padding-inline: 2px;
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.highlights-clips .number-stepper .stepper-btn {
+  width: 24px;
 }
 .highlights-quote {
   color: #a5afba;
@@ -3286,6 +3391,30 @@ body {
 .highlights-timeline-clip[data-kind="goal"] { background: #238647; }
 .highlights-timeline-clip[data-kind="chance"] { background: #98611f; }
 .highlights-timeline-clip[data-kind="manual"] { background: #7755a5; }
+.highlights-graphics-track {
+  position: relative;
+  border-top: 1px solid #38495d;
+}
+.highlights-timeline-graphic {
+  background: #8156a3;
+}
+.highlights-timeline-graphic .highlights-clip-target {
+  cursor: grab;
+}
+#hl-graphic-preview {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+}
+#hl-graphic-preview img {
+  position: absolute;
+  mask-composite: intersect;
+}
+.highlights-video-stage:has(#hm-render:not([hidden])) #hl-graphic-preview {
+  display: none;
+}
 .highlights-timeline-clip[data-excluded="true"] { opacity: .45; }
 .highlights-timeline-clip[data-selected="true"] {
   outline: 1px solid #fff;
@@ -3382,7 +3511,8 @@ body {
   .editor-save-footer:not([hidden]) {
     padding: 8px 12px;
   }
-  .editor-save-footer > .btn-primary {
+  .editor-save-footer > .btn-primary,
+  .editor-montage-save > .btn-primary {
     min-height: 30px;
     font-size: 13px;
   }

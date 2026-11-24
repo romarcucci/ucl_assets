@@ -82,6 +82,15 @@
     return icon;
   }
 
+  function libraryKindIcon(kind) {
+    if (globalStyleIcons[kind]) return globalStyleIcon(kind);
+    const icon = document.createElement("span");
+    icon.className = "library-folder-icon";
+    if (kind) icon.dataset.kind = kind;
+    icon.setAttribute("aria-hidden", "true");
+    return icon;
+  }
+
   function kindLabel(kind) {
     const [, label, tab] = catalog[kind];
     if (editorKinds.has(kind)) {
@@ -1121,6 +1130,27 @@
   });
 
   window.matchPresetMenus = {
+    listMontageGraphics() {
+      const kinds = ["lineup", "showdown", "matchScore", "matchBanner"];
+      if (!activeProjectId) return [];
+      const entries = [...records.values()].map(({ item }) => item)
+        .filter((item) => item.projectId === activeProjectId);
+      return kinds.map((kind) => {
+        const label = kindLabel(kind);
+        const items = entries.filter((item) => item.kind === kind)
+          .sort(kind === "matchBanner" ? compareGoalscorers : (a, b) => compareLibraryNames(a.name, b.name))
+          .map((item) => ({ id: item.id, name: libraryGraphicLabel(item, true), leg: presetNaming(item).leg }));
+        return { kind, label, items };
+      }).filter(({ items }) => items.length);
+    },
+    graphicIcon: libraryKindIcon,
+    renderMontageGraphic(id, layer) {
+      const item = records.get(id)?.item;
+      if (!item?.projectId || !["lineup", "showdown", "matchScore", "matchBanner"].includes(item.kind)) {
+        throw new Error("Montage graphic unavailable");
+      }
+      return captureMontageGraphic(catalog[item.kind][2], structuredClone(item.entry.data), layer);
+    },
     get activeProjectId() {
       return activeProjectId;
     },
@@ -1278,12 +1308,7 @@
       if (details.isConnected) expandedBranches.set(id, details.open);
     });
     const summary = document.createElement("summary");
-    const icon = globalStyleIcons[kind] ? globalStyleIcon(kind) : document.createElement("span");
-    if (!globalStyleIcons[kind]) {
-      icon.className = "library-folder-icon";
-      if (kind) icon.dataset.kind = kind;
-      icon.setAttribute("aria-hidden", "true");
-    }
+    const icon = libraryKindIcon(kind);
     const labelContent = document.createElement("span");
     labelContent.className = "library-branch-label";
     const name = document.createElement("span");
@@ -1479,6 +1504,19 @@
     results.replaceChildren(...sections);
   }
 
+  function libraryGraphicLabel(item, groupedByLeg) {
+    if (groupedByLeg && (item.kind === "matchBanner" || item.kind === "matchScore")) {
+      return item.name.replace(/ · (First|Second) Leg$/, "");
+    }
+    if (graphicPresetKinds.has(item.kind)) {
+      const { leg, phase, team } = presetNaming(item);
+      const detail = team || phase;
+      if (detail && (groupedByLeg || isFinalPreset(item))) return detail;
+      if (leg && detail) return `${leg} · ${detail}`;
+    }
+    return item.name;
+  }
+
   function renderItem(item, groupedByLeg = false) {
     const node = document.createElement("li");
     node.className = "library-item";
@@ -1489,10 +1527,8 @@
       node.addEventListener("dragend", stopDragging);
     }
     const check = document.createElement("input");
-    let displayName = item.name;
-    if (groupedByLeg && item.kind === "matchBanner") {
-      displayName = displayName.replace(/ · (First|Second) Leg$/, "");
-    }
+    const shortName = libraryGraphicLabel(item, groupedByLeg);
+    let displayName = item.kind === "matchBanner" || item.kind === "matchScore" ? shortName : item.name;
     if (Object.hasOwn(thumbnailLabels, item.kind)) {
       const label = thumbnailLabels[item.kind];
       const tab = catalog[item.kind][2];
@@ -1509,13 +1545,7 @@
     });
     const summary = document.createElement("div");
     summary.className = "library-item-name";
-    summary.textContent = displayName;
-    if (graphicPresetKinds.has(item.kind)) {
-      const { leg, phase, team } = presetNaming(item);
-      const detail = team || phase;
-      if (detail && (groupedByLeg || isFinalPreset(item))) summary.textContent = detail;
-      else if (leg && detail) summary.textContent = `${leg} · ${detail}`;
-    }
+    summary.textContent = graphicPresetKinds.has(item.kind) ? shortName : displayName;
     if (movable) node.append(check);
     const endCard = item.kind === "endCard";
     const preview = endCard ? item.entry.data?.image : item.entry?.data?.libraryPreview;

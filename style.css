@@ -3406,11 +3406,35 @@ body {
   inset: 0;
   overflow: hidden;
   isolation: isolate;
+  container-type: inline-size;
   pointer-events: none;
 }
-#hl-graphic-preview img {
+#hl-graphic-preview > div {
   position: absolute;
   mask-composite: intersect;
+}
+#hl-graphic-preview img {
+  display: block;
+  width: 100%;
+}
+.highlights-graphic-clock {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-family: Arial, sans-serif;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.highlights-clock-anchor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+.highlights-clock-anchor output {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 .highlights-video-stage:has(#hm-render:not([hidden])) #hl-graphic-preview {
   display: none;

@@ -87,6 +87,7 @@
   const graphicEditors = new WeakMap();
   const graphicImages = new Map();
   let graphics = [];
+  let matchPeriods = [null, null];
   let selectedGraphic;
   let loadingGraphic = false;
   let timelineZoom = 1;
@@ -405,6 +406,38 @@
     controls.inert = busy || loadingAnalysis || loadingGraphic;
     graphicSource.disabled = !groups.length;
     $("graphic-add").disabled = !graphicChoice || duration < 0.2 || graphics.length >= 16;
+    for (const [index, half] of ["first", "second"].entries()) {
+      $(`clock-${half}`).disabled = !Number.isFinite(video.duration);
+      const at = matchPeriods[index];
+      $(`clock-${half}-time`).textContent = Number.isFinite(at) ? clock(at) : "—";
+    }
+    $("clock-clear").hidden = !matchPeriods.some(Number.isFinite);
+  }
+
+  for (const [index, half] of ["first", "second"].entries()) {
+    $(`clock-${half}`).addEventListener("click", () => {
+      const at = Number(video.currentTime.toFixed(3));
+      const other = matchPeriods[1 - index];
+      if (Number.isFinite(other) && (index === 0 ? at >= other : at <= other)) {
+        setStatus("Le début de la 2e mi-temps doit suivre celui de la 1re.");
+        return;
+      }
+      matchPeriods[index] = at;
+      graphicsChanged();
+    });
+  }
+  $("clock-clear").addEventListener("click", () => {
+    matchPeriods = [null, null];
+    graphicsChanged();
+  });
+
+  function liveScoreTime(time) {
+    const [first, second] = matchPeriods;
+    const offset = Number.isFinite(second) && time >= second ? 2700 : 0;
+    const anchor = offset ? second : first;
+    if (!Number.isFinite(anchor) || time < anchor) return "";
+    const elapsed = offset + Math.min(2700, Math.floor(time - anchor + 0.000001));
+    return `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
   }
 
   function renderGraphicPicker(groups) {
@@ -644,6 +677,11 @@
       const graphic = layers[index];
       if (!graphic) { image.remove(); continue; }
       const time = video.currentTime;
+      const timer = image.querySelector(".highlights-graphic-clock");
+      if (timer) {
+        timer.textContent = liveScoreTime(time);
+        timer.style.fontSize = `${graphicImages.get(graphic.slot).clock.size * graphic.size}cqw`;
+      }
       image.hidden = time < graphic.at || time >= graphic.at + graphic.length;
       image.style.width = `${graphic.size}%`;
       image.style.zIndex = index;
@@ -688,18 +726,28 @@
 
   async function graphicAsset(graphic) {
     const cached = graphicImages.get(graphic.slot);
-    if (cached) return cached.blob;
-    const blob = await window.matchPresetMenus.renderMontageGraphic(graphic.recordId, graphic.mode);
-    if (!graphics.some(({ slot, teamSlot }) => slot === graphic.slot || teamSlot === graphic.slot)) return blob;
+    if (cached) return cached;
+    const result = await window.matchPresetMenus.renderMontageGraphic(graphic.recordId, graphic.mode);
+    const { blob, clock: timer } = result;
+    if (!graphics.some(({ slot, teamSlot }) => slot === graphic.slot || teamSlot === graphic.slot)) return result;
     const url = URL.createObjectURL(blob);
-    graphicImages.set(graphic.slot, { blob, url });
+    graphicImages.set(graphic.slot, { ...result, url });
+    const overlay = document.createElement("div");
+    overlay.dataset.slot = graphic.slot;
     const image = document.createElement("img");
-    image.dataset.slot = graphic.slot;
     image.alt = "";
     image.src = url;
-    $("graphic-preview").append(image);
+    overlay.append(image);
+    if (timer) {
+      const text = document.createElement("span");
+      text.className = "highlights-graphic-clock";
+      text.style.left = `${timer.x * 100}%`;
+      text.style.top = `${timer.y * 100}%`;
+      overlay.append(text);
+    }
+    $("graphic-preview").append(overlay);
     renderGraphicPreview();
-    return blob;
+    return result;
   }
 
   function clearGraphicPreview() {
@@ -737,7 +785,13 @@
   async function montageAssets(configuration, extra = {}) {
     const assets = { ...extra };
     try {
-      for (const graphic of configuration.graphics ?? []) assets[graphic.slot] = await graphicAsset(graphic);
+      for (const graphic of configuration.graphics ?? []) {
+        const { blob, clock } = await graphicAsset(graphic);
+        assets[graphic.slot] = blob;
+        if (clock && configuration.matchPeriods?.some(Number.isFinite)) {
+          (configuration.graphicClocks ??= {})[graphic.slot] = clock;
+        }
+      }
     } catch {
       throw new Error(messages.graphicUnavailable);
     }
@@ -1073,6 +1127,7 @@
     duration = 0;
     clips = [];
     graphics = [];
+    matchPeriods = [null, null];
     selectedGraphic = undefined;
     clearGraphicPreview();
     expandedClip = undefined;
@@ -1116,6 +1171,7 @@
   function applyAnalysis(saved) {
     clips = saved.clips;
     graphics = saved.graphics ?? [];
+    matchPeriods = [saved.matchPeriods?.[0] ?? null, saved.matchPeriods?.[1] ?? null];
     selectedGraphic = undefined;
     clearGraphicPreview();
     transcript = saved.transcript ?? [];
@@ -1129,7 +1185,8 @@
   }
 
   function snapshotAnalysis() {
-    return { duration, clips: structuredClone(clips), graphics: structuredClone(graphics), transcript, analyzed, scoreRegion, montage: montage.snapshot() };
+    return { duration, clips: structuredClone(clips), graphics: structuredClone(graphics), matchPeriods: [...matchPeriods],
+      transcript, analyzed, scoreRegion, montage: montage.snapshot() };
   }
 
   async function saveMontageToLibrary() {
@@ -1758,7 +1815,8 @@
   }
 
   function enhancementConfiguration() {
-    return { ...montage.payload(false, false), enhancementMode: $("enhancement-mode").value, graphics: graphics.flatMap(graphicLayers) };
+    return { ...montage.payload(false, false), enhancementMode: $("enhancement-mode").value,
+      graphics: graphics.flatMap(graphicLayers), matchPeriods: [...matchPeriods] };
   }
 
   function isEnhancementReady(kept, configuration) {
@@ -1770,7 +1828,10 @@
     const clip = [selectedClip, ...clips].find((entry) => entry && valid(entry));
     if (!clip || !service?.montage) return;
     const configuration = montage.payload(dry, true);
-    if (!dry) configuration.graphics = graphics.flatMap(graphicLayers);
+    if (!dry) {
+      configuration.graphics = graphics.flatMap(graphicLayers);
+      configuration.matchPeriods = [...matchPeriods];
+    }
     const format = montage.format();
     const edit = exportClip(clip);
     if (dry) delete edit.gain;

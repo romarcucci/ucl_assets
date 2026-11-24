@@ -98,8 +98,8 @@ async function enhanceFrames(input, output, signal, onProgress) {
 }
 
 function enhancementKey(clips, montage) {
-  const { format, framing, audio, archive, graphics, clock, enhancementMode } = montage;
-  return JSON.stringify([clips, format, framing, audio, archive, graphics, clock, enhancementMode === "fast"]);
+  const { format, framing, audio, archive, graphics, clock, matchPeriods, enhancementMode } = montage;
+  return JSON.stringify([clips, format, framing, audio, archive, graphics, clock, matchPeriods, enhancementMode === "fast"]);
 }
 
 async function audioLevels(wav, signal) {

@@ -4206,6 +4206,20 @@ MBAPPÉ | 45+2'</textarea
           <details class="collapsible highlights-step">
             <summary>Graphiques du match</summary>
             <div class="collapsible-body" id="hl-graphics-controls">
+              <details class="collapsible collapsible-nested">
+                <summary>Chrono Live Score</summary>
+                <div class="collapsible-body">
+                  <div class="highlights-clock-anchor">
+                    <button class="btn-secondary" id="hl-clock-first" type="button">Début de la 1re mi-temps</button>
+                    <output id="hl-clock-first-time"></output>
+                  </div>
+                  <div class="highlights-clock-anchor">
+                    <button class="btn-secondary" id="hl-clock-second" type="button">Début de la 2e mi-temps</button>
+                    <output id="hl-clock-second-time"></output>
+                  </div>
+                  <button class="btn-secondary" id="hl-clock-clear" type="button" hidden>Effacer les repères du chrono</button>
+                </div>
+              </details>
               <div class="field">
                 <button class="btn-secondary highlights-graphic-source" id="hl-graphic-source"
                   type="button" popovertarget="hl-graphic-picker"

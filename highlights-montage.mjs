@@ -39,6 +39,9 @@ export function montageSettings(raw = {}, duration) {
       at: clamp(entry.at, 0, duration, 0), seconds: clamp(entry.seconds, 0, 9600, 0),
       score: /^\d{1,2}[-–:]\d{1,2}$/.test(entry.score) ? entry.score.replace(/[–:]/g, "-") : "",
     })).sort((a, b) => a.at - b.at) : [],
+    matchPeriods: Array.isArray(raw.matchPeriods) ? raw.matchPeriods.slice(0, 2)
+      .flatMap((at, index) => Number.isFinite(at) && at >= 0 && at < duration ? [{ at, start: index * 2700 }] : [])
+      .sort((a, b) => a.at - b.at) : [],
     graphics: Array.isArray(raw.graphics) ? raw.graphics.slice(0, 32).filter((entry) => assetSlot.test(entry.slot) && entry.slot.startsWith("graphic-"))
       .map((entry) => ({
         slot: entry.slot, at: clamp(entry.at, 0, duration, 0), length: clamp(entry.length, 0.001, duration + 1, 5),
@@ -46,6 +49,7 @@ export function montageSettings(raw = {}, duration) {
         motion: ["fade", "slide", "none"].includes(entry.motion) ? entry.motion : "fade",
         intro: graphicTransitions.has(entry.intro) ? entry.intro : undefined,
         outro: graphicTransitions.has(entry.outro) ? entry.outro : undefined,
+        clock: graphicClockBounds(raw.graphicClocks?.[entry.slot]),
       })) : [],
     outro: raw.outro === true,
     outroVideo: raw.outroVideo === true,
@@ -53,6 +57,11 @@ export function montageSettings(raw = {}, duration) {
     music: raw.music === true,
     musicGain: clamp(raw.musicGain, -40, 12, -8),
   };
+}
+
+function graphicClockBounds(bounds) {
+  if (!bounds || ![bounds.x, bounds.y, bounds.size].every(Number.isFinite)) return undefined;
+  return { x: clamp(bounds.x, 0, 1, 0.5), y: clamp(bounds.y, 0, 1, 0.5), size: clamp(bounds.size, 0.001, 0.5, 0.03) };
 }
 
 function graphicTransitionFilters(graphic, from, to) {
@@ -196,6 +205,18 @@ function matchClock(graph, label, settings, start, end) {
   return output;
 }
 
+function graphicClockFilters(clock, periods, start, end) {
+  if (!clock) return [];
+  return periods.flatMap((period, index) => {
+    const begin = Math.max(start, period.at);
+    const finish = Math.min(end, periods[index + 1]?.at ?? end);
+    if (begin >= finish) return [];
+    const time = `(min(2700,max(0,t+(${seconds(start - period.at)})))+${period.start})`;
+    const text = `%{eif\\:floor(${time}/60)\\:d\\:2}\\:%{eif\\:mod(floor(${time}),60)\\:d\\:2}`;
+    return [`drawtext=fontfile=clock.ttf:text='${text}':fontcolor=white:fontsize=w*${clock.size}:x=w*${clock.x}-tw/2:y=h*${clock.y}-th/2:enable='gte(t,${seconds(begin - start)})*lt(t,${seconds(finish - start)})'`];
+  });
+}
+
 async function enhanceFinalVideo(work, output, settings, job, signal, { ffmpeg, run, videoArgs, enhanceFrames }) {
   job.phase = "enhancement";
   job.progress = 15;
@@ -263,7 +284,9 @@ export async function renderMontage(session, clips, raw, job, signal, tools, { p
         await link(preparedFrom, target).catch(() => copyFile(preparedFrom, target));
       }
       files.push(filename);
-    } else if (settings.clock.length) await clockFont(work);
+    } else if (settings.clock.length || (settings.matchPeriods.length && settings.graphics.some((graphic) => graphic.clock))) {
+      await clockFont(work);
+    }
     let complete = 0;
     for (const [index, clip] of (preparedFrom ? [] : clips).entries()) {
       const { start, end } = clip;
@@ -285,6 +308,7 @@ export async function renderMontage(session, clips, raw, job, signal, tools, { p
         const to = from + graphic.length;
         const fade = Math.min(0.3, graphic.length / 3);
         const filters = [`scale=${even(settings.width * graphic.size / 100)}:-2`, "format=rgba"];
+        filters.push(...graphicClockFilters(graphic.clock, settings.matchPeriods, start, end));
         const hasTransitions = graphic.intro !== undefined || graphic.outro !== undefined;
         if (hasTransitions) {
           filters.push(...graphicTransitionFilters(graphic, from, to));

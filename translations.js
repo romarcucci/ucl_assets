@@ -226,6 +226,11 @@ Fin (s)|End (s)
 Lire l’extrait|Play clip
 Garder l’extrait|Keep clip
 Graphiques du match|Match graphics
+Chrono Live Score|Live Score clock
+Début de la 1re mi-temps|First-half kickoff
+Début de la 2e mi-temps|Second-half kickoff
+Effacer les repères du chrono|Clear clock markers
+Le début de la 2e mi-temps doit suivre celui de la 1re.|The second-half kickoff must be after the first-half kickoff.
 Début (min:s)|Start (min:s)
 Fin (min:s)|End (min:s)
 Durée (min:s)|Duration (min:s)

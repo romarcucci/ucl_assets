@@ -3359,6 +3359,8 @@ body {
   margin-bottom: 6px;
 }
 .highlights-timeline-track {
+  --hl-block-height: 30px;
+  --hl-lane-height: calc(var(--hl-block-height) + 4px);
   position: relative;
   min-width: 100%;
   min-height: 54px;
@@ -3379,6 +3381,10 @@ body {
 .highlights-timeline-clips {
   position: relative;
   height: 22px;
+}
+.highlights-timeline-clips,
+.highlights-graphics-track {
+  height: calc(var(--hl-lane-count, 1) * var(--hl-lane-height) + 4px);
 }
 .highlights-clock-track {
   position: relative;
@@ -3429,6 +3435,12 @@ body {
   width: auto;
   margin: 0;
 }
+.highlights-timeline-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
 .highlights-timeline-ticks span {
   position: absolute;
   inset-block-end: 0;
@@ -3441,9 +3453,10 @@ body {
 }
 .highlights-timeline-clip {
   position: absolute;
+  top: calc(var(--hl-lane) * var(--hl-lane-height) + 3px);
   display: flex;
   min-width: 5px;
-  height: 20px;
+  height: var(--hl-block-height);
   border-radius: 3px;
   color: #fff;
   background: #3275b8;
@@ -3515,6 +3528,7 @@ body {
 .highlights-timeline-clip .highlights-clip-target {
   flex: 1;
   min-width: 0;
+  padding-inline: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3525,7 +3539,7 @@ body {
   width: clamp(3px, 20%, 9px);
   flex: 0 0 auto;
   padding: 0;
-  background: #ffffff32;
+  background: linear-gradient(#ffffff80, #ffffff80) center / 2px 70% no-repeat;
   cursor: ew-resize;
 }
 @container (min-width: 24px) {

@@ -98,6 +98,7 @@
   const defaultClockStyle = { x: 5, y: 5, size: 2.5, color: "#ffffff" };
   let clockStyle = { ...defaultClockStyle };
   let selectedGraphic;
+  const selectedGraphics = new Set();
   let loadingGraphic = false;
   let timelineZoom = 1;
   let timelineDrag;
@@ -196,7 +197,7 @@
   }
 
   function updateControls() {
-    $("timeline-delete").disabled = busy || !selectedClips.size;
+    updateTimelineDelete();
     const kept = clips.filter((clip) => clip.keep).map(exportClip);
     const restoring = busy || loadingAnalysis || loadingGraphic;
     updateMatchVideoButton();
@@ -382,11 +383,13 @@
         block.dataset.excluded = clip.review === "ignore";
         block.dataset.selected = selectedClips.has(clip);
         block.dataset.primary = clip === selectedClip;
-        block.style.top = `${lane * 24 + 3}px`;
+        block.style.setProperty("--hl-lane", lane);
         positionBlock(block, clip);
         const title = `${clipLabel(clip)} · ${clock(clip.start)}–${clock(clip.end)}`;
         block.title = title;
-        const target = makeButton(clipLabel(clip), (event) => selectTimelineClip(clip, event));
+        const target = makeButton(clipLabel(clip), (event) => {
+          if (event.detail === 0) selectTimelineClip(clip, event);
+        });
         target.className = "highlights-clip-target";
         target.setAttribute("aria-label", title);
         target.setAttribute("aria-pressed", String(selectedClips.has(clip)));
@@ -402,7 +405,7 @@
         clipTrack.append(block);
       }
     }
-    clipTrack.style.height = `${Math.max(26, lanes.length * 24 + 4)}px`;
+    clipTrack.style.setProperty("--hl-lane-count", Math.max(1, lanes.length));
     renderClockTrack();
     renderGraphicTrack();
     timestamps();
@@ -580,15 +583,16 @@
       const block = document.createElement("div");
       block.className = "highlights-timeline-clip highlights-timeline-graphic";
       block.dataset.graphic = graphic.slot;
-      block.dataset.selected = graphic === selectedGraphic;
-      block.style.top = `${lane * 24 + 3}px`;
+      block.dataset.selected = selectedGraphics.has(graphic);
+      block.dataset.primary = graphic === selectedGraphic && selectedGraphics.has(graphic);
+      block.style.setProperty("--hl-lane", lane);
       block.title = graphic.label;
       positionGraphic(block, graphic);
-      const button = makeButton(graphic.label, () => {
-        selectGraphic(graphic);
-        seek(graphic.at);
+      const button = makeButton(graphic.label, (event) => {
+        if (event.detail === 0) selectTimelineGraphic(graphic, event);
       });
       button.className = "highlights-clip-target";
+      button.setAttribute("aria-pressed", String(selectedGraphics.has(graphic)));
       const handle = makeButton("Redimensionner le graphique", () => selectGraphic(graphic));
       handle.className = "highlights-trim";
       handle.dataset.graphicResize = "";
@@ -597,7 +601,7 @@
       block.append(button, handle);
       graphicTrack.append(block);
     }
-    graphicTrack.style.height = `${lanes.length * 24 + 4}px`;
+    graphicTrack.style.setProperty("--hl-lane-count", lanes.length);
   }
 
   const graphicTransitions = [
@@ -808,11 +812,16 @@
 
   function selectGraphic(graphic) {
     selectedGraphic = graphic;
+    selectedGraphics.clear();
+    selectedGraphics.add(graphic);
+    selectedClips.clear();
+    selectedClip = undefined;
+    updateClipSelection();
     $("graphics-controls").closest("details").open = true;
     const editor = graphicEditors.get(graphic);
     if (editor) editor.details.open = true;
     updateGraphicControls();
-    for (const block of graphicTrack.children) block.dataset.selected = block.dataset.graphic === graphic.slot;
+    updateGraphicSelection();
     const layers = graphicLayers(graphic);
     if (layers.some(({ slot }) => !graphicImages.has(slot)) && !loadingGraphic && !busy) {
       loadingGraphic = true;
@@ -821,6 +830,26 @@
         loadingGraphic = false;
         updateControls();
       });
+    }
+  }
+
+  function updateGraphicSelection() {
+    const slots = new Set([...selectedGraphics].map(({ slot }) => slot));
+    for (const block of graphicTrack.children) {
+      block.dataset.selected = slots.has(block.dataset.graphic);
+      block.dataset.primary = slots.has(block.dataset.graphic) && block.dataset.graphic === selectedGraphic?.slot;
+      block.querySelector(".highlights-clip-target").setAttribute("aria-pressed", block.dataset.selected);
+    }
+    updateTimelineDelete();
+  }
+
+  function selectTimelineGraphic(graphic, event) {
+    if (busy) return;
+    const anchor = selectedGraphics.has(selectedGraphic) ? selectedGraphic : [...selectedGraphics].at(-1);
+    if (extendTimelineSelection(graphic, event, selectedGraphics, anchor, () => [...graphics].sort((a, b) => a.at - b.at))) {
+      updateGraphicSelection();
+    } else {
+      selectGraphic(graphic);
     }
   }
 
@@ -856,13 +885,25 @@
     graphicsChanged();
   });
   function removeGraphic(graphic) {
-    for (const slot of [graphic.slot, graphic.teamSlot]) {
-      const cached = graphicImages.get(slot);
-      if (cached) URL.revokeObjectURL(cached.url);
-      graphicImages.delete(slot);
+    removeGraphics(new Set([graphic]));
+  }
+
+  function removeGraphics(removing) {
+    if (busy || !removing.size) return;
+    for (const graphic of removing) {
+      for (const slot of [graphic.slot, graphic.teamSlot]) {
+        const cached = graphicImages.get(slot);
+        if (cached) {
+          cached.overlay.remove();
+          URL.revokeObjectURL(cached.url);
+        }
+        graphicImages.delete(slot);
+        uploadedMontageAssets.delete(slot);
+      }
+      selectedGraphics.delete(graphic);
     }
-    graphics = graphics.filter((item) => item !== graphic);
-    if (selectedGraphic === graphic) selectedGraphic = undefined;
+    graphics = graphics.filter((graphic) => !removing.has(graphic));
+    if (removing.has(selectedGraphic)) selectedGraphic = undefined;
     renderGraphicEditors();
     graphicsChanged();
   }
@@ -872,6 +913,8 @@
     selectedClip = clip;
     selectedClips.clear();
     selectedClips.add(clip);
+    selectedGraphics.clear();
+    updateGraphicSelection();
     if (shouldSeek) seek(clip.start);
     updateClipSelection();
   }
@@ -883,34 +926,43 @@
       block.dataset.primary = clip === selectedClip;
       block.querySelector(".highlights-clip-target").setAttribute("aria-pressed", block.dataset.selected);
     }
-    $("timeline-delete").disabled = busy || !selectedClips.size;
+    updateTimelineDelete();
     updateTrackingControls();
+  }
+
+  function updateTimelineDelete() {
+    $("timeline-delete").disabled = busy || !(selectedClips.size || selectedGraphics.size);
+  }
+
+  function extendTimelineSelection(item, event, selection, anchor, orderedItems) {
+    if (event.shiftKey && anchor) {
+      const ordered = orderedItems();
+      const start = ordered.indexOf(anchor);
+      const end = ordered.indexOf(item);
+      if (start >= 0 && end >= 0) {
+        if (!event.ctrlKey && !event.metaKey) selection.clear();
+        for (const entry of ordered.slice(Math.min(start, end), Math.max(start, end) + 1)) selection.add(entry);
+        return "range";
+      }
+    }
+    if (event.ctrlKey || event.metaKey || $("timeline-multi-select").checked) {
+      if (!selection.delete(item)) selection.add(item);
+      return "toggle";
+    }
   }
 
   function selectTimelineClip(clip, event) {
     if (busy) return;
-    if (event.shiftKey && selectedClip) {
-      const ordered = clips.filter(valid).sort((a, b) => a.start - b.start);
-      const anchor = ordered.indexOf(selectedClip);
-      const end = ordered.indexOf(clip);
-      if (anchor >= 0 && end >= 0) {
-        if (!event.ctrlKey && !event.metaKey) selectedClips.clear();
-        for (const item of ordered.slice(Math.min(anchor, end), Math.max(anchor, end) + 1)) selectedClips.add(item);
-        updateClipSelection();
-        return;
-      }
-    }
-    if (event.ctrlKey || event.metaKey) {
-      if (selectedClips.delete(clip)) {
-        if (selectedClip === clip) selectedClip = [...selectedClips].at(-1);
-      } else {
-        selectedClips.add(clip);
-        selectedClip = clip;
+    const selection = extendTimelineSelection(clip, event, selectedClips, selectedClip, () => clips.filter(valid).sort((a, b) => a.start - b.start));
+    if (selection) {
+      if (selection === "toggle") {
+        if (selectedClips.has(clip)) selectedClip = clip;
+        else if (selectedClip === clip) selectedClip = [...selectedClips].at(-1);
       }
       updateClipSelection();
       return;
     }
-    selectClip(clip);
+    selectClip(clip, false);
     openClipDetails(clip);
   }
 
@@ -930,10 +982,12 @@
     renderClips();
   }
 
-  $("timeline-delete").addEventListener("click", () => {
+  function removeTimelineSelection() {
     removeClips(new Set(selectedClips));
+    removeGraphics(new Set(selectedGraphics));
     track.focus({ preventScroll: true });
-  });
+  }
+  $("timeline-delete").addEventListener("click", removeTimelineSelection);
 
   function openClipDetails(clip) {
     const details = clipDetails.get(clip);
@@ -1226,6 +1280,7 @@
     clockStyle = { ...defaultClockStyle };
     syncClockStyleControls();
     selectedGraphic = undefined;
+    selectedGraphics.clear();
     clearGraphicPreview();
     expandedClip = undefined;
     reviewQueue = [];
@@ -1276,6 +1331,7 @@
       .map((key) => [key, saved.clockStyle?.[key] ?? defaultClockStyle[key]]));
     syncClockStyleControls();
     selectedGraphic = undefined;
+    selectedGraphics.clear();
     clearGraphicPreview();
     transcript = saved.transcript ?? [];
     scoreRegion = saved.scoreRegion;
@@ -1603,6 +1659,13 @@
     });
   }
   $("timeline-reset").addEventListener("click", () => setTimelineZoom(1));
+  function centerTimelineOnPlayhead() {
+    if (!duration) return;
+    const playheadX = playhead.getBoundingClientRect().left;
+    const viewportLeft = rail.getBoundingClientRect().left + rail.clientLeft;
+    rail.scrollLeft += playheadX - viewportLeft - rail.clientWidth / 2;
+  }
+  $("timeline-go-to-playhead").addEventListener("click", centerTimelineOnPlayhead);
   new ResizeObserver(renderTicks).observe(rail);
 
   track.addEventListener("pointerdown", (event) => {
@@ -1618,25 +1681,30 @@
       return;
     }
     const graphicBlock = event.target.closest("[data-graphic]");
+    const { ctrlKey, metaKey, shiftKey } = event;
+    const modifiers = { ctrlKey, metaKey, shiftKey };
+    const selecting = ctrlKey || metaKey || shiftKey || $("timeline-multi-select").checked;
     if (graphicBlock) {
       if (busy || loadingGraphic) return;
       const graphic = graphics.find(({ slot }) => slot === graphicBlock.dataset.graphic);
       if (!graphic) return;
       const resize = Boolean(event.target.closest("[data-graphic-resize]"));
       timelineDrag = { id: event.pointerId, graphic, block: graphicBlock, resize, clientX: event.clientX,
+        selectionOnly: selecting, modifiers,
         cursor: video.currentTime,
         offset: trackTime(event.clientX) - (resize ? graphic.at + graphic.length : graphic.at) };
       track.setPointerCapture(event.pointerId);
       return;
     }
-    const edge = event.target.closest("[data-edge]")?.dataset.edge;
     const block = event.target.closest("[data-index]");
     if (block && busy) return;
-    if (block && !edge && (event.ctrlKey || event.metaKey || event.shiftKey)) return;
     const clip = block ? clips[Number(block.dataset.index)] : undefined;
+    const selectionOnly = clip && selecting;
+    const edge = selectionOnly ? undefined : event.target.closest("[data-edge]")?.dataset.edge;
     const time = trackTime(event.clientX);
     const offset = clip ? clip[edge ?? "start"] - time : 0;
     timelineDrag = { id: event.pointerId, clip, block, edge, offset, clientX: event.clientX,
+      selectionOnly, modifiers,
       cursor: video.currentTime,
       length: clip ? clip.end - clip.start : undefined };
     track.setPointerCapture(event.pointerId);
@@ -1649,7 +1717,7 @@
     }
   });
   track.addEventListener("pointermove", (event) => {
-    if (timelineDrag?.id !== event.pointerId) return;
+    if (timelineDrag?.id !== event.pointerId || timelineDrag.selectionOnly) return;
     const { clip, edge, block, offset, graphic, resize, clockIndex, clientX, length, cursor } = timelineDrag;
     const time = trackTime(event.clientX);
     if (graphic) {
@@ -1711,19 +1779,21 @@
   });
   track.addEventListener("pointerup", (event) => {
     if (timelineDrag?.id !== event.pointerId || timelineDrag.moved) return;
-    const { clip, clockIndex, edge } = timelineDrag;
+    const { clip, clockIndex, edge, graphic, modifiers } = timelineDrag;
     if (clockIndex !== undefined) seek(matchPeriods[clockIndex]);
-    else if (clip && !edge) {
-      selectTimelineClip(clip, event);
+    else if (graphic) {
+      selectTimelineGraphic(graphic, modifiers);
+      track.focus({ preventScroll: true });
+    } else if (clip && !edge) {
+      selectTimelineClip(clip, modifiers);
       track.focus({ preventScroll: true });
     }
   });
   track.addEventListener("lostpointercapture", (event) => {
     if (timelineDrag?.id !== event.pointerId) return;
-    if (timelineDrag.graphic) {
+    if (timelineDrag.graphic && timelineDrag.moved) {
       selectGraphic(timelineDrag.graphic);
-      if (timelineDrag.moved) graphicsChanged();
-      else seek(timelineDrag.graphic.at);
+      graphicsChanged();
     }
     const { clip, clockIndex, moved } = timelineDrag;
     if (clip && moved) renderClips();
@@ -1806,6 +1876,7 @@
     const current = ordered.indexOf(selectedClip);
     const index = current < 0 ? (direction > 0 ? 0 : ordered.length - 1) : current + direction;
     selectClip(ordered[Math.max(0, Math.min(ordered.length - 1, index))]);
+    centerTimelineOnPlayhead();
   }
 
   function stopReview() {
@@ -1858,11 +1929,10 @@
   $("prev").addEventListener("click", () => moveToClip(-1));
   $("next").addEventListener("click", () => moveToClip(1));
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Delete" && !busy && selectedClips.size && timeline.contains(event.target) &&
+    if (event.key === "Delete" && !$("timeline-delete").disabled && timeline.contains(event.target) &&
       !event.target.closest?.("input, select, textarea, [contenteditable]")) {
       event.preventDefault();
-      removeClips(new Set(selectedClips));
-      track.focus({ preventScroll: true });
+      removeTimelineSelection();
       return;
     }
     if (!video.closest(".preview-container").classList.contains("active") || !Number.isFinite(video.duration) ||

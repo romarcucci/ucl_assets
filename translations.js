@@ -230,7 +230,9 @@ Chrono Live Score|Live Score clock
 Chrono incrusté|On-screen clock
 Vue d’ensemble|Fit timeline
 Afficher toute la timeline|Fit the entire timeline
-Supprimer les clips sélectionnés|Delete selected clips
+Supprimer la sélection|Delete selection
+Sélection multiple|Multi-select
+Aller à la tête de lecture|Go to playhead
 Position X (%)|X position (%)
 Position Y (%)|Y position (%)
 Diminuer la position X|Decrease X position

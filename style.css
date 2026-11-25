@@ -2971,6 +2971,7 @@ body {
 .hm-source-frame {
   position: absolute;
   inset: 0;
+  container-type: size;
   overflow: hidden;
   background: #0d1117;
 }
@@ -3363,10 +3364,70 @@ body {
   min-height: 54px;
   touch-action: none;
 }
+.highlights-timeline-track[data-aligned="true"]::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: var(--hl-alignment);
+  width: 2px;
+  background: #75d2ff;
+  box-shadow: 0 0 6px #75d2ff;
+  pointer-events: none;
+  z-index: 3;
+}
 .highlights-timeline-ticks,
 .highlights-timeline-clips {
   position: relative;
   height: 22px;
+}
+.highlights-clock-track {
+  position: relative;
+  height: 24px;
+  border-top: 1px solid #38495d;
+}
+.highlights-clock-marker {
+  position: absolute;
+  top: 2px;
+  color: #d7eaff;
+  background: #244468;
+  border: 0;
+  border-radius: 3px;
+  padding: 2px 5px;
+  font: inherit;
+  font-size: 11px;
+  cursor: grab;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 4px;
+  text-align: left;
+}
+#hl-clock-current {
+  color: #d7eaff;
+  font-variant-numeric: tabular-nums;
+}
+#hl-standalone-clock {
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  background: transparent;
+  color: #fff;
+  font: clamp(10px, 2.5cqh, 28px)/1 Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.highlights-clock-stepper input[type="number"] {
+  width: 48px;
+}
+.highlights-timeline-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.highlights-timeline-zoom .btn-secondary {
+  width: auto;
+  margin: 0;
 }
 .highlights-timeline-ticks span {
   position: absolute;
@@ -3457,6 +3518,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: grab;
 }
 .highlights-timeline-clip .highlights-trim {
   display: none;
@@ -3467,7 +3529,7 @@ body {
   cursor: ew-resize;
 }
 @container (min-width: 24px) {
-  .highlights-timeline-clip[data-selected="true"] .highlights-trim {
+  .highlights-timeline-clip[data-primary="true"] .highlights-trim {
     display: block;
   }
 }
@@ -3478,6 +3540,11 @@ body {
   background: #fff;
   pointer-events: none;
   z-index: 2;
+}
+.highlights-playhead[data-snapped="true"] {
+  width: 3px;
+  background: #75d2ff;
+  box-shadow: 0 0 8px #75d2ff;
 }
 [data-fixed-section-order] .collapsible > summary {
   cursor: pointer;

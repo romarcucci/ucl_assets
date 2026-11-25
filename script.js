@@ -6175,17 +6175,10 @@ async function captureMontageGraphic(tab, data, layer) {
     await document.fonts.ready;
     await Promise.all([...target.querySelectorAll("img")].map((image) => image.decode().catch(() => {})));
     restoredBackgrounds.push(...await preInlineBgImages(target));
-    const bounds = target.getBoundingClientRect();
-    const { width } = bounds;
+    const { width } = target.getBoundingClientRect();
     if (!width) throw new Error("Graphic has no renderable size");
-    const timer = tab === "score" ? target.querySelector(".sb-timer")?.getBoundingClientRect() : null;
-    const clock = timer?.width ? {
-      x: (timer.left + timer.width / 2 - bounds.left) / width,
-      y: (timer.top + timer.height / 2 - bounds.top) / bounds.height,
-      size: Math.min(timer.height * 0.58, timer.width / 3.6) / width,
-    } : undefined;
     const blob = await renderGraphicExport(target, "png", { pixelRatio: Math.min(2, 1280 / width), backgroundColor: null });
-    return { blob, clock };
+    return blob;
   } finally {
     if (previousMode === undefined) delete target.dataset.exportMode;
     else target.dataset.exportMode = previousMode;

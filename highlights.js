@@ -74,6 +74,7 @@
   let savingAnalysis = false;
   let analysisDatabase;
   let selectedClip;
+  const selectedClips = new Set();
   let expandedClip;
   const clipDetails = new WeakMap();
   const graphicTrack = $("graphics-track");
@@ -87,7 +88,15 @@
   const graphicEditors = new WeakMap();
   const graphicImages = new Map();
   let graphics = [];
-  let matchPeriods = [null, null];
+  const clockHalves = [
+    { key: "first", from: 0, length: 2700 },
+    { key: "second", from: 2700, length: 2700 },
+    { key: "extra-first", from: 5400, length: 900 },
+    { key: "extra-second", from: 6300, length: 900 },
+  ];
+  let matchPeriods = clockHalves.map(() => null);
+  const defaultClockStyle = { x: 5, y: 5, size: 2.5, color: "#ffffff" };
+  let clockStyle = { ...defaultClockStyle };
   let selectedGraphic;
   let loadingGraphic = false;
   let timelineZoom = 1;
@@ -187,6 +196,7 @@
   }
 
   function updateControls() {
+    $("timeline-delete").disabled = busy || !selectedClips.size;
     const kept = clips.filter((clip) => clip.keep).map(exportClip);
     const restoring = busy || loadingAnalysis || loadingGraphic;
     updateMatchVideoButton();
@@ -317,6 +327,9 @@
     $("clock").value = `${clock(video.currentTime)} / ${clock(duration)}`;
     renderTrackedBox();
     renderGraphicPreview();
+    const timer = $("clock-current");
+    timer.textContent = liveScoreTime(video.currentTime);
+    timer.hidden = !timer.textContent;
   }
 
   function seek(time) {
@@ -367,17 +380,16 @@
         block.dataset.index = index;
         block.dataset.kind = clip.kind;
         block.dataset.excluded = clip.review === "ignore";
-        block.dataset.selected = clip === selectedClip;
+        block.dataset.selected = selectedClips.has(clip);
+        block.dataset.primary = clip === selectedClip;
         block.style.top = `${lane * 24 + 3}px`;
         positionBlock(block, clip);
         const title = `${clipLabel(clip)} · ${clock(clip.start)}–${clock(clip.end)}`;
         block.title = title;
-        const target = makeButton(clipLabel(clip), () => {
-          selectClip(clip);
-          openClipDetails(clip);
-        });
+        const target = makeButton(clipLabel(clip), (event) => selectTimelineClip(clip, event));
         target.className = "highlights-clip-target";
         target.setAttribute("aria-label", title);
+        target.setAttribute("aria-pressed", String(selectedClips.has(clip)));
         const handle = (edge, message) => {
           const button = makeButton(message, () => updateTrim(clip, edge, video.currentTime));
           button.className = "highlights-trim";
@@ -391,8 +403,26 @@
       }
     }
     clipTrack.style.height = `${Math.max(26, lanes.length * 24 + 4)}px`;
+    renderClockTrack();
     renderGraphicTrack();
     timestamps();
+  }
+
+  function renderClockTrack() {
+    const lane = $("clock-track");
+    lane.replaceChildren();
+    lane.hidden = !duration || !matchPeriods.some(Number.isFinite);
+    if (lane.hidden) return;
+    for (const { at, end, from, length, index } of clockSpans()) {
+      const value = `${matchClockText(from)} → ${matchClockText(from + length)}`;
+      const marker = makeButton(value, () => seek(at));
+      marker.className = "highlights-clock-marker";
+      marker.dataset.clockMarker = index;
+      marker.style.left = `${at / duration * 100}%`;
+      marker.style.width = `${(end - at) / duration * 100}%`;
+      marker.title = `${value} · ${clock(at)}–${clock(end)}`;
+      lane.append(marker);
+    }
   }
 
   function updateGraphicControls() {
@@ -406,20 +436,20 @@
     controls.inert = busy || loadingAnalysis || loadingGraphic;
     graphicSource.disabled = !groups.length;
     $("graphic-add").disabled = !graphicChoice || duration < 0.2 || graphics.length >= 16;
-    for (const [index, half] of ["first", "second"].entries()) {
-      $(`clock-${half}`).disabled = !Number.isFinite(video.duration);
+    for (const [index, { key }] of clockHalves.entries()) {
+      $(`clock-${key}`).disabled = !Number.isFinite(video.duration);
       const at = matchPeriods[index];
-      $(`clock-${half}-time`).textContent = Number.isFinite(at) ? clock(at) : "—";
+      $(`clock-${key}-time`).textContent = Number.isFinite(at) ? clock(at) : "—";
     }
     $("clock-clear").hidden = !matchPeriods.some(Number.isFinite);
   }
 
-  for (const [index, half] of ["first", "second"].entries()) {
-    $(`clock-${half}`).addEventListener("click", () => {
+  for (const [index, { key }] of clockHalves.entries()) {
+    $(`clock-${key}`).addEventListener("click", () => {
       const at = Number(video.currentTime.toFixed(3));
-      const other = matchPeriods[1 - index];
-      if (Number.isFinite(other) && (index === 0 ? at >= other : at <= other)) {
-        setStatus("Le début de la 2e mi-temps doit suivre celui de la 1re.");
+      if (at >= duration || matchPeriods.some((other, position) => Number.isFinite(other) &&
+        (position < index && other >= at || position > index && other <= at))) {
+        setStatus("Place le chrono avant la fin de la vidéo et dans l’ordre des mi-temps.");
         return;
       }
       matchPeriods[index] = at;
@@ -427,17 +457,42 @@
     });
   }
   $("clock-clear").addEventListener("click", () => {
-    matchPeriods = [null, null];
+    matchPeriods = clockHalves.map(() => null);
     graphicsChanged();
   });
+  for (const key of Object.keys(defaultClockStyle)) {
+    const input = $(`clock-${key}`);
+    input.addEventListener("input", () => {
+      if (key === "color") clockStyle.color = input.value;
+      else if (Number.isFinite(input.valueAsNumber)) {
+        const value = Math.round(input.valueAsNumber * 10) / 10;
+        clockStyle[key] = Math.max(Number(input.min), Math.min(Number(input.max), value));
+      }
+      invalidateExport();
+      renderGraphicPreview();
+    });
+    input.addEventListener("change", syncClockStyleControls);
+  }
+  function syncClockStyleControls() {
+    for (const [key, value] of Object.entries(clockStyle)) $(`clock-${key}`).value = value;
+  }
+
+  function clockSpans() {
+    const spans = clockHalves.flatMap(({ from, length }, index) => Number.isFinite(matchPeriods[index])
+      ? [{ at: matchPeriods[index], from, length, index }] : []);
+    return spans.map((period, index) => ({ ...period,
+      end: Math.min(period.at + period.length, spans[index + 1]?.at ?? duration, duration),
+    })).filter(({ at, end }) => end > at);
+  }
+
+  function matchClockText(seconds) {
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }
 
   function liveScoreTime(time) {
-    const [first, second] = matchPeriods;
-    const offset = Number.isFinite(second) && time >= second ? 2700 : 0;
-    const anchor = offset ? second : first;
-    if (!Number.isFinite(anchor) || time < anchor) return "";
-    const elapsed = offset + Math.min(2700, Math.floor(time - anchor + 0.000001));
-    return `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
+    const period = clockSpans().findLast(({ at, end }) => time >= at && time <= end);
+    if (!period) return "";
+    return matchClockText(period.from + Math.min(period.length, Math.floor(time - period.at + 0.000001)));
   }
 
   function renderGraphicPicker(groups) {
@@ -670,18 +725,13 @@
 
   function renderGraphicPreview() {
     const overlay = $("graphic-preview");
-    if (!overlay.childElementCount) return;
+    const time = video.currentTime;
+    const clock = liveScoreTime(time);
     const layers = graphics.flatMap(graphicLayers);
     for (const image of [...overlay.children]) {
       const index = layers.findIndex(({ slot }) => slot === image.dataset.slot);
       const graphic = layers[index];
       if (!graphic) { image.remove(); continue; }
-      const time = video.currentTime;
-      const timer = image.querySelector(".highlights-graphic-clock");
-      if (timer) {
-        timer.textContent = liveScoreTime(time);
-        timer.style.fontSize = `${graphicImages.get(graphic.slot).clock.size * graphic.size}cqw`;
-      }
       image.hidden = time < graphic.at || time >= graphic.at + graphic.length;
       image.style.width = `${graphic.size}%`;
       image.style.zIndex = index;
@@ -722,32 +772,32 @@
         image.style.opacity = Math.max(0, Math.min(1, (time - graphic.at) / fade, (graphic.at + graphic.length - time) / fade));
       }
     }
+    const standalone = $("standalone-clock");
+    standalone.textContent = clock;
+    standalone.hidden = !standalone.textContent;
+    standalone.style.left = `${clockStyle.x}%`;
+    standalone.style.top = `${clockStyle.y}%`;
+    standalone.style.translate = `-${clockStyle.x}% -${clockStyle.y}%`;
+    standalone.style.fontSize = `${clockStyle.size}cqh`;
+    standalone.style.color = clockStyle.color;
   }
 
   async function graphicAsset(graphic) {
     const cached = graphicImages.get(graphic.slot);
-    if (cached) return cached;
-    const result = await window.matchPresetMenus.renderMontageGraphic(graphic.recordId, graphic.mode);
-    const { blob, clock: timer } = result;
-    if (!graphics.some(({ slot, teamSlot }) => slot === graphic.slot || teamSlot === graphic.slot)) return result;
+    if (cached) return cached.blob;
+    const blob = await window.matchPresetMenus.renderMontageGraphic(graphic.recordId, graphic.mode);
+    if (!graphics.some(({ slot, teamSlot }) => slot === graphic.slot || teamSlot === graphic.slot)) return blob;
     const url = URL.createObjectURL(blob);
-    graphicImages.set(graphic.slot, { ...result, url });
     const overlay = document.createElement("div");
     overlay.dataset.slot = graphic.slot;
     const image = document.createElement("img");
     image.alt = "";
     image.src = url;
     overlay.append(image);
-    if (timer) {
-      const text = document.createElement("span");
-      text.className = "highlights-graphic-clock";
-      text.style.left = `${timer.x * 100}%`;
-      text.style.top = `${timer.y * 100}%`;
-      overlay.append(text);
-    }
     $("graphic-preview").append(overlay);
+    graphicImages.set(graphic.slot, { blob, url, overlay });
     renderGraphicPreview();
-    return result;
+    return blob;
   }
 
   function clearGraphicPreview() {
@@ -776,8 +826,9 @@
 
   function graphicsChanged() {
     invalidateExport();
+    renderClockTrack();
     renderGraphicTrack();
-    renderGraphicPreview();
+    timestamps();
     updateGraphicControls();
     graphics.forEach((graphic) => graphicEditors.get(graphic)?.refresh());
   }
@@ -785,13 +836,7 @@
   async function montageAssets(configuration, extra = {}) {
     const assets = { ...extra };
     try {
-      for (const graphic of configuration.graphics ?? []) {
-        const { blob, clock } = await graphicAsset(graphic);
-        assets[graphic.slot] = blob;
-        if (clock && configuration.matchPeriods?.some(Number.isFinite)) {
-          (configuration.graphicClocks ??= {})[graphic.slot] = clock;
-        }
-      }
+      for (const graphic of configuration.graphics ?? []) assets[graphic.slot] = await graphicAsset(graphic);
     } catch {
       throw new Error(messages.graphicUnavailable);
     }
@@ -825,12 +870,70 @@
 
   function selectClip(clip, shouldSeek = true) {
     selectedClip = clip;
+    selectedClips.clear();
+    selectedClips.add(clip);
     if (shouldSeek) seek(clip.start);
+    updateClipSelection();
+  }
+
+  function updateClipSelection() {
     for (const block of clipTrack.children) {
-      block.dataset.selected = clips[Number(block.dataset.index)] === selectedClip;
+      const clip = clips[Number(block.dataset.index)];
+      block.dataset.selected = selectedClips.has(clip);
+      block.dataset.primary = clip === selectedClip;
+      block.querySelector(".highlights-clip-target").setAttribute("aria-pressed", block.dataset.selected);
     }
+    $("timeline-delete").disabled = busy || !selectedClips.size;
     updateTrackingControls();
   }
+
+  function selectTimelineClip(clip, event) {
+    if (busy) return;
+    if (event.shiftKey && selectedClip) {
+      const ordered = clips.filter(valid).sort((a, b) => a.start - b.start);
+      const anchor = ordered.indexOf(selectedClip);
+      const end = ordered.indexOf(clip);
+      if (anchor >= 0 && end >= 0) {
+        if (!event.ctrlKey && !event.metaKey) selectedClips.clear();
+        for (const item of ordered.slice(Math.min(anchor, end), Math.max(anchor, end) + 1)) selectedClips.add(item);
+        updateClipSelection();
+        return;
+      }
+    }
+    if (event.ctrlKey || event.metaKey) {
+      if (selectedClips.delete(clip)) {
+        if (selectedClip === clip) selectedClip = [...selectedClips].at(-1);
+      } else {
+        selectedClips.add(clip);
+        selectedClip = clip;
+      }
+      updateClipSelection();
+      return;
+    }
+    selectClip(clip);
+    openClipDetails(clip);
+  }
+
+  function removeClips(removing) {
+    if (busy || !removing.size) return;
+    if (removing.has(trackingSelection?.clip)) closeScorePicker();
+    if (removing.has(reviewQueue[reviewIndex])) stopReview();
+    else {
+      reviewIndex -= reviewQueue.slice(0, Math.max(0, reviewIndex)).filter((clip) => removing.has(clip)).length;
+      reviewQueue = reviewQueue.filter((clip) => !removing.has(clip));
+    }
+    clips = clips.filter((clip) => !removing.has(clip));
+    for (const clip of removing) selectedClips.delete(clip);
+    if (removing.has(expandedClip)) expandedClip = undefined;
+    if (removing.has(selectedClip)) selectedClip = [...selectedClips].at(-1);
+    invalidateExport();
+    renderClips();
+  }
+
+  $("timeline-delete").addEventListener("click", () => {
+    removeClips(new Set(selectedClips));
+    track.focus({ preventScroll: true });
+  });
 
   function openClipDetails(clip) {
     const details = clipDetails.get(clip);
@@ -842,12 +945,13 @@
     details.querySelector("summary").scrollIntoView({ block: "nearest" });
   }
 
-  function updateTrim(clip, edge, seconds, block) {
+  function updateTrim(clip, edge, seconds, block, snapped = false) {
     if (!valid(clip)) return;
     const round = (value) => Math.round(value * 100) / 100;
+    const position = snapped ? seconds : round(seconds);
     clip[edge] = edge === "start"
-      ? Math.min(round(seconds), round(clip.end - 0.2))
-      : Math.max(round(seconds), round(clip.start + 0.2));
+      ? Math.min(position, snapped ? clip.end - 0.2 : round(clip.end - 0.2))
+      : Math.max(position, snapped ? clip.start + 0.2 : round(clip.start + 0.2));
     clip[edge] = Math.max(0, Math.min(duration, clip[edge]));
     invalidateExport();
     if (block) positionBlock(block, clip);
@@ -907,16 +1011,7 @@
       const remove = makeButton("Retirer", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        clips = clips.filter((item) => item !== clip);
-        if (selectedClip === clip) selectedClip = undefined;
-        if (expandedClip === clip) expandedClip = undefined;
-        if (reviewQueue.includes(clip)) {
-          const index = reviewQueue.indexOf(clip);
-          reviewQueue.splice(index, 1);
-          if (index < reviewIndex) reviewIndex--;
-        }
-        invalidateExport();
-        renderClips();
+        removeClips(new Set([clip]));
       });
       remove.classList.add("highlights-clip-remove");
       header.append(keep, caption, remove);
@@ -1127,7 +1222,9 @@
     duration = 0;
     clips = [];
     graphics = [];
-    matchPeriods = [null, null];
+    matchPeriods = clockHalves.map(() => null);
+    clockStyle = { ...defaultClockStyle };
+    syncClockStyleControls();
     selectedGraphic = undefined;
     clearGraphicPreview();
     expandedClip = undefined;
@@ -1139,6 +1236,7 @@
     analyzed = false;
     signature = undefined;
     selectedClip = undefined;
+    selectedClips.clear();
     loadingAnalysis = true;
     playerEnd = undefined;
     setTimelineZoom(1);
@@ -1170,8 +1268,13 @@
 
   function applyAnalysis(saved) {
     clips = saved.clips;
+    selectedClip = undefined;
+    selectedClips.clear();
     graphics = saved.graphics ?? [];
-    matchPeriods = [saved.matchPeriods?.[0] ?? null, saved.matchPeriods?.[1] ?? null];
+    matchPeriods = clockHalves.map((_, index) => saved.matchPeriods?.[index] ?? null);
+    clockStyle = Object.fromEntries(Object.keys(defaultClockStyle)
+      .map((key) => [key, saved.clockStyle?.[key] ?? defaultClockStyle[key]]));
+    syncClockStyleControls();
     selectedGraphic = undefined;
     clearGraphicPreview();
     transcript = saved.transcript ?? [];
@@ -1185,7 +1288,7 @@
   }
 
   function snapshotAnalysis() {
-    return { duration, clips: structuredClone(clips), graphics: structuredClone(graphics), matchPeriods: [...matchPeriods],
+    return { duration, clips: structuredClone(clips), graphics: structuredClone(graphics), matchPeriods: [...matchPeriods], clockStyle: { ...clockStyle },
       transcript, analyzed, scoreRegion, montage: montage.snapshot() };
   }
 
@@ -1258,6 +1361,7 @@
     timestamps();
   });
   video.addEventListener("play", () => {
+    playhead.dataset.snapped = "false";
     if (playbackSpeed() < 0) {
       stopReverse();
       $("speed").value = "1";
@@ -1280,6 +1384,9 @@
     } else {
       rail.scrollLeft = 0;
     }
+    $("timeline-reset").textContent = timelineZoom === 1
+      ? translate("Vue d’ensemble")
+      : `${Math.round(timelineZoom * 6000 / duration)} %`;
     renderTicks();
   }
 
@@ -1420,65 +1527,195 @@
 
   function trackTime(clientX) {
     const rect = track.getBoundingClientRect();
-    return Math.max(0, Math.min(duration, (clientX - rect.left) / rect.width * duration));
+    return (clientX - rect.left) * duration / rect.width;
+  }
+
+  function snapTimeline(time, { min = 0, max = duration, offsets = [0], endLimit = duration,
+    excludeClip, excludeClock, excludeGraphic, cursor, disabled } = {}) {
+    const targets = Number.isFinite(cursor) ? [cursor] : [];
+    for (const clip of clips) {
+      if (clip !== excludeClip && valid(clip)) targets.push(clip.start, clip.end);
+    }
+    for (const graphic of graphics) {
+      if (graphic !== excludeGraphic) targets.push(graphic.at, graphic.at + graphic.length);
+    }
+    for (const { at, end, index } of clockSpans()) {
+      if (index !== excludeClock) {
+        targets.push(at);
+        // A period cut short by the moving marker follows that marker.
+        if (at + clockHalves[index].length <= end || end !== matchPeriods[excludeClock]) targets.push(end);
+      }
+    }
+    let position = Math.max(min, Math.min(max, time));
+    let guide;
+    let distance = 9 * duration / track.getBoundingClientRect().width;
+    if (!disabled) {
+      for (const offset of offsets) {
+        for (const target of targets) {
+          if (offset && target > endLimit) continue;
+          const candidate = target - offset;
+          const gap = Math.abs(candidate - time);
+          if (candidate < min || candidate > max || gap > distance || (guide !== undefined && gap === distance)) continue;
+          position = candidate;
+          guide = target;
+          distance = gap;
+        }
+      }
+    }
+    return { position, guide };
+  }
+
+  function setTimelineGuide(time) {
+    track.dataset.aligned = String(time !== undefined);
+    if (time !== undefined) track.style.setProperty("--hl-alignment", `${time / duration * 100}%`);
+  }
+
+  function scrubTimeline(time, disabled) {
+    const { position, guide } = snapTimeline(time, { disabled });
+    playhead.dataset.snapped = String(guide !== undefined);
+    seek(position);
   }
 
   rail.addEventListener("wheel", (event) => {
-    if (!event.deltaY || event.shiftKey || event.ctrlKey || event.altKey) return;
+    if (!event.deltaY || !duration || event.shiftKey || event.altKey) return;
+    if (event.ctrlKey) {
+      event.preventDefault();
+      const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rail.clientWidth : 1;
+      const factor = Math.exp(Math.max(-0.5, Math.min(0.5, -event.deltaY * scale / 240)));
+      const next = timelineZoom === 1 && factor > 1 ? Math.max(factor, duration / 60) : timelineZoom * factor;
+      setTimelineZoom(next, event.clientX);
+      return;
+    }
+    if (rail.scrollWidth <= rail.clientWidth) return;
     event.preventDefault();
-    const step = Math.max(-1, Math.min(1, event.deltaY / (event.deltaMode ? 3 : 100)));
-    setTimelineZoom(timelineZoom * Math.exp(-step * 0.32), event.clientX);
+    const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rail.clientWidth : 1;
+    rail.scrollLeft += event.deltaY * scale;
   }, { passive: false });
+  for (const [direction, factor] of [["out", 1 / 1.5], ["in", 1.5]]) {
+    $(`timeline-zoom-${direction}`).addEventListener("click", () => {
+      const railBounds = rail.getBoundingClientRect();
+      const playheadX = track.getBoundingClientRect().left + video.currentTime / duration * track.offsetWidth;
+      const anchor = playheadX >= railBounds.left && playheadX <= railBounds.right
+        ? playheadX : railBounds.left + railBounds.width / 2;
+      const next = direction === "in" && timelineZoom === 1
+        ? Math.max(factor, duration / 60) : timelineZoom * factor;
+      setTimelineZoom(next, anchor);
+    });
+  }
   $("timeline-reset").addEventListener("click", () => setTimelineZoom(1));
   new ResizeObserver(renderTicks).observe(rail);
 
   track.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 || timelineDrag || !duration) return;
+    playhead.dataset.snapped = "false";
+    const clockBlock = event.target.closest("[data-clock-marker]");
+    if (clockBlock) {
+      if (busy) return;
+      const clockIndex = Number(clockBlock.dataset.clockMarker);
+      timelineDrag = { id: event.pointerId, clockIndex, clientX: event.clientX,
+        offset: matchPeriods[clockIndex] - trackTime(event.clientX) };
+      track.setPointerCapture(event.pointerId);
+      return;
+    }
     const graphicBlock = event.target.closest("[data-graphic]");
     if (graphicBlock) {
       if (busy || loadingGraphic) return;
       const graphic = graphics.find(({ slot }) => slot === graphicBlock.dataset.graphic);
       if (!graphic) return;
       const resize = Boolean(event.target.closest("[data-graphic-resize]"));
-      timelineDrag = { id: event.pointerId, graphic, block: graphicBlock, resize,
+      timelineDrag = { id: event.pointerId, graphic, block: graphicBlock, resize, clientX: event.clientX,
+        cursor: video.currentTime,
         offset: trackTime(event.clientX) - (resize ? graphic.at + graphic.length : graphic.at) };
       track.setPointerCapture(event.pointerId);
       return;
     }
     const edge = event.target.closest("[data-edge]")?.dataset.edge;
     const block = event.target.closest("[data-index]");
-    if (block && !edge) return;
+    if (block && busy) return;
+    if (block && !edge && (event.ctrlKey || event.metaKey || event.shiftKey)) return;
     const clip = block ? clips[Number(block.dataset.index)] : undefined;
     const time = trackTime(event.clientX);
-    const offset = edge ? clip[edge] - time : 0;
-    timelineDrag = { id: event.pointerId, clip, block, edge, offset };
+    const offset = clip ? clip[edge ?? "start"] - time : 0;
+    timelineDrag = { id: event.pointerId, clip, block, edge, offset, clientX: event.clientX,
+      cursor: video.currentTime,
+      length: clip ? clip.end - clip.start : undefined };
     track.setPointerCapture(event.pointerId);
     if (edge) {
       pausePlayback();
       selectClip(clip, false);
       seek(clip[edge]);
-    } else {
-      seek(time);
+    } else if (!clip) {
+      scrubTimeline(time, event.altKey);
     }
   });
   track.addEventListener("pointermove", (event) => {
     if (timelineDrag?.id !== event.pointerId) return;
+    const { clip, edge, block, offset, graphic, resize, clockIndex, clientX, length, cursor } = timelineDrag;
     const time = trackTime(event.clientX);
-    const { clip, edge, block, offset, graphic, resize } = timelineDrag;
     if (graphic) {
-      const position = Math.round((time - offset) * 100) / 100;
-      if (resize) graphic.length = Math.max(0.2, Math.min(duration - graphic.at, position - graphic.at));
-      else graphic.at = Math.max(0, Math.min(duration - graphic.length, position));
+      if (!timelineDrag.moved && Math.abs(event.clientX - clientX) < 4) return;
+      const { position, guide } = snapTimeline(time - offset, {
+        min: resize ? graphic.at + 0.2 : 0,
+        max: resize ? duration : duration - graphic.length,
+        offsets: resize ? [0] : [0, graphic.length],
+        excludeGraphic: graphic, cursor, disabled: event.altKey,
+      });
+      if (resize) graphic.length = position - graphic.at;
+      else graphic.at = position;
+      setTimelineGuide(guide);
       timelineDrag.moved = true;
       positionGraphic(block, graphic);
       renderGraphicPreview();
       return;
     }
-    if (edge) {
-      updateTrim(clip, edge, time + offset, block);
-      seek(clip[edge]);
+    if (!clip && clockIndex === undefined) {
+      scrubTimeline(time, event.altKey);
+      return;
+    }
+    if (!timelineDrag.moved && Math.abs(event.clientX - clientX) < 4) return;
+    if (!timelineDrag.moved) pausePlayback();
+    timelineDrag.moved = true;
+    const options = { excludeClip: clip, excludeClock: clockIndex, cursor, disabled: event.altKey };
+    if (clockIndex !== undefined) {
+      const previous = matchPeriods.slice(0, clockIndex).findLast(Number.isFinite);
+      const next = matchPeriods.slice(clockIndex + 1).find(Number.isFinite);
+      options.min = previous === undefined ? 0 : previous + 0.001;
+      options.max = (next ?? duration) - 0.001;
+      options.endLimit = next ?? duration;
+      options.offsets = [0, clockHalves[clockIndex].length];
+    } else if (edge === "start") {
+      options.max = clip.end - 0.2;
+    } else if (edge === "end") {
+      options.min = clip.start + 0.2;
     } else {
-      seek(time);
+      options.max = duration - length;
+      options.offsets = [0, length];
+    }
+    const { position, guide } = snapTimeline(time + offset, options);
+    setTimelineGuide(guide);
+    if (clockIndex !== undefined) {
+      matchPeriods[clockIndex] = position;
+      renderClockTrack();
+      seek(position);
+    } else {
+      selectClip(clip, false);
+      if (edge) updateTrim(clip, edge, position, block, guide !== undefined);
+      else {
+        clip.start = position;
+        clip.end = position + length;
+        positionBlock(block, clip);
+        invalidateExport();
+      }
+      seek(clip[edge ?? "start"]);
+    }
+  });
+  track.addEventListener("pointerup", (event) => {
+    if (timelineDrag?.id !== event.pointerId || timelineDrag.moved) return;
+    const { clip, clockIndex, edge } = timelineDrag;
+    if (clockIndex !== undefined) seek(matchPeriods[clockIndex]);
+    else if (clip && !edge) {
+      selectTimelineClip(clip, event);
+      track.focus({ preventScroll: true });
     }
   });
   track.addEventListener("lostpointercapture", (event) => {
@@ -1488,7 +1725,10 @@
       if (timelineDrag.moved) graphicsChanged();
       else seek(timelineDrag.graphic.at);
     }
-    if (timelineDrag.edge) renderClips();
+    const { clip, clockIndex, moved } = timelineDrag;
+    if (clip && moved) renderClips();
+    if (clockIndex !== undefined && moved) graphicsChanged();
+    setTimelineGuide(undefined);
     timelineDrag = undefined;
   });
 
@@ -1618,6 +1858,13 @@
   $("prev").addEventListener("click", () => moveToClip(-1));
   $("next").addEventListener("click", () => moveToClip(1));
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Delete" && !busy && selectedClips.size && timeline.contains(event.target) &&
+      !event.target.closest?.("input, select, textarea, [contenteditable]")) {
+      event.preventDefault();
+      removeClips(new Set(selectedClips));
+      track.focus({ preventScroll: true });
+      return;
+    }
     if (!video.closest(".preview-container").classList.contains("active") || !Number.isFinite(video.duration) ||
       event.target.closest?.("input, select, textarea, [contenteditable], dialog") || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "Escape" && !scorePicker.hidden) {
@@ -1662,6 +1909,14 @@
     invalidateExport();
     updateControls();
     try {
+      if (data.montage?.matchPeriods?.some(Number.isFinite) && !service?.clockStyle) {
+        service = await call("/status", { signal: request.signal });
+        if (!service.clockStyle) {
+          setStatus("Relance le service local Highlights pour appliquer les réglages du chrono à l’export.");
+          return;
+        }
+        session = undefined;
+      }
       await ensureSource(request.signal);
       if (typeof assets === "function") assets = await assets();
       for (const [slot, asset] of Object.entries(assets)) {
@@ -1742,9 +1997,10 @@
     const start = Math.max(0, video.currentTime - 7);
     const end = Math.min(duration, video.currentTime + 7);
     if (end - start < 0.1) return;
-    selectedClip = { kind: "manual", start, end, keep: true, review: "keep" };
-    clips.push(selectedClip);
+    const clip = { kind: "manual", start, end, keep: true, review: "keep" };
+    clips.push(clip);
     clips.sort((a, b) => a.start - b.start);
+    selectClip(clip, false);
     invalidateExport();
     renderClips();
   });
@@ -1816,7 +2072,7 @@
 
   function enhancementConfiguration() {
     return { ...montage.payload(false, false), enhancementMode: $("enhancement-mode").value,
-      graphics: graphics.flatMap(graphicLayers), matchPeriods: [...matchPeriods] };
+      graphics: graphics.flatMap(graphicLayers), matchPeriods: [...matchPeriods], clockStyle: { ...clockStyle } };
   }
 
   function isEnhancementReady(kept, configuration) {
@@ -1831,6 +2087,7 @@
     if (!dry) {
       configuration.graphics = graphics.flatMap(graphicLayers);
       configuration.matchPeriods = [...matchPeriods];
+      configuration.clockStyle = { ...clockStyle };
     }
     const format = montage.format();
     const edit = exportClip(clip);

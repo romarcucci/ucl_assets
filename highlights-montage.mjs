@@ -39,9 +39,14 @@ export function montageSettings(raw = {}, duration) {
       at: clamp(entry.at, 0, duration, 0), seconds: clamp(entry.seconds, 0, 9600, 0),
       score: /^\d{1,2}[-–:]\d{1,2}$/.test(entry.score) ? entry.score.replace(/[–:]/g, "-") : "",
     })).sort((a, b) => a.at - b.at) : [],
-    matchPeriods: Array.isArray(raw.matchPeriods) ? raw.matchPeriods.slice(0, 2)
-      .flatMap((at, index) => Number.isFinite(at) && at >= 0 && at < duration ? [{ at, start: index * 2700 }] : [])
-      .sort((a, b) => a.at - b.at) : [],
+    matchPeriods: montageClockPeriods(raw.matchPeriods, duration),
+    clockStyle: {
+      x: clamp(raw.clockStyle?.x, 0, 100, 5) / 100,
+      y: clamp(raw.clockStyle?.y, 0, 100, 5) / 100,
+      size: clamp(raw.clockStyle?.size, 0.5, 15, 2.5) / 100,
+      color: typeof raw.clockStyle?.color === "string" && /^#[0-9a-f]{6}$/i.test(raw.clockStyle.color)
+        ? `0x${raw.clockStyle.color.slice(1)}` : "white",
+    },
     graphics: Array.isArray(raw.graphics) ? raw.graphics.slice(0, 32).filter((entry) => assetSlot.test(entry.slot) && entry.slot.startsWith("graphic-"))
       .map((entry) => ({
         slot: entry.slot, at: clamp(entry.at, 0, duration, 0), length: clamp(entry.length, 0.001, duration + 1, 5),
@@ -57,6 +62,18 @@ export function montageSettings(raw = {}, duration) {
     music: raw.music === true,
     musicGain: clamp(raw.musicGain, -40, 12, -8),
   };
+}
+
+function montageClockPeriods(markers, duration) {
+  if (!Array.isArray(markers)) return [];
+  const starts = [0, 2700, 5400, 6300];
+  const periods = starts.flatMap((start, index) => {
+    const at = markers[index];
+    return Number.isFinite(at) && at >= 0 && at < duration ? [{ at, start, length: index < 2 ? 2700 : 900 }] : [];
+  }).sort((a, b) => a.at - b.at);
+  return periods.map((period, index) => ({ ...period,
+    end: Math.min(period.at + period.length, periods[index + 1]?.at ?? duration, duration),
+  })).filter(({ at, end }) => end > at);
 }
 
 function graphicClockBounds(bounds) {
@@ -205,16 +222,31 @@ function matchClock(graph, label, settings, start, end) {
   return output;
 }
 
+function periodClockFilters(periods, start, end, style, extraEnable = "", color = "white") {
+  return periods.flatMap((period) => {
+    const begin = Math.max(start, period.at);
+    const finish = Math.min(end, period.end);
+    if (begin >= finish) return [];
+    const time = `(min(${period.length},max(0,t+(${seconds(start - period.at)})))+${period.start})`;
+    const text = `%{eif\\:floor(${time}/60)\\:d}\\:%{eif\\:mod(floor(${time}),60)\\:d\\:2}`;
+    return [`drawtext=fontfile=clock.ttf:text='${text}':fontcolor=${color}:${style}:enable='gte(t,${seconds(begin - start)})*lt(t,${seconds(finish - start)})${extraEnable}'`];
+  });
+}
+
 function graphicClockFilters(clock, periods, start, end) {
   if (!clock) return [];
-  return periods.flatMap((period, index) => {
-    const begin = Math.max(start, period.at);
-    const finish = Math.min(end, periods[index + 1]?.at ?? end);
-    if (begin >= finish) return [];
-    const time = `(min(2700,max(0,t+(${seconds(start - period.at)})))+${period.start})`;
-    const text = `%{eif\\:floor(${time}/60)\\:d\\:2}\\:%{eif\\:mod(floor(${time}),60)\\:d\\:2}`;
-    return [`drawtext=fontfile=clock.ttf:text='${text}':fontcolor=white:fontsize=w*${clock.size}:x=w*${clock.x}-tw/2:y=h*${clock.y}-th/2:enable='gte(t,${seconds(begin - start)})*lt(t,${seconds(finish - start)})'`];
-  });
+  return periodClockFilters(periods, start, end, `fontsize=w*${clock.size}:x=w*${clock.x}-tw/2:y=h*${clock.y}-th/2`);
+}
+
+function standaloneClock(graph, label, periods, { x, y, size, color }, scoreGraphics, start, end) {
+  const covered = scoreGraphics.filter((graphic) => graphic.at < end && graphic.at + graphic.length > start)
+    .map((graphic) => `gte(t,${seconds(graphic.at - start)})*lt(t,${seconds(graphic.at + graphic.length - start)})`);
+  const uncovered = covered.length ? `*not(${covered.join("+")})` : "";
+  const filters = periodClockFilters(periods, start, end,
+    `fontsize=h*${size}:x=(w-tw)*${x}:y=(h-th)*${y}`, uncovered, color);
+  if (!filters.length) return label;
+  graph.push(`[${label}]${filters.join(",")}[standaloneclock]`);
+  return "standaloneclock";
 }
 
 async function enhanceFinalVideo(work, output, settings, job, signal, { ffmpeg, run, videoArgs, enhanceFrames }) {
@@ -284,7 +316,7 @@ export async function renderMontage(session, clips, raw, job, signal, tools, { p
         await link(preparedFrom, target).catch(() => copyFile(preparedFrom, target));
       }
       files.push(filename);
-    } else if (settings.clock.length || (settings.matchPeriods.length && settings.graphics.some((graphic) => graphic.clock))) {
+    } else if (settings.clock.length || settings.matchPeriods.length) {
       await clockFont(work);
     }
     let complete = 0;
@@ -329,6 +361,8 @@ export async function renderMontage(session, clips, raw, job, signal, tools, { p
         nextInput++;
       }
       label = matchClock(graph, label, settings, start, end);
+      label = standaloneClock(graph, label, settings.matchPeriods, settings.clockStyle,
+        settings.graphics.filter((graphic) => graphic.clock && session.assets?.has(graphic.slot)), start, end);
       const fade = card && index === clips.length - 1 ? `,${fadeToBlack(length)}` : "";
       graph.push(`[${label}]setsar=1${fade}[video]`);
       graph.push(useSourceAudio ? audioGraph(settings, clip, Math.max(0, -sourceAudio / audio.rate)) : "[1:a]anull[sound]");

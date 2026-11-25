@@ -74,7 +74,7 @@ async function capabilities() {
     stat(model).then(() => run(whisper, ["--help"])).then(() => true, () => false),
   ]);
   return { ffmpeg: encoder && probe, whisper: speech, savesTranscript: true, scoreboard: canReadScores(), replays: true,
-    montage: true, tracking: true, prepareEnhancement: encoder && await canEnhanceVideo() };
+    montage: true, clockStyle: true, tracking: true, prepareEnhancement: encoder && await canEnhanceVideo() };
 }
 
 async function canEnhanceVideo() {
@@ -98,8 +98,8 @@ async function enhanceFrames(input, output, signal, onProgress) {
 }
 
 function enhancementKey(clips, montage) {
-  const { format, framing, audio, archive, graphics, clock, matchPeriods, enhancementMode } = montage;
-  return JSON.stringify([clips, format, framing, audio, archive, graphics, clock, matchPeriods, enhancementMode === "fast"]);
+  const { format, framing, audio, archive, graphics, clock, matchPeriods, clockStyle, enhancementMode } = montage;
+  return JSON.stringify([clips, format, framing, audio, archive, graphics, clock, matchPeriods, clockStyle, enhancementMode === "fast"]);
 }
 
 async function audioLevels(wav, signal) {

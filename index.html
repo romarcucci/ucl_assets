@@ -4207,17 +4207,54 @@ MBAPPÉ | 45+2'</textarea
             <summary>Graphiques du match</summary>
             <div class="collapsible-body" id="hl-graphics-controls">
               <details class="collapsible collapsible-nested">
-                <summary>Chrono Live Score</summary>
+                <summary>Chrono incrusté</summary>
                 <div class="collapsible-body">
                   <div class="highlights-clock-anchor">
-                    <button class="btn-secondary" id="hl-clock-first" type="button">Début de la 1re mi-temps</button>
+                    <button class="btn-secondary" id="hl-clock-first" type="button">Ajouter le chrono de la 1re mi-temps</button>
                     <output id="hl-clock-first-time"></output>
                   </div>
                   <div class="highlights-clock-anchor">
-                    <button class="btn-secondary" id="hl-clock-second" type="button">Début de la 2e mi-temps</button>
+                    <button class="btn-secondary" id="hl-clock-second" type="button">Ajouter le chrono de la 2e mi-temps</button>
                     <output id="hl-clock-second-time"></output>
                   </div>
+                  <div class="highlights-clock-anchor">
+                    <button class="btn-secondary" id="hl-clock-extra-first" type="button">Ajouter le chrono de la 1re prolongation</button>
+                    <output id="hl-clock-extra-first-time"></output>
+                  </div>
+                  <div class="highlights-clock-anchor">
+                    <button class="btn-secondary" id="hl-clock-extra-second" type="button">Ajouter le chrono de la 2e prolongation</button>
+                    <output id="hl-clock-extra-second-time"></output>
+                  </div>
                   <button class="btn-secondary" id="hl-clock-clear" type="button" hidden>Effacer les repères du chrono</button>
+                  <div class="row">
+                    <div class="field">
+                      <label for="hl-clock-x">Position X (%)</label>
+                      <div class="number-stepper highlights-clock-stepper">
+                        <button class="stepper-btn" type="button" data-step="-0.1" data-target="hl-clock-x" aria-label="Diminuer la position X">−</button>
+                        <input id="hl-clock-x" type="number" min="0" max="100" step="0.1" value="5" />
+                        <button class="stepper-btn" type="button" data-step="0.1" data-target="hl-clock-x" aria-label="Augmenter la position X">+</button>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="hl-clock-y">Position Y (%)</label>
+                      <div class="number-stepper highlights-clock-stepper">
+                        <button class="stepper-btn" type="button" data-step="-0.1" data-target="hl-clock-y" aria-label="Diminuer la position Y">−</button>
+                        <input id="hl-clock-y" type="number" min="0" max="100" step="0.1" value="5" />
+                        <button class="stepper-btn" type="button" data-step="0.1" data-target="hl-clock-y" aria-label="Augmenter la position Y">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="field">
+                      <label for="hl-clock-size">Taille (%)</label>
+                      <div class="number-stepper highlights-clock-stepper">
+                        <button class="stepper-btn" type="button" data-step="-0.1" data-target="hl-clock-size" aria-label="Diminuer la taille">−</button>
+                        <input id="hl-clock-size" type="number" min="0.5" max="15" step="0.1" value="2.5" />
+                        <button class="stepper-btn" type="button" data-step="0.1" data-target="hl-clock-size" aria-label="Augmenter la taille">+</button>
+                      </div>
+                    </div>
+                    <label class="field"><span>Couleur des chiffres</span><input id="hl-clock-color" type="color" value="#ffffff" /></label>
+                  </div>
                 </div>
               </details>
               <div class="field">
@@ -4737,6 +4774,7 @@ MBAPPÉ | 45+2'</textarea
               <canvas id="hm-backdrop" aria-hidden="true" hidden></canvas>
               <video id="hl-video" playsinline preload="metadata"></video>
               <div id="hl-graphic-preview" aria-hidden="true"></div>
+              <output id="hl-standalone-clock" hidden aria-hidden="true"></output>
             </div>
             <video id="hm-render" playsinline hidden></video>
             <div class="highlights-score-box highlights-tracked-box" id="hl-track-box" hidden aria-hidden="true"></div>
@@ -4770,14 +4808,20 @@ MBAPPÉ | 45+2'</textarea
               <div class="highlights-timeline-scroll" id="hl-timeline-scroll">
                 <div class="highlights-timeline-track" id="hl-timeline-track" tabindex="0" aria-label="Timeline du match">
                   <div class="highlights-timeline-ticks" id="hl-timeline-ticks" aria-hidden="true"></div>
+                  <div class="highlights-clock-track" id="hl-clock-track" aria-label="Chrono Live Score" hidden></div>
                   <div class="highlights-timeline-clips" id="hl-timeline-clips"></div>
                   <div class="highlights-graphics-track" id="hl-graphics-track" aria-label="Graphiques du match" hidden></div>
                   <div class="highlights-playhead" id="hl-playhead" aria-hidden="true"></div>
                 </div>
               </div>
               <div class="highlights-timeline-tools">
-                <span>Molette pour zoomer sur la timeline. I et O pour ajuster la coupe sélectionnée.</span>
-                <button class="btn-secondary" id="hl-timeline-reset" type="button" aria-label="Afficher le match en entier sur la timeline">100 %</button>
+                <output id="hl-clock-current" aria-label="Chrono Live Score" hidden></output>
+                <button class="btn-secondary" id="hl-timeline-delete" type="button" disabled>Supprimer les clips sélectionnés</button>
+                <div class="highlights-timeline-zoom">
+                  <button class="btn-secondary" id="hl-timeline-zoom-out" type="button" aria-label="Réduire le zoom de la timeline">−</button>
+                  <button class="btn-secondary" id="hl-timeline-reset" type="button" aria-label="Afficher toute la timeline">Vue d’ensemble</button>
+                  <button class="btn-secondary" id="hl-timeline-zoom-in" type="button" aria-label="Augmenter le zoom de la timeline">+</button>
+                </div>
               </div>
             </div>
           </div>
@@ -5040,7 +5084,7 @@ MBAPPÉ | 45+2'</textarea
     <script src="video-thumbnail.js"></script>
     <script src="translations.js"></script>
     <script src="script.js"></script>
-    <script src="local-library.js"></script>
+    <script src="local-library.js?v=8"></script>
     <script src="highlights-montage.js"></script>
     <script src="highlights.js"></script>
   </body>

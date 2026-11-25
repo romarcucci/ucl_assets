@@ -109,6 +109,7 @@
   const disconnected = "Connecte le dossier de sauvegarde pour afficher la bibliothèque.";
   let connection;
   let message;
+  let statusDetail;
   let resultMessage;
   let queue = Promise.resolve();
   let campaigns = new Map();
@@ -121,10 +122,12 @@
   const expandedBranches = new Map();
   const selected = new Set();
 
-  function setStatus(text) {
+  function setStatus(text, detail = "") {
     message = text;
+    statusDetail = detail;
     status.hidden = !text;
     status.textContent = text ? translate(text, { folder: connection?.directory.name }) : "";
+    if (detail) status.textContent += ` ${detail}`;
   }
 
   function accessConnection(mode, action) {
@@ -132,20 +135,37 @@
       const open = indexedDB.open("ucl-backup-folder", 1);
       open.onupgradeneeded = () => open.result.createObjectStore("settings");
       open.onerror = () => reject(open.error);
+      open.onblocked = () => reject(new DOMException("IndexedDB connection blocked", "InvalidStateError"));
       open.onsuccess = () => {
         const db = open.result;
-        const transaction = db.transaction("settings", mode);
-        const request = action(transaction.objectStore("settings"));
-        transaction.oncomplete = () => {
+        try {
+          const transaction = db.transaction("settings", mode);
+          const request = action(transaction.objectStore("settings"));
+          transaction.oncomplete = () => {
+            db.close();
+            resolve(request.result);
+          };
+          transaction.onabort = () => {
+            db.close();
+            reject(transaction.error);
+          };
+        } catch (error) {
           db.close();
-          resolve(request.result);
-        };
-        transaction.onabort = () => {
-          db.close();
-          reject(transaction.error);
-        };
+          reject(error);
+        }
       };
     });
+  }
+
+  async function checkBackupAccess(operation, step) {
+    let timeout;
+    try {
+      return await Promise.race([operation, new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new DOMException(step, "TimeoutError")), 5000);
+      })]);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async function folder(root, parts, create = false) {
@@ -207,9 +227,14 @@
     return records.has(id) ? digest(new TextEncoder().encode(crypto.randomUUID())) : id;
   }
 
-  function findRecord(kind, name, projectId) {
+  function findRecord(kind, name, projectId, entry) {
     return [...records.values()].find(({ item }) =>
-      item.kind === kind && item.name === name && (item.projectId || "") === projectId);
+      item.kind === kind && item.name === name && (item.projectId || "") === projectId &&
+      (kind !== "montage" || !entry || isShortEdit(item.entry) === isShortEdit(entry)));
+  }
+
+  function isShortEdit(entry) {
+    return entry?.data?.montage?.format === "short";
   }
 
   async function useProject(project) {
@@ -368,7 +393,7 @@
     if (catalog[kind][5]) project = null;
     if (migration && [...records.values()].some(({ item }) => item.kind === kind && item.name === entry.name)) return;
     const placement = projectPlacement(project);
-    const existing = findRecord(kind, entry.name, placement.projectId);
+    const existing = findRecord(kind, entry.name, placement.projectId, entry);
     const id = existing?.item.id ?? await availableRecordId(kind, entry.name, placement.projectId);
     const item = {
       version: 1, id, kind, name: entry.name, ...placement,
@@ -1367,7 +1392,11 @@
       if (kind === "thumbnail") {
         list.sort((a, b) => Number(a.kind === "shortThumbnail") - Number(b.kind === "shortThumbnail"));
       }
-      const children = list.map((item) => renderItem(item, groupedByLeg));
+      const children = kind === "montage" ? [false, true].map((short) => branch(
+        id + (short ? "/short" : "/video"), short ? "Short" : "Video",
+        list.filter((item) => isShortEdit(item.entry) === short).map((item) => renderItem(item, groupedByLeg)),
+        { type: "kind", kind },
+      )) : list.map((item) => renderItem(item, groupedByLeg));
       return branch(id, names[kind] ?? kindLabel(kind), children, { type: "kind", kind });
     });
   }
@@ -1815,7 +1844,13 @@
         render();
         return;
       }
-      if (await connection.directory.queryPermission({ mode: "readwrite" }) !== "granted") {
+      const permission = await checkBackupAccess(connection.directory.queryPermission({ mode: "readwrite" }),
+        "Checking folder permission").catch((error) => {
+        if (error.name !== "TimeoutError") throw error;
+        console.warn("[UCL Backup] Folder permission check timed out; select the folder again", error);
+        return "prompt";
+      });
+      if (permission !== "granted") {
         resultMessage = denied;
         setStatus(denied);
         render();
@@ -1824,9 +1859,10 @@
       resultMessage = undefined;
       await action();
       render();
-    }).catch(() => {
+    }).catch((error) => {
+      console.error("[UCL Backup] Scheduled library operation failed", error);
       resultMessage = failed;
-      setStatus(failed);
+      setStatus(failed, error.name);
       render();
     });
     return queue;
@@ -2363,7 +2399,7 @@
       if (tab.dataset.tab === "library") render();
     });
   }
-  document.addEventListener("interface-language-change", () => { setStatus(message); render(); });
+  document.addEventListener("interface-language-change", () => { setStatus(message, statusDetail); render(); });
   syncLibraryDock(document.querySelector(".tab.active").dataset.tab);
   render();
 
@@ -2443,7 +2479,11 @@
   }
 
   async function activate() {
+    setStatus("Chargement de la bibliothèque « {folder} »…");
+    console.info("[UCL Backup] Reading campaigns and presets", connection.directory.name);
     await readLibrary();
+    console.info("[UCL Backup] Library read", { campaigns: campaigns.size, projects: projects.size });
+    render();
     await migrate();
     for (const project of projects.values()) {
       if (!project.inferred) continue;
@@ -2460,6 +2500,7 @@
     await flushPending();
     if (!dock.inert) revealActiveMatchInDock();
     setStatus("Bibliothèque connectée à « {folder} ».");
+    console.info("[UCL Backup] Library connected", connection.directory.name);
   }
 
   if (typeof window.showDirectoryPicker !== "function") {
@@ -2469,39 +2510,62 @@
     return;
   }
 
-  const ready = accessConnection("readonly", (store) => store.get("active")).then((saved) => {
+  const ready = checkBackupAccess(accessConnection("readonly", (store) => store.get("active")),
+    "Reading saved folder from IndexedDB").then((saved) => {
     if (!connection && saved?.directory) {
       connection = saved;
       activeProjectId = saved.activeProjectId ?? "";
-      return schedule(activate);
+      if (!button.disabled) schedule(activate);
     }
-  }).catch(() => setStatus(failed));
+  }).catch((error) => {
+    console.error("[UCL Backup] Restoring saved connection failed", error);
+    setStatus(failed, error.name);
+  });
   for (const tab of thumbnailKinds.keys()) {
     document.querySelector(`.tab[data-tab="${tab}"]`).addEventListener("click", () => loadActiveThumbnail(tab));
   }
 
   button.addEventListener("click", async () => {
     button.disabled = true;
+    let selecting = true;
+    setStatus("Sélectionne le dossier de sauvegarde, puis confirme dans Chrome si nécessaire.");
     try {
-      if (connection && message === denied) {
-        if (await connection.directory.requestPermission({ mode: "readwrite" }) !== "granted") return;
-      } else {
-        const directory = await window.showDirectoryPicker({ id: "ucl-library", mode: "readwrite" });
-        await ready;
-        await queue;
-        if (!(connection && await connection.directory.isSameEntry(directory))) {
-          const next = { directory, migrateBrowser: !connection };
-          await accessConnection("readwrite", (store) => store.put(next, "active"));
-          connection = next;
-          activeProjectId = "";
-          thumbnailProjects.clear();
-          selected.clear();
-          expandedBranches.clear();
-        }
+      const directory = await window.showDirectoryPicker({ id: "ucl-library", mode: "readwrite" });
+      selecting = false;
+      setStatus("Ouverture du dossier sélectionné…");
+      console.info("[UCL Backup] Folder selected; waiting for saved connection", directory.name);
+      await ready;
+      console.info("[UCL Backup] Saved connection loaded; waiting for library queue");
+      await queue;
+      console.info("[UCL Backup] Library queue ready; comparing folder handles", { hasSavedFolder: !!connection });
+      const sameDirectory = connection && await checkBackupAccess(connection.directory.isSameEntry(directory),
+        "Comparing saved and selected folders").catch((error) => {
+        console.warn("[UCL Backup] Could not compare folder handles", error);
+        return false;
+      });
+      console.info("[UCL Backup] Folder comparison finished", { sameDirectory: !!sameDirectory });
+      const next = sameDirectory ? { ...connection, directory } : { directory, migrateBrowser: !connection };
+      connection = next;
+      if (!sameDirectory) {
+        activeProjectId = "";
+        thumbnailProjects.clear();
+        selected.clear();
+        expandedBranches.clear();
       }
+      console.info("[UCL Backup] Starting library activation");
       await schedule(activate);
+      console.info("[UCL Backup] Activation returned; saving folder handle");
+      await accessConnection("readwrite", (store) => store.put(next, "active"));
+      console.info("[UCL Backup] Folder handle saved");
     } catch (error) {
-      if (error.name !== "AbortError") setStatus(failed);
+      if (!selecting || error.name !== "AbortError") console.error("[UCL Backup] Connection failed", error);
+      if (selecting && error.name === "SecurityError") {
+        setStatus("Ouvre l’éditeur dans un onglet du navigateur pour choisir le dossier.");
+      } else if (selecting && error.name === "AbortError") {
+        setStatus("Aucun dossier autorisé. Sélectionne ton dossier de sauvegarde et confirme l’accès.");
+      } else {
+        setStatus(failed, error.name);
+      }
     } finally {
       button.disabled = false;
     }

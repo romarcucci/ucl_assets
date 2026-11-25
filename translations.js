@@ -227,10 +227,29 @@ Lire l’extrait|Play clip
 Garder l’extrait|Keep clip
 Graphiques du match|Match graphics
 Chrono Live Score|Live Score clock
-Début de la 1re mi-temps|First-half kickoff
-Début de la 2e mi-temps|Second-half kickoff
+Chrono incrusté|On-screen clock
+Vue d’ensemble|Fit timeline
+Afficher toute la timeline|Fit the entire timeline
+Supprimer les clips sélectionnés|Delete selected clips
+Position X (%)|X position (%)
+Position Y (%)|Y position (%)
+Diminuer la position X|Decrease X position
+Augmenter la position X|Increase X position
+Diminuer la position Y|Decrease Y position
+Augmenter la position Y|Increase Y position
+Taille (%)|Size (%)
+Couleur des chiffres|Digit color
+Diminuer la taille|Decrease size
+Augmenter la taille|Increase size
+Relance le service local Highlights pour appliquer les réglages du chrono à l’export.|Restart the local Highlights service to apply the clock settings to exports.
+Ajouter le chrono de la 1re mi-temps|Add first-half clock
+Ajouter le chrono de la 2e mi-temps|Add second-half clock
+Ajouter le chrono de la 1re prolongation|Add extra-time first-half clock
+Ajouter le chrono de la 2e prolongation|Add extra-time second-half clock
 Effacer les repères du chrono|Clear clock markers
-Le début de la 2e mi-temps doit suivre celui de la 1re.|The second-half kickoff must be after the first-half kickoff.
+Place le chrono avant la fin de la vidéo et dans l’ordre des mi-temps.|Place clocks before the end of the video and in half order.
+Réduire le zoom de la timeline|Zoom out on the timeline
+Augmenter le zoom de la timeline|Zoom in on the timeline
 Début (min:s)|Start (min:s)
 Fin (min:s)|End (min:s)
 Durée (min:s)|Duration (min:s)
@@ -810,7 +829,12 @@ Couleur de l’ombre des joueurs|Player shadow color
 Couleur de l’ombre de l’écusson gauche|Left club logo shadow color
 Couleur de l’ombre de l’écusson droit|Right club logo shadow color
 Dossier de sauvegarde|Backup folder
+Sélectionne le dossier de sauvegarde, puis confirme dans Chrome si nécessaire.|Select your backup folder, then confirm in Chrome if prompted.
+Ouverture du dossier sélectionné…|Opening the selected folder…
+Chargement de la bibliothèque « {folder} »…|Loading the “{folder}” library…
 Réautorise le dossier de sauvegarde pour reprendre la copie automatique.|Grant access to the backup folder to resume automatic backups.
+Ouvre l’éditeur dans un onglet du navigateur pour choisir le dossier.|Open the editor in a browser tab to select the folder.
+Aucun dossier autorisé. Sélectionne ton dossier de sauvegarde et confirme l’accès.|No folder was authorized. Select your backup folder and confirm access.
 Ce navigateur ne permet pas d’écrire dans un dossier. Ouvre l’éditeur dans Chrome ou Edge.|This browser cannot write to a folder. Open the editor in Chrome or Edge.
 Impossible d’écrire dans le dossier de sauvegarde. Vérifie son accès.|Could not write to the backup folder. Check its permissions.
 Sauvegarde copiée dans « {folder} ».|Backup written to “{folder}”.

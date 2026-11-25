@@ -163,7 +163,14 @@ Encadre le joueur ou le ballon sur une image où il est bien visible.|Draw a box
 Langue du commentaire|Commentary language
 Automatique|Auto
 Suggestions max.|Max suggestions
+Confiance minimale SoccerNet (%)|Minimum SoccerNet confidence (%)
 Analyser le match|Analyze the match
+Analyser avec Whisper|Analyze with Whisper
+Analyser avec SoccerNet Action Spotting|Analyze with SoccerNet Action Spotting
+Détection des actions avec SoccerNet…|Detecting match events with SoccerNet…
+SoccerNet est indisponible sur le service local.|SoccerNet is unavailable on the local service.
+SoccerNet n’a pas pu analyser cette vidéo.|SoccerNet could not analyze this video.
+Whisper est indisponible sur le service local.|Whisper is unavailable on the local service.
 Progression du montage|Highlights progress
 Temps écoulé|Elapsed time
 Extraits à garder|Clips to keep
@@ -193,7 +200,7 @@ Position de lecture|Playback position
 Timeline du match|Match timeline
 Molette pour zoomer sur la timeline. I et O pour ajuster la coupe sélectionnée.|Scroll to zoom the timeline. Press I and O to trim the selected clip.
 Afficher le match en entier sur la timeline|Fit the full match on the timeline
-Ajouter autour de la tête de lecture|Add clip around playhead
+Ajouter à partir de la tête de lecture|Add clip from playhead
 Ajouter un extrait|Add clip
 Commandes de lecture|Playback controls
 Vitesse de lecture|Playback speed
@@ -217,6 +224,10 @@ La comparaison des ralentis a échoué. Les suggestions ont été conservées.|R
 Une opération est déjà en cours.|An operation is already in progress.
 L’opération a échoué. Réessaie avec cette vidéo ou un autre fichier.|The operation failed. Try again with this video or another file.
 But possible|Possible goal
+But|Goal
+Occasion|Chance
+Type d’extrait|Clip type
+Type d’origine|Original type
 Score à l’écran · {score}|On-screen score · {score}
 Occasion possible|Possible chance
 Pic sonore|Audio peak

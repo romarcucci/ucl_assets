@@ -11,15 +11,18 @@
   const scorePicker = $("score-picker");
   const scoreBox = $("score-box");
   const analyze = $("analyze");
+  const analyzeSoccerNet = $("analyze-soccernet");
   const cancel = $("cancel");
   const add = $("add");
+  const addTimeline = $("add-timeline");
   const save = $("save");
   const exportButton = $("export");
   const download = $("download");
   const clipList = $("clips");
-  const whisper = $("whisper");
   const language = $("language");
   const limit = $("limit");
+  const soccerConfidence = $("soccernet-confidence");
+  const soccerConfidenceButtons = soccerConfidence.closest(".number-stepper").querySelectorAll(".stepper-btn");
   const limitButtons = limit.closest(".number-stepper").querySelectorAll(".stepper-btn");
   const timeline = $("timeline");
   const track = $("timeline-track");
@@ -32,6 +35,7 @@
   const stages = {
     audio: "Analyse du son du match…",
     whisper: "Transcription locale des commentaires…",
+    soccernet: "Détection des actions avec SoccerNet…",
     score: "Lecture du tableau de score…",
     replay: "Recherche de ralentis répétés…",
     tracking: "Suivi du sujet dans l’extrait…",
@@ -45,6 +49,8 @@
     sessionMissing: "La session locale a expiré. Relance l’opération.",
     noAudio: "Cette vidéo n’a pas de piste audio. Tu peux ajouter les extraits à la main.",
     whisperFallback: "Whisper a échoué. Les suggestions viennent de l’analyse du son.",
+    soccernetUnavailable: "SoccerNet est indisponible sur le service local.",
+    soccernetFailed: "SoccerNet n’a pas pu analyser cette vidéo.",
     scoreFallback: "Le score n’a pas pu être lu. Les autres indices restent disponibles.",
     replayFallback: "La comparaison des ralentis a échoué. Les suggestions ont été conservées.",
     invalidScoreRegion: "Sélectionne une zone valide autour des deux chiffres du score.",
@@ -202,16 +208,18 @@
     const restoring = busy || loadingAnalysis || loadingGraphic;
     updateMatchVideoButton();
     updateGraphicControls();
-    whisper.disabled = busy || !service?.whisper;
     replayToggle.disabled = restoring || !service?.replays;
     scoreButton.disabled = restoring || !service?.scoreboard || !Number.isFinite(video.duration);
     scoreButton.textContent = translate(scoreRegion ? "Modifier la zone du score" : "Définir la zone du score");
     $("score-clear").hidden = !scoreRegion || busy;
-    language.disabled = whisper.disabled || !whisper.checked;
+    language.disabled = restoring || !service?.whisper;
     limit.disabled = busy;
     limitButtons.forEach((button) => { button.disabled = busy; });
-    analyze.disabled = restoring || !file || !service?.ffmpeg;
-    add.disabled = restoring || !Number.isFinite(video.duration) || clips.length >= 80;
+    analyze.disabled = restoring || !file || !service?.ffmpeg || !service?.whisper;
+    analyzeSoccerNet.disabled = restoring || !file || !service?.ffmpeg || !service?.soccernet;
+    soccerConfidence.disabled = restoring || !service?.soccernet;
+    soccerConfidenceButtons.forEach((button) => { button.disabled = soccerConfidence.disabled; });
+    add.disabled = addTimeline.disabled = restoring || !Number.isFinite(video.duration) || clips.length >= 80;
     save.disabled = restoring || savingAnalysis || !signature || (!analyzed && !clips.length) || !clips.every(valid);
     exportButton.disabled = restoring || !service?.ffmpeg || !service?.montage || !kept.length || !kept.every(valid);
     $("end-card").disabled = restoring;
@@ -292,6 +300,7 @@
   }
 
   function clipLabel(clip) {
+    if (clip.classification) return translate(clip.classification === "goal" ? "But" : "Occasion");
     return translate({ goal: "But possible", chance: "Occasion possible", audio: "Pic sonore", manual: "Extrait manuel" }[clip.kind]);
   }
 
@@ -299,6 +308,7 @@
     if (!valid(clip) || !Number.isFinite(video.duration) || video.error) return;
     selectClip(clip, false);
     seek(playbackSpeed() < 0 ? clip.end : clip.start);
+    centerTimelineOnPlayhead();
     playerStart = clip.start;
     playerEnd = clip.end;
     startPlayback();
@@ -313,6 +323,7 @@
     $("review").hidden = !clips.length;
     const current = reviewQueue[reviewIndex];
     $("review-current").hidden = !current;
+    $("review-kind").value = current?.classification ?? "";
     $("review-start").textContent = translate(current ? "Quitter la validation" : "Validation rapide");
     $("review-start").disabled = !current && !pendingReview().length;
     const seconds = clips.filter((clip) => clip.keep).map(exportClip).filter(valid)
@@ -379,7 +390,7 @@
         const block = document.createElement("div");
         block.className = "highlights-timeline-clip";
         block.dataset.index = index;
-        block.dataset.kind = clip.kind;
+        block.dataset.kind = clip.classification ?? clip.kind;
         block.dataset.excluded = clip.review === "ignore";
         block.dataset.selected = selectedClips.has(clip);
         block.dataset.primary = clip === selectedClip;
@@ -1027,6 +1038,13 @@
     return button;
   }
 
+  function classifyClip(clip, classification) {
+    if (!clip) return;
+    if (classification) clip.classification = classification;
+    else delete clip.classification;
+    renderClips();
+  }
+
   function renderClips() {
     clipList.replaceChildren();
     for (const clip of clips) {
@@ -1091,6 +1109,19 @@
 
       const row = document.createElement("div");
       row.className = "row";
+      const kindField = document.createElement("label");
+      kindField.className = "field";
+      const kindTitle = document.createElement("span");
+      kindTitle.textContent = translate("Type d’extrait");
+      const kind = $("review-kind").cloneNode(true);
+      kind.removeAttribute("id");
+      kind.value = clip.classification ?? "";
+      kind.addEventListener("change", () => {
+        classifyClip(clip, kind.value);
+        clipDetails.get(clip)?.querySelector("select")?.focus({ preventScroll: true });
+      });
+      kindField.append(kindTitle, kind);
+      row.append(kindField);
       const fields = {};
       for (const [key, title] of [["start", "Début (min:s)"], ["end", "Fin (min:s)"]]) {
         fields[key] = stepperField(title, () => clip[key], (value) => {
@@ -1146,7 +1177,7 @@
   function connectionMessage() {
     return !service ? "" :
       !service.ffmpeg ? "FFmpeg et FFprobe doivent être installés pour analyser et exporter." :
-      !service.whisper ? "Whisper est indisponible. L’analyse du son reste utilisable." :
+      !service.whisper ? "Whisper est indisponible sur le service local." :
       !service.montage ? "Relance le service local pour activer le montage." :
       !service.scoreboard ? "Installe les dépendances avec npm install pour lire le tableau de score." : "";
   }
@@ -1711,7 +1742,6 @@
     if (edge) {
       pausePlayback();
       selectClip(clip, false);
-      seek(clip[edge]);
     } else if (!clip) {
       scrubTimeline(time, event.altKey);
     }
@@ -1774,7 +1804,6 @@
         positionBlock(block, clip);
         invalidateExport();
       }
-      seek(clip[edge ?? "start"]);
     }
   });
   track.addEventListener("pointerup", (event) => {
@@ -1898,6 +1927,9 @@
     reviewIndex = 0;
     playClip(reviewQueue[0]);
     renderReview();
+  });
+  $("review-kind").addEventListener("change", (event) => {
+    classifyClip(reviewQueue[reviewIndex], event.target.value);
   });
   for (const [id, decision] of [["keep", "keep"], ["ignore", "ignore"], ["review-later", "later"]]) {
     $(id).addEventListener("click", () => {
@@ -2036,9 +2068,12 @@
     }
   }
 
-  analyze.addEventListener("click", () => {
+  function analyzeMatch(engine) {
+    if (engine === "soccernet" && !soccerConfidence.reportValidity()) return;
     const options = {
-      whisper: whisper.checked && Boolean(service?.whisper),
+      engine,
+      soccerConfidence: engine === "soccernet" ? soccerConfidence.valueAsNumber : undefined,
+      whisper: engine === "whisper",
       language: language.value,
       limit: Number.isInteger(limit.valueAsNumber) ? limit.valueAsNumber : Number(limit.defaultValue),
       scoreRegion: service?.scoreboard ? scoreRegion : undefined,
@@ -2058,14 +2093,16 @@
       else setStatus(result.clips.length ? "Suggestions prêtes. Valide les extraits à garder." :
         "Aucun passage détecté. Tu peux ajouter les extraits à la main.");
     }, {}, "analysis");
-  });
+  }
+  analyze.addEventListener("click", () => analyzeMatch("whisper"));
+  analyzeSoccerNet.addEventListener("click", () => analyzeMatch("soccernet"));
   cancel.addEventListener("click", () => {
     cancellationRequested = true;
     if (!session) request?.abort();
   });
-  add.addEventListener("click", () => {
-    const start = Math.max(0, video.currentTime - 7);
-    const end = Math.min(duration, video.currentTime + 7);
+  function addClipAtPlayhead() {
+    const start = video.currentTime;
+    const end = Math.min(duration, start + 14);
     if (end - start < 0.1) return;
     const clip = { kind: "manual", start, end, keep: true, review: "keep" };
     clips.push(clip);
@@ -2073,7 +2110,9 @@
     selectClip(clip, false);
     invalidateExport();
     renderClips();
-  });
+  }
+  add.addEventListener("click", addClipAtPlayhead);
+  addTimeline.addEventListener("click", addClipAtPlayhead);
   save.addEventListener("click", async () => {
     savingAnalysis = true;
     const payload = snapshotAnalysis();
@@ -2177,7 +2216,6 @@
     }, () => montageAssets(configuration));
   }
 
-  whisper.addEventListener("change", updateControls);
   document.addEventListener("interface-language-change", () => {
     setStatus(statusMessage, statusVariables);
     setPreview(previewMessage);

@@ -3365,6 +3365,7 @@ body {
   min-width: 100%;
   min-height: 54px;
   touch-action: none;
+  user-select: none;
 }
 .highlights-timeline-track[data-aligned="true"]::after {
   content: "";
@@ -3559,6 +3560,19 @@ body {
   width: 3px;
   background: #75d2ff;
   box-shadow: 0 0 8px #75d2ff;
+}
+.highlights-playhead::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%);
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+  cursor: ew-resize;
+  pointer-events: auto;
 }
 [data-fixed-section-order] .collapsible > summary {
   cursor: pointer;

@@ -4034,10 +4034,6 @@ MBAPPÉ | 45+2'</textarea
             <summary>Analyse du match</summary>
             <div class="collapsible-body">
               <label class="checkbox-field">
-                <input type="checkbox" id="hl-whisper" checked disabled />
-                <span>Analyser les commentaires avec Whisper</span>
-              </label>
-              <label class="checkbox-field">
                 <input type="checkbox" id="hl-replays" checked disabled />
                 <span>Écarter les ralentis répétés</span>
               </label>
@@ -4066,9 +4062,18 @@ MBAPPÉ | 45+2'</textarea
                     <button type="button" class="stepper-btn" data-step="1" data-target="hl-limit" aria-label="Augmenter">+</button>
                   </div>
                 </label>
+                <label class="field">
+                  <span>Confiance minimale SoccerNet (%)</span>
+                  <div class="number-stepper">
+                    <button type="button" class="stepper-btn" data-step="-1" data-target="hl-soccernet-confidence" aria-label="Diminuer" disabled>−</button>
+                    <input type="number" id="hl-soccernet-confidence" min="5" max="100" step="1" value="20" required disabled />
+                    <button type="button" class="stepper-btn" data-step="1" data-target="hl-soccernet-confidence" aria-label="Augmenter" disabled>+</button>
+                  </div>
+                </label>
               </div>
               <div class="highlights-actions">
-                <button class="btn-primary" id="hl-analyze" type="button" disabled>Analyser le match</button>
+                <button class="btn-secondary" id="hl-analyze" type="button" disabled>Analyser avec Whisper</button>
+                <button class="btn-primary" id="hl-analyze-soccernet" type="button" disabled>Analyser avec SoccerNet Action Spotting</button>
               </div>
               <div id="hl-analysis-feedback"></div>
             </div>
@@ -4077,7 +4082,7 @@ MBAPPÉ | 45+2'</textarea
             <summary>Extraits à garder</summary>
             <div class="collapsible-body">
               <div class="highlights-actions">
-                <button class="btn-secondary" id="hl-add" type="button" title="Ajouter autour de la tête de lecture" disabled>Ajouter un extrait</button>
+                <button class="btn-secondary" id="hl-add" type="button" title="Ajouter à partir de la tête de lecture" disabled>Ajouter un extrait</button>
                 <button class="btn-secondary" id="hl-save" type="button" disabled>Enregistrer l’analyse</button>
               </div>
               <div class="highlights-review" id="hl-review" hidden>
@@ -4087,6 +4092,14 @@ MBAPPÉ | 45+2'</textarea
                 </div>
                 <div id="hl-review-current" hidden>
                   <p id="hl-review-label" role="status"></p>
+                  <label class="field">
+                    <span>Type d’extrait</span>
+                    <select id="hl-review-kind">
+                      <option value="">Type d’origine</option>
+                      <option value="goal">But</option>
+                      <option value="chance">Occasion</option>
+                    </select>
+                  </label>
                   <div class="highlights-actions">
                     <button class="btn-primary" id="hl-keep" type="button">Garder</button>
                     <button class="btn-secondary" id="hl-ignore" type="button">Ignorer</button>
@@ -4786,6 +4799,7 @@ MBAPPÉ | 45+2'</textarea
           <div class="highlights-controls">
             <div class="highlights-transport" id="hl-transport" hidden>
               <div class="highlights-actions" role="group" aria-label="Commandes de lecture">
+                <button class="btn-secondary" id="hl-add-timeline" type="button" title="Ajouter à partir de la tête de lecture" disabled>Ajouter un extrait</button>
                 <button class="btn-secondary" id="hl-prev" type="button">Extrait précédent</button>
                 <button class="btn-secondary" id="hl-back" type="button" aria-label="Reculer de 5 secondes">−5 s</button>
                 <button class="btn-secondary" id="hl-play" type="button">Lecture</button>

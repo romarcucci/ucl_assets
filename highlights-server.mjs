@@ -18,6 +18,11 @@ const ffmpeg = process.env.UCL_FFMPEG || "ffmpeg";
 const ffprobe = process.env.UCL_FFPROBE || "ffprobe";
 const whisper = process.env.UCL_WHISPER || join(tools, "bin", "whisper-cli.exe");
 const model = process.env.UCL_WHISPER_MODEL || join(tools, "ggml-base.bin");
+const soccerDirectory = join(tools, "tdeed");
+const soccerPython = join(tools, "soccernet-env", "Scripts", "python.exe");
+const soccerModel = "SoccerNet_small";
+const soccerFps = 25;
+const soccerLabels = new Map([["Goal", "goal"], ["Shots on target", "chance"], ["Shots off target", "chance"]]);
 const esrgan = resolve(process.env.UCL_REALESRGAN || join(tools, "realesrgan", "realesrgan-ncnn-vulkan.exe"));
 const enhancementModels = join(dirname(esrgan), "models");
 const enhancementModel = "realesrgan-x4plus";
@@ -73,8 +78,15 @@ async function capabilities() {
     available(ffmpeg), available(ffprobe),
     stat(model).then(() => run(whisper, ["--help"])).then(() => true, () => false),
   ]);
-  return { ffmpeg: encoder && probe, whisper: speech, savesTranscript: true, scoreboard: canReadScores(), replays: true,
+  return { ffmpeg: encoder && probe, whisper: speech, soccernet: await canSpotSoccerActions(),
+    savesTranscript: true, scoreboard: canReadScores(), replays: true,
     montage: true, clockStyle: true, tracking: true, prepareEnhancement: encoder && await canEnhanceVideo() };
+}
+
+async function canSpotSoccerActions() {
+  const files = [soccerPython, join(soccerDirectory, "inference.py"),
+    join(soccerDirectory, "checkpoints", "SoccerNet", soccerModel, "checkpoint_best.pt")];
+  return Promise.all(files.map((file) => stat(file))).then((entries) => entries.every((entry) => entry.isFile()), () => false);
 }
 
 async function canEnhanceVideo() {
@@ -137,8 +149,8 @@ const replayWords = /\b(?:ralenti|replay|repeticion|repeticao|wiederholung)\b/;
 const goalWords = /\b(?:quel but|et le but|but de|but pour|marque|ouvre le score|egalise|go+a+l+|scores|equalis[ez]er|go+l+|gool|rete|to+r+|treffer)\b|\bbu+t+\s*!/;
 const chanceWords = /\b(?:arrete|arret|parade|poteau|transversale|grosse occasion|frappe|penalty|great save|save by|on target|hits the post|crossbar|what a chance|remate|disparo|paradon|larguero|traversa|parata|tiro|pfosten|latte|pariert|defesa)\b/;
 
-function suggestClips(levels, transcript, scores, duration, limit) {
-  const candidates = [];
+function suggestClips(levels, transcript, scores, duration, limit, spots = []) {
+  const candidates = [...spots];
   const audioScores = levels.map((level, time) => {
     const nearby = levels.slice(Math.max(0, time - 20), Math.min(levels.length, time + 21)).sort((a, b) => a - b);
     return Math.max(0, level - nearby[Math.floor(nearby.length / 2)]);
@@ -199,13 +211,61 @@ function transcodeProgress(line, total, update) {
   if (value) update(Math.min(1, Number(value[1]) / 1e6 / total));
 }
 
+async function spotSoccerActions(session, confidencePercent, signal, progress) {
+  const video = join(session.directory, "soccernet-input.mp4");
+  const output = join(session.directory, "results_inference.json");
+  // T-DEED reports frame indices and drops incomplete windows. Normalize FPS
+  // and pad by one full 100-sample window (stride 12) to cover the end.
+  const padding = 48;
+  const runInference = [
+    "import sys, inference",
+    "from util import eval as evaluator",
+    "from util.io import store_json_inference",
+    "output = sys.argv.pop(1)",
+    "evaluator.store_json_inference = lambda _, pred, stride: store_json_inference(output, pred, stride)",
+    "inference.main(inference.get_args())",
+  ].join("\n");
+  try {
+    await run(ffmpeg, [...videoArgs, ...inputOptions, "-i", session.source, "-map", "0:v:0", "-an",
+      "-vf", `fps=${soccerFps},scale=398:224,setsar=1,tpad=stop_mode=clone:stop_duration=${padding}`,
+      "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+      "-progress", "pipe:2", "-nostats", video], {
+      signal, onLine: (line) => transcodeProgress(line, session.duration + padding, (fraction) => progress(fraction * 0.3)),
+    });
+    const windows = Math.max(1, Math.floor(session.duration * soccerFps / (50 * 12)) + 1);
+    await run(soccerPython, ["-c", runInference, session.directory, "--model", soccerModel,
+      "--video_path", video, "--frame_width", "398", "--frame_height", "224",
+      "--inference_threshold", String(confidencePercent / 100)], {
+      signal, cwd: soccerDirectory, onLine: (line) => {
+        const iteration = /^\s*(\d+)it\b/.exec(line);
+        if (iteration) progress(0.3 + 0.69 * Math.min(1, Number(iteration[1]) / windows));
+      },
+    });
+    const { predictions } = JSON.parse(await readFile(output, "utf8"));
+    return predictions.flatMap(({ frame, label, confidence }) => {
+      const kind = soccerLabels.get(label);
+      const time = frame / soccerFps;
+      if (!kind || !Number.isFinite(time) || time < 0 || time >= session.duration || !Number.isFinite(confidence)) return [];
+      return [{ time, kind, score: (kind === "goal" ? 70 : 40) + confidence * 20 }];
+    });
+  } catch (error) {
+    if (signal.aborted) throw error;
+    console.error("SoccerNet:", error.message);
+    throw new RequestError(500, "soccernetFailed");
+  } finally {
+    await Promise.all([video, output].map((file) => rm(file, { force: true })));
+  }
+}
+
 async function analyze(session, options, job, signal) {
-  if (!session.audio && !options.scoreRegion) return { clips: [], transcript: [], notice: "noAudio" };
+  const useAudio = session.audio && !options.soccernet;
+  if (!useAudio && !options.scoreRegion && !options.soccernet) return { clips: [], transcript: [], notice: "noAudio" };
   const wav = join(session.directory, "audio.wav");
   const transcriptFile = join(session.directory, "commentary");
   const stages = [
-    ["audio", session.audio ? 18 : 0],
-    ["whisper", session.audio && options.whisper ? 48 : 0],
+    ["audio", useAudio ? 18 : 0],
+    ["whisper", useAudio && options.whisper ? 48 : 0],
+    ["soccernet", options.soccernet ? 66 : 0],
     ["score", options.scoreRegion ? 24 : 0],
     ["replay", options.replays ? 10 : 0],
   ];
@@ -221,8 +281,8 @@ async function analyze(session, options, job, signal) {
     };
   }
   try {
-    let levels = [], transcript = [], scores = [], notice;
-    if (session.audio) {
+    let levels = [], transcript = [], scores = [], spots = [], notice;
+    if (useAudio) {
       const progress = phase("audio");
       await run(ffmpeg, [...videoArgs, ...inputOptions, "-i", session.source, "-map", "0:a:0", "-vn",
         "-af", "aresample=async=1:first_pts=0", "-ar", String(sampleRate), "-ac", "1", "-c:a", "pcm_s16le",
@@ -232,7 +292,7 @@ async function analyze(session, options, job, signal) {
       levels = await audioLevels(wav, signal);
       progress(1);
     }
-    if (session.audio && options.whisper) {
+    if (useAudio && options.whisper) {
       const progress = phase("whisper");
       try {
         await run(whisper, ["-ng", "-oj", "-pp", "-l", options.language, "-m", model, "-f", wav, "-of", transcriptFile], {
@@ -251,6 +311,11 @@ async function analyze(session, options, job, signal) {
       }
       progress(1);
     }
+    if (options.soccernet) {
+      const progress = phase("soccernet");
+      spots = await spotSoccerActions(session, options.soccerConfidence, signal, progress);
+      progress(1);
+    }
     const vision = { ffmpeg, run, inputOptions, videoArgs, signal, transcodeProgress };
     if (options.scoreRegion) {
       const progress = phase("score");
@@ -263,7 +328,8 @@ async function analyze(session, options, job, signal) {
       }
       progress(1);
     }
-    let clips = suggestClips(levels, transcript, scores, session.duration, options.replays ? Math.min(50, options.limit * 2) : options.limit);
+    let clips = suggestClips(levels, transcript, scores, session.duration,
+      options.replays ? Math.min(50, options.limit * 2) : options.limit, spots);
     let replays = 0;
     if (options.replays) {
       const progress = phase("replay");
@@ -513,13 +579,17 @@ const server = createServer({ requestTimeout: 0 }, async (request, response) => 
     if (method === "POST" && action === "analyze") {
       const body = await readJson(request);
       const options = {
+        soccernet: body.engine === "soccernet",
+        soccerConfidence: Number.isInteger(body.soccerConfidence) ? Math.max(5, Math.min(100, body.soccerConfidence)) : 20,
         whisper: body.whisper === true,
         language: ["auto", "fr", "en", "es", "it", "de", "pt"].includes(body.language) ? body.language : "auto",
         limit: Math.max(1, Math.min(40, Number.isInteger(body.limit) ? body.limit : 20)),
         scoreRegion: scoreRegion(body.scoreRegion),
         replays: body.replays === true,
       };
-      return json(response, startJob(session, "audio", (job, signal) => analyze(session, options, job, signal)), 202);
+      if (options.soccernet && !await canSpotSoccerActions()) throw new RequestError(503, "soccernetUnavailable");
+      return json(response, startJob(session, options.soccernet ? "soccernet" : "audio",
+        (job, signal) => analyze(session, options, job, signal)), 202);
     }
     if (method === "POST" && (action === "enhance" || action === "export")) {
       const body = await readJson(request);
